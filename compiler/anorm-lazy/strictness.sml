@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -28,38 +28,38 @@ struct
   structure L = Layout
   structure LU = LayoutUtils
   structure AL = ANormLazy
-  structure AC = AbsCoreF (struct structure Dom = Pointed end) 
+  structure AC = AbsCoreF (struct structure Dom = Pointed end)
   structure LC = ANormLazyToAbsCoreF (struct structure AbsCore = AC end)
   structure AE = AbsCoreEvalF (struct structure AbsCore = AC end)
-  structure ACL = AbsCoreLayoutF (struct structure AbsCore = AC 
+  structure ACL = AbsCoreLayoutF (struct structure AbsCore = AC
                                          type ty = ANormLazy.ty
                                          val layoutTy = ANormLazyLayout.layoutTy
                                   end)
-  structure ADL = AbsCoreLayoutF (struct structure AbsCore = AC 
+  structure ADL = AbsCoreLayoutF (struct structure AbsCore = AC
                                          type ty = AE.demand
                                          val layoutTy = AE.layoutDemand
                                   end)
 
   val passname = "ANormLazyStrictness"
 
-  fun setVars (st, vs) = 
+  fun setVars (st, vs) =
       let
         fun setter (v, strict) =
             let
               val strict' = case I.variableInfo (st, v) of AE.L => false | _ => true
-            in 
+            in
               (v, strict orelse strict')
             end
       in
         List.map (vs, setter)
       end
 
-  fun setVars' (st, vs) = 
+  fun setVars' (st, vs) =
       let
         fun setter (v, ty, strict) =
             let
               val strict' = case I.variableInfo (st, v) of AE.L => false | _ => true
-            in 
+            in
               (v, ty, strict orelse strict')
             end
       in
@@ -72,17 +72,17 @@ struct
       (case e
         of AL.ConApp (c, vs) => AL.ConApp (c, setVars (st, vs))
          | AL.App (e, v) => AL.App (doExp (st, e), v)
-         | AL.Lam ((v, vty, _), e) => 
+         | AL.Lam ((v, vty, _), e) =>
           let
             val strict = case I.variableInfo (st, v) of AE.L => false | _ => true
           in
-            AL.Lam ((v, vty, strict), doExp (st, e)) 
+            AL.Lam ((v, vty, strict), doExp (st, e))
           end
          | AL.Let (vdefg, e) => AL.Let (doVDefg (st, vdefg), doExp (st, e))
          | AL.Case (e, (v, vty), ty, alts) =>
           let
             val e = doExp (st, e)
-            val doAlt = 
+            val doAlt =
                fn AL.Acon (c, vs, e) => AL.Acon (c, setVars' (st, vs), doExp (st, e))
                 | AL.Alit (l, t, e) => AL.Alit (l, t, doExp (st, e))
                 | AL.Adefault e => AL.Adefault (doExp (st, e))
@@ -93,11 +93,11 @@ struct
          | e => e
       )
 
-  and rec doVDef = 
-   fn (st, vd) => 
+  and rec doVDef =
+   fn (st, vd) =>
       (case vd
-        of AL.Vdef (AL.VbSingle (v, vty, _), e) => 
-          let 
+        of AL.Vdef (AL.VbSingle (v, vty, _), e) =>
+          let
             val strict = case I.variableInfo (st, v) of AE.L => false | _ => true
           in
             AL.Vdef (AL.VbSingle (v, vty, strict), doExp (st, e))
@@ -105,7 +105,7 @@ struct
          | AL.Vdef (vs, e) => AL.Vdef (vs, doExp (st, e)))
 
   and rec doVDefg =
-   fn (st, vdg) => 
+   fn (st, vdg) =>
       (case vdg
         of AL.Rec vdefs => AL.Rec (List.map (vdefs, fn def => doVDef (st, def)))
          | AL.Nonrec vdef => AL.Nonrec (doVDef (st, vdef)))
@@ -121,7 +121,7 @@ struct
   val defaultOpt = { showBefore = false, showAfter = false }
 
   val parse =
-    fn s => 
+    fn s =>
       if s = "+" then SOME { showBefore = false, showAfter = true }
         else if s = "-" then SOME { showBefore = true, showAfter = false }
         else if s = "+-" orelse s = "-+" then SOME { showBefore = true, showAfter = true }
@@ -129,7 +129,7 @@ struct
 
   val (control, showOptGet) = Config.Control.mk (passname, describe, parse, fn _ => defaultOpt)
 
-  fun program (p as (AL.Module (main, vdefgs), im, tm), pd, bn) = 
+  fun program (p as (AL.Module (main, vdefgs), im, tm), pd, bn) =
       let
         val cfg = PassData.getConfig pd
         val opt = showOptGet cfg
@@ -141,7 +141,7 @@ struct
       in
         (AL.Module (main, vdefgs), im, tm)
       end
- 
+
   fun layout (module, cfg) = ANormLazyLayout.layoutModule (cfg, module)
 
   val layout' = ANormLazyStats.layout (ANormLazyStats.O { id = SOME passname })
@@ -157,6 +157,6 @@ struct
 
   val associates = { controls = [control], debugs = [], features = [], subPasses = [] }
 
-  val pass = Pass.mkOptFullPass (description, associates, program) 
+  val pass = Pass.mkOptFullPass (description, associates, program)
 
 end

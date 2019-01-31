@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -38,7 +38,7 @@ struct
                          val name = modname
                          val indent = 0)
 
-  structure FrontEndHs = 
+  structure FrontEndHs =
   struct
     val description = {name        = "FrontEndHs",
                        description = "Compile HS (*.hs or *.lhs) to GHC Core (*.hcr)",
@@ -55,7 +55,7 @@ struct
           val config = PassData.getConfig pd
           val fe = Path.fromString "ghc"
           val path = Config.pathToHostString (config, path) ^ "." ^ ext
-          val args = ["-D__PPILER__", "--make", "-c", "-fforce-recomp", "-fext-core"] 
+          val args = ["-D__PPILER__", "--make", "-c", "-fforce-recomp", "-fext-core"]
                      @ List.rev (Config.ghcOpt config) @ [path]
         in
           Pass.run (config, Chat.log0, fe, args)
@@ -90,8 +90,8 @@ struct
       in x
       end
 
-  val controls = CoreHsLayout.controls @ ANormLazyLayout.controls @ 
-                 ANormStrictLayout.controls  
+  val controls = CoreHsLayout.controls @ ANormLazyLayout.controls @
+                 ANormStrictLayout.controls
 
   val debugs = ANormStrictLayout.debugs
 
@@ -110,12 +110,12 @@ struct
       doPass CoreHsParse.pass >>
       doPass CoreHsLinkOption.pass >>
       stopAt "hsc" >> Pass.first (
-      doPass CoreHsNormalize.pass >> 
-      doPass CoreHsToANormLazy.pass >> 
+      doPass CoreHsNormalize.pass >>
+      doPass CoreHsToANormLazy.pass >>
       doPass ANormLazyStrictness.pass >>
-      doPass ANormLazyToStrict.pass >> 
-      doPass ANormStrictOptimize.pass >> 
-      doPass ANormStrictClosureConvert.pass >> 
+      doPass ANormLazyToStrict.pass >>
+      doPass ANormStrictOptimize.pass >>
+      doPass ANormStrictClosureConvert.pass >>
       stopAt "ans" >>
       doPass ANormStrictToMil.pass)
 

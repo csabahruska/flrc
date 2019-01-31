@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -27,56 +27,56 @@ structure Word32 = Word32
 structure Utils = struct
 
     (* General utilities *)
-    fun flip2 (a,b) = (b,a) 
+    fun flip2 (a,b) = (b,a)
 
 
-    structure Iterate = 
+    structure Iterate =
     struct
-      val for : 'a * ('a -> 'a) * ('a -> bool) * 'b * ('a * 'b -> 'b) -> 'b = 
+      val for : 'a * ('a -> 'a) * ('a -> bool) * 'b * ('a * 'b -> 'b) -> 'b =
        fn (init, inc, continue, b, step) =>
           let
-            val rec loop = 
-             fn (a, b) => 
+            val rec loop =
+             fn (a, b) =>
                 if continue a then
                   loop (inc a, step (a, b))
                 else
                   b
           in loop (init, b)
           end
-      val foreach : 'a * ('a -> 'a) * ('a -> bool) * ('a -> unit) -> unit = 
+      val foreach : 'a * ('a -> 'a) * ('a -> bool) * ('a -> unit) -> unit =
        fn (init, inc, continue, step) => for (init, inc, continue, (), fn (i, ()) => step i)
-          
+
     end (* Iterate *)
 
-    structure Imperative = 
+    structure Imperative =
     struct
       val block : unit list -> unit = fn l => ()
      (* infix 1 *)
       val $$ : unit * unit -> unit = fn (a, b) => ()
     end
 
-    structure Function = 
+    structure Function =
     struct
       val id : 'a -> 'a = fn x => x
-      val flipIn : ('a * 'b -> 'c) -> ('b * 'a -> 'c) = 
+      val flipIn : ('a * 'b -> 'c) -> ('b * 'a -> 'c) =
        fn f => f o flip2
-      val flipOut : ('a -> 'b * 'c) -> ('a -> 'c * 'b) = 
+      val flipOut : ('a -> 'b * 'c) -> ('a -> 'c * 'b) =
        fn f => flip2 o f
-      val flip : ('a * 'b -> 'c * 'd) -> ('b * 'a -> 'd * 'c) = 
+      val flip : ('a * 'b -> 'c * 'd) -> ('b * 'a -> 'd * 'c) =
        fn f => flip2 o f o flip2
-               
-      val disj : ('a -> bool) * ('a -> bool) -> ('a -> bool) = 
-       fn (f1, f2) => 
+
+      val disj : ('a -> bool) * ('a -> bool) -> ('a -> bool) =
+       fn (f1, f2) =>
        fn a => (f1 a) orelse (f2 a)
       val conj : ('a -> bool) * ('a -> bool) -> ('a -> bool) =
-       fn (f1, f2) => 
+       fn (f1, f2) =>
        fn a => (f1 a) andalso (f2 a)
 
-      val apply2 : ('a -> 'b) -> ('a * 'a) -> ('b * 'b) = 
+      val apply2 : ('a -> 'b) -> ('a * 'a) -> ('b * 'b) =
        fn f => fn (a, b) => (f a, f b)
 
       (* infix 3 @@ *)
-      val @@ : ('a -> 'b) * 'a -> 'b = 
+      val @@ : ('a -> 'b) * 'a -> 'b =
        fn (f, a) => f a
 
       (* left-associating infix application operator *)
@@ -85,7 +85,7 @@ structure Utils = struct
 
       val curry : ('a * 'b -> 'c) -> ('a -> 'b -> 'c) =
        fn f => (fn x => (fn y => f (x, y)))
- 
+
       val uncurry : ('a -> 'b -> 'c) -> ('a * 'b -> 'c) =
        fn f => (fn (x, y) => f x y)
 
@@ -96,7 +96,7 @@ structure Utils = struct
       (* infix 3 <\ \> *)
       val <\ = fn (x, f) => fn y => f (x, y)
       val \> = fn (f, y) => f y
-      (* infixr 3 /> </ *)    
+      (* infixr 3 /> </ *)
       val /> = fn (f, y) => fn x => f (x, y)
       val </ = fn (x, f) => f x
 
@@ -108,37 +108,37 @@ structure Utils = struct
     end (* structure Function *)
 
     structure MltonVector = Vector
-    structure Vector = 
-    struct 
-      val cons : 'a * 'a vector -> 'a vector = 
+    structure Vector =
+    struct
+      val cons : 'a * 'a vector -> 'a vector =
        fn (a, v) => Vector.concat [Vector.new1 a, v]
       fun snoc (v, a) = Vector.concat [v, Vector.new1 a]
-      val update : 'a vector * int * 'a -> 'a vector = 
+      val update : 'a vector * int * 'a -> 'a vector =
        fn (vec, i , elem) =>
           Vector.mapi (vec, fn(i', elem') => if (i = i') then elem else elem')
-      val count : 'a vector * ('a -> bool) -> int = 
+      val count : 'a vector * ('a -> bool) -> int =
        fn (vec, p) =>
           Vector.fold (vec, 0, fn (a, i) => if p a then i+1 else i)
-      val split : 'a vector * int -> 'a vector * 'a vector = 
+      val split : 'a vector * int -> 'a vector * 'a vector =
        fn (vec, i) =>
           let
             val a = Vector.prefix (vec, i)
             val b = Vector.dropPrefix (vec, i)
           in (a, b)
           end
-      val toListOnto : 'a vector * 'a list -> 'a list = 
+      val toListOnto : 'a vector * 'a list -> 'a list =
        fn (v, l) => Vector.foldr (v, l, op ::)
       val toListMap2 : 'a vector * 'b vector * (('a * 'b) ->  'c) -> 'c list =
        fn (v1, v2, f) => Vector.foldr2 (v1, v2, [], fn (a, b, l) => f (a, b) :: l)
-      val rec concatToList : 'a vector list -> 'a list = 
-       fn vl => 
+      val rec concatToList : 'a vector list -> 'a list =
+       fn vl =>
           (case vl
             of [] => []
              | v::vl => toListOnto (v, concatToList vl))
-      val lookup : 'a vector * int -> 'a option = 
+      val lookup : 'a vector * int -> 'a option =
        fn (v, i) => (SOME (Vector.sub (v, i))) handle Subscript => NONE
-      val allEq : 'a vector * ('a * 'a -> bool) -> bool = 
-          fn (v, eq) => 
+      val allEq : 'a vector * ('a * 'a -> bool) -> bool =
+          fn (v, eq) =>
              if Vector.isEmpty v then
                true
              else
@@ -147,22 +147,22 @@ structure Utils = struct
                  val equal = Vector.forall (v, fn a => eq (a, b))
                in equal
                end
-      val transpose : 'a vector vector -> 'a vector vector = 
+      val transpose : 'a vector vector -> 'a vector vector =
           fn v =>
              let
                val newCols = Vector.length v
-               val newRows = if newCols > 0 then 
+               val newRows = if newCols > 0 then
                                Vector.length (Vector.sub (v, 0))
-                             else 
+                             else
                                0
-               val oldElt = 
-                fn (row, col) => 
+               val oldElt =
+                fn (row, col) =>
                    Vector.sub (Vector.sub (v, row), col)
                val v = Vector.tabulate (newRows, fn row => Vector.tabulate (newCols, fn col => oldElt (col, row)))
              in v
              end
-      val fromOption : 'a option -> 'a vector = 
-       fn opt => 
+      val fromOption : 'a option -> 'a vector =
+       fn opt =>
           (case opt
             of SOME a => Vector.new1 a
              | NONE => Vector.new0 ())
@@ -170,42 +170,42 @@ structure Utils = struct
           Vector.mapAndFold (Vector.mapi (xs, fn x => x), y, fn ((i, x), y) => f (i, x, y))
       val mapSecond : ('a * 'b) Vector.t * ('b -> 'c) -> ('a * 'c) Vector.t =
        fn (v, f) => Vector.map (v, fn (a, b) => (a, f b))
-      val exists2 : 'a Vector.t * 'b Vector.t * ('a * 'b -> bool) -> bool = 
-          fn (v1, v2, p) => 
+      val exists2 : 'a Vector.t * 'b Vector.t * ('a * 'b -> bool) -> bool =
+          fn (v1, v2, p) =>
              let
                val len1 = Vector.length v1
                val len2 = Vector.length v2
                val () = if len1 = len2 then ()
                         else Fail.fail ("utils.sml", "Vector.exists2", "Unequal lengths")
                val rec loop =
-                fn i => 
+                fn i =>
                    if i < len1 then
                      p (Vector.sub (v1, i), Vector.sub (v2, i)) orelse loop (i+1)
                    else
                      false
              in loop 0
              end
-      val replaceAll : 'a Vector.t * ('a -> 'a option) -> 'a Vector.t = 
+      val replaceAll : 'a Vector.t * ('a -> 'a option) -> 'a Vector.t =
        fn (v, f) => Vector.map (v, fn a => case f a of SOME a => a | NONE => a)
     end (* structure Vector *)
 
-    structure SortedVectorMap = 
+    structure SortedVectorMap =
     struct
       structure Vector = MltonVector
       type ('a, 'b) t = ('a * 'b) Vector.t
-      (* Sorted vectors of pairs. 
+      (* Sorted vectors of pairs.
        * Sort is in increasing order according to the given comparison
        *)
-      val unionWith : ('a * 'a -> order) -> ('a , 'b) t * ('a, 'b) t * (('b * 'b) -> 'b) -> ('a, 'b) t = 
-       fn compare => 
-       fn (a1, a2, f) => 
+      val unionWith : ('a * 'a -> order) -> ('a , 'b) t * ('a, 'b) t * (('b * 'b) -> 'b) -> ('a, 'b) t =
+       fn compare =>
+       fn (a1, a2, f) =>
           let
-            val rec loop = 
-             fn (a1, a2) => 
+            val rec loop =
+             fn (a1, a2) =>
                 case (a1, a2)
                  of ([], a) => a
                   | (a, []) => a
-                  | ((k1, v1)::a12, (k2, v2)::a22) => 
+                  | ((k1, v1)::a12, (k2, v2)::a22) =>
                     (case compare (k1, k2)
                       of LESS    => (k1, v1)::loop (a12, a2)
                        | GREATER => (k2, v2)::loop (a1, a22)
@@ -214,15 +214,15 @@ structure Utils = struct
           end
 
       val intersectWith : ('a * 'a -> order) -> ('a, 'b) t * ('a, 'b) t * (('b * 'b) -> 'b) -> ('a, 'b) t =
-       fn compare => 
-       fn (a1, a2, f) => 
+       fn compare =>
+       fn (a1, a2, f) =>
           let
-            val rec loop = 
-             fn (a1, a2) => 
+            val rec loop =
+             fn (a1, a2) =>
                 case (a1, a2)
                  of ([], a) => []
                   | (a, []) => []
-                  | ((k1, v1)::a12, (k2, v2)::a22) => 
+                  | ((k1, v1)::a12, (k2, v2)::a22) =>
                     (case compare (k1, k2)
                       of LESS    => loop (a12, a2)
                        | GREATER => loop (a1, a22)
@@ -230,58 +230,58 @@ structure Utils = struct
           in Vector.fromList (loop (Vector.toList a1, Vector.toList a2))
           end
 
-      val isSorted : ('a * 'a -> order) -> ('a, 'b) t -> bool = 
-       fn compare => 
-       fn a1 => 
+      val isSorted : ('a * 'a -> order) -> ('a, 'b) t -> bool =
+       fn compare =>
+       fn a1 =>
           let
             val le = fn ((k1, _), (k2, _)) => compare (k1, k2) <> GREATER
           in MltonVector.isSorted (a1, le)
           end
 
-      val fromList : ('a * 'a -> order) -> ('a * 'b ) list -> ('a, 'b) t = 
+      val fromList : ('a * 'a -> order) -> ('a * 'b ) list -> ('a, 'b) t =
        fn compare =>
-       fn l => 
+       fn l =>
           let
             val le = fn ((k1, _), (k2, _)) => compare (k1, k2) <> GREATER
           in Vector.fromList (List.insertionSort (l, le))
           end
 
-      val fromList : ('a * 'a -> order) -> ('a * 'b ) list -> ('a, 'b) t = 
+      val fromList : ('a * 'a -> order) -> ('a * 'b ) list -> ('a, 'b) t =
        fn compare =>
-       fn l => 
+       fn l =>
           let
             val le = fn ((k1, _), (k2, _)) => compare (k1, k2) <> GREATER
           in Vector.fromList (List.insertionSort (l, le))
           end
 
-      val fromVector : ('a * 'a -> order) -> ('a * 'b ) Vector.t -> ('a, 'b) t = 
-          fn compare => 
+      val fromVector : ('a * 'a -> order) -> ('a * 'b ) Vector.t -> ('a, 'b) t =
+          fn compare =>
           fn v => fromList compare (Vector.toList v)
 
-          
+
     end  (* structure SortedVectorMap *)
 
     structure MltonList = List
 
-    structure List = 
+    structure List =
     struct
     (* List utilities *)
 
-    val dec : 'a MltonList.t -> ('a * 'a MltonList.t) option = 
+    val dec : 'a MltonList.t -> ('a * 'a MltonList.t) option =
         fn l => (case l
                   of [] => NONE
                    | a::aa => SOME (a, aa))
 
     fun concatOption (l : 'a option MltonList.t) : 'a MltonList.t = MltonList.keepAllMap (l, Function.id)
 
-    fun allEq eq l = 
+    fun allEq eq l =
         (case l
           of [] => true
-           | a::aa =>  
+           | a::aa =>
              let
-               val eq1 = 
+               val eq1 =
                 fn b => eq(a, b)
-               val eq = 
+               val eq =
                    MltonList.forall (aa, eq1)
              in eq
              end)
@@ -306,7 +306,7 @@ structure Utils = struct
     val mapFoldl : ('a list * 'c * (('a * 'c) -> ('b * 'c)))
                    -> ('b list * 'c) =
        fn (l, ix, f) =>
-        
+
         let fun aux (item, (cx, a)) =
                 let val (nitem, nx) = f (item, cx) in (nx, nitem::a) end
           val (fx, l) = MltonList.fold (l, (ix, []), aux)
@@ -329,7 +329,7 @@ structure Utils = struct
 
     fun uniqueList ([], equal) = []
       | uniqueList ([x], equal) = [x]
-      | uniqueList (x::xs, equal) = 
+      | uniqueList (x::xs, equal) =
         if MltonList.exists (xs, fn n => equal (x, n)) then
           uniqueList (xs, equal)
         else
@@ -339,34 +339,34 @@ structure Utils = struct
 
     end (* structure List *)
 
-    structure Option = 
+    structure Option =
     struct
-      val out : 'a option * (unit -> 'a) -> 'a = 
-       fn (opt, f) => 
+      val out : 'a option * (unit -> 'a) -> 'a =
+       fn (opt, f) =>
           (case opt
             of SOME v => v
              | NONE => f())
 
       val get : 'a option * 'a -> 'a =
-       fn (opt, d) => 
+       fn (opt, d) =>
           (case opt
             of NONE => d
              | SOME x => x)
 
       val bind : 'a option * ('a -> 'b option) -> 'b option =
-       fn (opt, f) => 
+       fn (opt, f) =>
           (case opt
             of NONE => NONE
              | SOME v => f v)
 
-      val dispatch : 'a option * ('a -> 'b) * (unit -> 'b) -> 'b = 
-       fn (opt, f1, f2) => 
+      val dispatch : 'a option * ('a -> 'b) * (unit -> 'b) -> 'b =
+       fn (opt, f1, f2) =>
           (case opt
             of SOME a => f1 a
              | NONE => f2 ())
 
-      val dispatchMap : 'a option * ('a -> 'b) * (unit -> unit) -> 'b option = 
-       fn (opt, f1, f2) => 
+      val dispatchMap : 'a option * ('a -> 'b) * (unit -> unit) -> 'b option =
+       fn (opt, f1, f2) =>
           (case opt
             of SOME a => SOME (f1 a)
              | NONE => (f2 (); NONE))
@@ -379,47 +379,47 @@ structure Utils = struct
              | NONE => NONE)
 
       (* If at most one are present, return it *)
-      val atMostOneOf : ('a option) * ('a option) -> 'a option = 
-       fn p => 
+      val atMostOneOf : ('a option) * ('a option) -> 'a option =
+       fn p =>
           (case p
             of (NONE, snd) => snd
              | (fst, NONE) => fst
              | _ => NONE)
 
       (* If either one are present, return it.  If both present, prefers left *)
-      val eitherOneOf : ('a option) * ('a option) -> 'a option = 
-       fn (fst, snd) => 
+      val eitherOneOf : ('a option) * ('a option) -> 'a option =
+       fn (fst, snd) =>
           (case fst
             of NONE => snd
              | _ => fst)
 
-      val map2 : ('a option) * ('b option) * ('a * 'b -> 'c) -> 'c option = 
-          fn (o1, o2, f) => 
+      val map2 : ('a option) * ('b option) * ('a * 'b -> 'c) -> 'c option =
+          fn (o1, o2, f) =>
              (case (o1, o2)
                of (SOME a, SOME b) => SOME (f (a, b))
                 | _ => NONE)
 
-      val union : ('a option) * ('a option) * ('a * 'a -> 'a) -> 'a option = 
-          fn (o1, o2, f) => 
+      val union : ('a option) * ('a option) * ('a * 'a -> 'a) -> 'a option =
+          fn (o1, o2, f) =>
              (case (o1, o2)
                of (a, NONE) => a
                 | (NONE, b) => b
                 | (SOME a, SOME b) => SOME (f (a, b)))
 
-      val fromVector : 'a vector -> 'a option option = 
-       fn v => 
+      val fromVector : 'a vector -> 'a option option =
+       fn v =>
           (case MltonVector.length v
             of 0 => SOME NONE
              | 1 => SOME (SOME (MltonVector.sub (v, 0)))
              | _ => NONE)
 
-      val toList : 'a option -> 'a list = 
-       fn opt => 
+      val toList : 'a option -> 'a list =
+       fn opt =>
           (case opt
             of SOME a => [a]
              | NONE => [])
 
-      val rec distribute : ('a option) list -> ('a list) option = 
+      val rec distribute : ('a option) list -> ('a list) option =
        fn list =>
           case list
            of []      => SOME []
@@ -442,12 +442,12 @@ structure Utils = struct
 
     end (* structure Option *)
 
-    structure Ref = 
+    structure Ref =
     struct
-      val inc : int ref -> int = 
+      val inc : int ref -> int =
        fn (r as ref i) => (r := i + 1;i)
 
-      val dec : int ref -> int = 
+      val dec : int ref -> int =
        fn (r as ref i) => (r := i - 1;i)
 
     end (* structure Ref *)
@@ -487,17 +487,17 @@ structure Utils = struct
         end
 
     (* Return a list of 32 bit digits (msd first) corresponding
-     * to the base 2^32 representation of the absolute value of the 
+     * to the base 2^32 representation of the absolute value of the
      * number.  Returns [] on zero *)
-    fun intInfAbsDigits32 (i : IntInf.t) : Word32.word MltonList.t = 
+    fun intInfAbsDigits32 (i : IntInf.t) : Word32.word MltonList.t =
         let
           val i = IntInf.abs i
           val base = IntInf.pow (2, 32)
-          val rec loop = 
-           fn (i, l) => 
-              if i = 0 then 
+          val rec loop =
+           fn (i, l) =>
+              if i = 0 then
                 l
-              else 
+              else
                 loop (i div base, Word32.fromLargeInt (i mod base)::l)
         in loop (i, [])
         end
@@ -507,7 +507,7 @@ structure Utils = struct
 
     (* Grow arr such that idx is in range (if not already in range) *)
     (* New fields are filled with the default element*)
-    fun growArrayR (arrR : 'a Array.t ref, idx : int, dflt : 'a) : unit = 
+    fun growArrayR (arrR : 'a Array.t ref, idx : int, dflt : 'a) : unit =
         if idx < Array.length (!arrR) then ()
         else
           let
@@ -539,7 +539,7 @@ structure LayoutUtils = struct
         case ov of
           SOME v => f v
         | NONE => L.str "None"
-                     
+
     fun layoutBool b =
         if b then L.str "True"
         else L.str "False"
@@ -573,7 +573,7 @@ structure LayoutUtils = struct
         let
           val os = if append then Pervasive.TextIO.openAppend fname else Pervasive.TextIO.openOut fname
           val () = printLayoutToStream(l, os)
-	  val () = Pervasive.TextIO.closeOut os
+          val () = Pervasive.TextIO.closeOut os
         in ()
         end
 
@@ -654,7 +654,7 @@ struct
     val singleton = RBT.singleton
     fun fromList l = RBT.addList (empty, l)
     val toList = RBT.listItems
-    fun fromVector v = 
+    fun fromVector v =
         Vector.fold (v, empty, RBT.add o Utils.flip2)
     val toVector = Vector.fromList o RBT.listItems
     val isEmpty = RBT.isEmpty
@@ -665,14 +665,14 @@ struct
     val insert = RBT.add
     val insertList = RBT.addList
     fun remove (s, e) = RBT.delete (s, e) handle NotFound => s
-    fun union (s1, s2) = 
+    fun union (s1, s2) =
         if isEmpty s1 then s2
-        else if isEmpty s2 then s1 
+        else if isEmpty s2 then s1
         else RBT.union (s1, s2)
-    fun intersection (s1, s2) = 
+    fun intersection (s1, s2) =
         if (isEmpty s1) orelse (isEmpty s2) then empty
         else RBT.intersection (s1, s2)
-    fun difference (s1, s2) = 
+    fun difference (s1, s2) =
         if isEmpty s1 then empty
         else if isEmpty s2 then s1
         else RBT.difference (s1, s2)
@@ -816,8 +816,8 @@ struct
     fun layout (d, f) =
         LayoutUtils.sequence ("{", "}", ",") (List.map (RBT.listItemsi d, f))
 
-    val choose : 'a t -> ('a t * key * 'a) option = 
-        fn d => 
+    val choose : 'a t -> ('a t * key * 'a) option =
+        fn d =>
            case RBT.firsti d
             of SOME (l, a) => SOME (remove (d, l), l, a)
              | NONE => NONE
@@ -845,11 +845,11 @@ sig
   type key
   type 'a t
 
-  val empty : unit -> 'a t            
+  val empty : unit -> 'a t
   (* Add all elements of the second to the first*)
   val add : 'a t * 'a t  -> unit
   val addWith : 'a t * 'a t * (key * 'a * 'a -> 'a) -> unit
-  val choose : 'a t -> (key * 'a) option 
+  val choose : 'a t -> (key * 'a) option
   val fromList : (key * 'a) list -> 'a t
   val fromList2 : key list * 'a list -> 'a t
   (* Order of entries is arbitrary *)
@@ -889,7 +889,7 @@ struct
 
   type key = Key.t
   type 'a t = 'a D.t ref
-             
+
   fun empty () = ref D.empty
   fun addWith (a, b, f) = a := D.union(!a, !b, f)
   fun add (a, b) = addWith (a, b, fn (k, a, b) => b)
@@ -913,7 +913,7 @@ struct
   fun modify (d, f) = d := D.map (!d, fn (_, i) => f i)
   fun copy d = ref (!d)
   fun copyWith (d, f) = ref (D.map (!d, f))
-  fun choose d = 
+  fun choose d =
       case D.choose (!d)
        of SOME (dnew, l, a) => (d := dnew;SOME (l, a))
         | NONE => NONE
@@ -930,7 +930,7 @@ structure ImpCharDict =
     DictImpF (struct type t = char val compare = Char.compare end);
 
 
-signature DLIST = 
+signature DLIST =
 sig
   type 'a t
   type 'a cursor
@@ -969,17 +969,17 @@ sig
   val layout   : 'a t * ('a -> Layout.t) -> Layout.t
 end
 
-structure DList :> DLIST = 
+structure DList :> DLIST =
 struct
 
 
   type 'a ptr = 'a option ref
 
-  datatype 'a node = 
+  datatype 'a node =
            Start of 'a data ptr
          | Elt of 'a data
 
-  and 'a data = 
+  and 'a data =
       D of {prev : 'a node ptr,
             data : 'a,
             next : 'a data ptr}
@@ -990,7 +990,7 @@ struct
 
   fun empty () : 'a t = ref NONE
 
-  fun newData (e : 'a) : 'a cursor = 
+  fun newData (e : 'a) : 'a cursor =
       let
         val prev = ref NONE
         val next = ref NONE
@@ -1006,17 +1006,17 @@ struct
 
   val getVal = data
 
-  fun nodeNextp (n : 'a node) : 'a data ptr = 
+  fun nodeNextp (n : 'a node) : 'a data ptr =
       (case n
         of Start p => p
          | Elt c => nextp c)
 
 
   fun isEmpty (l : 'a t) : bool = not (isSome(!l))
-      
+
   fun first (l : 'a t) : 'a cursor option = !l
 
-  fun insert (l : 'a t, e : 'a) : 'a cursor = 
+  fun insert (l : 'a t, e : 'a) : 'a cursor =
       let
         val cursor = newData e
         val () = (nextp cursor) := !l
@@ -1028,33 +1028,33 @@ struct
       in cursor
       end
 
-  fun last (l : 'a t) : 'a cursor option = 
+  fun last (l : 'a t) : 'a cursor option =
       let
-        fun loop d = 
+        fun loop d =
             (case !(nextp d)
               of NONE => d
                | SOME d => loop d)
-        val res = 
+        val res =
             (case !l
               of NONE => NONE
                | SOME d => SOME (loop d))
       in res
       end
 
-  fun append (l1 : 'a t, l2 : 'a t) : unit = 
+  fun append (l1 : 'a t, l2 : 'a t) : unit =
       let
-        val () = 
+        val () =
             (case !l2
               of NONE => ()
-               | SOME d2 => 
+               | SOME d2 =>
                  (case last l1
-                   of NONE => 
+                   of NONE =>
                       let
                         val () = l1 := SOME d2
                         val () = (prevp d2) := SOME (Start l1)
                       in ()
                       end
-                    | SOME d1  => 
+                    | SOME d1  =>
                       let
                         val () = (nextp d1) := SOME d2
                         val () = (prevp d2) := SOME (Elt d1)
@@ -1064,43 +1064,43 @@ struct
       in ()
       end
 
-  fun insertLast (l : 'a t, e : 'a) : 'a cursor = 
+  fun insertLast (l : 'a t, e : 'a) : 'a cursor =
       let
         val l2 = empty()
         val c = insert(l2, e)
         val () = append (l, l2)
-      in 
+      in
         c
       end
 
-  fun all (l : 'a t) : 'a cursor list = 
-      let 
-        fun loop (l, acc) = 
+  fun all (l : 'a t) : 'a cursor list =
+      let
+        fun loop (l, acc) =
             (case !l
               of NONE => rev acc
-               | SOME d => 
+               | SOME d =>
                  loop(nextp d, d :: acc))
       in loop (l, [])
       end
 
-  fun foreach (l : 'a t, f : 'a -> unit) : unit = 
-      let 
-        fun loop l = 
+  fun foreach (l : 'a t, f : 'a -> unit) : unit =
+      let
+        fun loop l =
             case !l
              of NONE => ()
               | SOME d => (f (data d); loop (nextp d))
       in loop l
       end
 
-  fun toListMap (l : 'a t, f : 'a -> 'b) : 'b list = 
+  fun toListMap (l : 'a t, f : 'a -> 'b) : 'b list =
       List.map (all l, f o getVal)
 
-  fun toListRev (l : 'a t) : 'a list = 
-      let 
-        fun loop (l, acc) = 
+  fun toListRev (l : 'a t) : 'a list =
+      let
+        fun loop (l, acc) =
             (case !l
               of NONE => acc
-               | SOME d => 
+               | SOME d =>
                  loop(nextp d, data d:: acc))
       in loop (l, [])
       end
@@ -1115,19 +1115,19 @@ struct
 
   val toVectorUnordered = toVectorRev
 
-  fun remove (node : 'a cursor) : unit = 
+  fun remove (node : 'a cursor) : unit =
       let
         val pp = prevp node
         val np = nextp node
-        val () = 
+        val () =
             case pp
              of ref NONE => ()
-              | ref (SOME l) => 
+              | ref (SOME l) =>
                 (pp := NONE;
                  (nodeNextp l) := !np;
                  case np
                   of ref NONE => ()
-                   | ref (SOME c) => 
+                   | ref (SOME c) =>
                      (
                       (prevp c) := SOME l;
                       np := NONE
@@ -1136,19 +1136,19 @@ struct
       in ()
       end
 
-  fun link (n1 : 'a cursor, n2 : 'a cursor) : unit = 
+  fun link (n1 : 'a cursor, n2 : 'a cursor) : unit =
       (
        nextp n1 := SOME n2;
        prevp n2 := SOME (Elt n1)
        )
 
-  fun linkNode (n1 : 'a node, n2 : 'a cursor) : unit = 
+  fun linkNode (n1 : 'a node, n2 : 'a cursor) : unit =
       (
        nodeNextp n1 := SOME n2;
        prevp n2 := SOME n1
        )
 
-  fun insertL (n1 : 'a cursor, e : 'a) : 'a cursor = 
+  fun insertL (n1 : 'a cursor, e : 'a) : 'a cursor =
       let
         val n2 = newData e
         val () = case !(prevp n1)
@@ -1158,7 +1158,7 @@ struct
       in n2
       end
 
-  fun insertR (n1 : 'a cursor, e : 'a) : 'a cursor = 
+  fun insertR (n1 : 'a cursor, e : 'a) : 'a cursor =
       let
         val n2 = newData e
         val () = case !(nextp n1)
@@ -1170,23 +1170,23 @@ struct
 
   fun next (n1 : 'a cursor) : 'a cursor option = !(nextp n1)
 
-  fun prev (n1 : 'a cursor) : 'a cursor option = 
+  fun prev (n1 : 'a cursor) : 'a cursor option =
       case !(prevp n1)
        of NONE => NONE
         | SOME (Start _) => NONE
         | SOME (Elt data) => SOME data
-                           
-  fun layout (l : 'a t, f : 'a -> Layout.t) = 
+
+  fun layout (l : 'a t, f : 'a -> Layout.t) =
       LayoutUtils.bracketSeq (List.map (all l, f o getVal))
 
-  fun fromList (l : 'a list) : 'a t = 
+  fun fromList (l : 'a list) : 'a t =
       let
         val dl = empty()
-        fun loop (c, l) = 
+        fun loop (c, l) =
             (case l
               of [] => ()
                | a::l => loop(insertR (c, a), l))
-        val () = 
+        val () =
             case l
              of [] => ()
               | a::l => loop(insert (dl, a), l)
@@ -1196,7 +1196,7 @@ struct
 
 end
 (*
-structure DList :> DLIST = 
+structure DList :> DLIST =
 struct
 
 
@@ -1207,12 +1207,12 @@ struct
         NONE => Fail.fail ("Dereference of Null pointer")
       | SOME v => v
 
-  datatype 'a data = 
+  datatype 'a data =
            D of {prev : 'a node,
                  data : 'a,
                  next : 'a node}
   withtype 'a node = 'a data ptr
-                  
+
   type 'a t = 'a node ref
   type 'a cursor = 'a data
 
@@ -1220,7 +1220,7 @@ struct
 
   fun isEmpty (l : 'a t) : bool = not (isSome(!!l))
 
-  fun newData (e : 'a) : 'a cursor = 
+  fun newData (e : 'a) : 'a cursor =
       let
         val prev = ref NONE
         val next = ref NONE
@@ -1230,7 +1230,7 @@ struct
       in cursor
       end
 
-  fun singleton (e : 'a) : 'a t = 
+  fun singleton (e : 'a) : 'a t =
       let
         val l = ref NONE
         val p = ref NONE
@@ -1250,26 +1250,26 @@ struct
   fun data  (D {data, ...}) : 'a = data
 
   fun first (l : 'a t) : 'a cursor option = !!l
-  fun last  (l : 'a t) : 'a cursor option = 
+  fun last  (l : 'a t) : 'a cursor option =
       (case !!l
         of SOME (D{prev, ...}) => SOME ($ prev)
          | NONE                => NONE)
 
 
-  fun link (d1 as (D {next, ...}), 
-            d2 as (D {prev, ...})) = 
+  fun link (d1 as (D {next, ...}),
+            d2 as (D {prev, ...})) =
       let
         val () = next := d2
         val () = prev := d1
       in ()
       end
 
-  fun seq (l1, l2) = 
+  fun seq (l1, l2) =
       (case (!l1, !l2)
         of (ref NONE, l)   => l1 := l
          | (l, ref NONE)   => l2 := l
          | (n1 as (ref (SOME d1)),
-            n2 as (ref (SOME d2))) => 
+            n2 as (ref (SOME d2))) =>
            let
              val first = d1
              val midR  = $ (prevp d1)
@@ -1281,7 +1281,7 @@ struct
            in ()
            end
 
-  fun insert (l : 'a t, e : 'a) : 'a cursor = 
+  fun insert (l : 'a t, e : 'a) : 'a cursor =
       let
         val s = singleton e
         val c = $!s
@@ -1289,7 +1289,7 @@ struct
       in c
       end
 
-  fun insertLast (l : 'a t, e : 'a) : 'a cursor = 
+  fun insertLast (l : 'a t, e : 'a) : 'a cursor =
       let
         val s = singleton e
         val c = $!s
@@ -1297,13 +1297,13 @@ struct
       in c
       end
 
-  fun all (l : 'a t) : 'a cursor list = 
-      (case !!l 
+  fun all (l : 'a t) : 'a cursor list =
+      (case !!l
         of NONE => []
-         | SOME d => 
+         | SOME d =>
            let
              val sentinal = nextp ($ (prevp d))
-             fun loop (d, acc) = 
+             fun loop (d, acc) =
                  let
                    val acc = d::acc
                    val n = nextp d
@@ -1314,13 +1314,13 @@ struct
            in loop (d, [])
            end)
 
-  fun foreach (l : 'a t, f : 'a -> unit) : unit = 
+  fun foreach (l : 'a t, f : 'a -> unit) : unit =
       (case !!l
         of NONE => ()
-         | SOME d => 
-           let 
+         | SOME d =>
+           let
              val sentinal = nextp ($ (prevp d))
-             fun loop (d, acc) = 
+             fun loop (d, acc) =
                  let
                    val () = f (data d)
                    val n = nextp d
@@ -1334,19 +1334,19 @@ struct
 
   fun toVector (l : 'a t) : 'a vector = Vector.fromList (toList l)
 
-  fun remove (node : 'a cursor) : unit = 
+  fun remove (node : 'a cursor) : unit =
       let
         val pp = prevp node
         val np = nextp node
-        val () = 
+        val () =
             case pp
              of ref NONE => ()
-              | ref (SOME l) => 
+              | ref (SOME l) =>
                 (pp := NONE;
                  (nodeNextp l) := !np;
                  case np
                   of ref NONE => ()
-                   | ref (SOME c) => 
+                   | ref (SOME c) =>
                      (
                       (prevp c) := SOME l;
                       np := NONE
@@ -1355,19 +1355,19 @@ struct
       in ()
       end
 
-  fun link (n1 : 'a cursor, n2 : 'a cursor) : unit = 
+  fun link (n1 : 'a cursor, n2 : 'a cursor) : unit =
       (
        nextp n1 := SOME n2;
        prevp n2 := SOME (Elt n1)
        )
 
-  fun linkNode (n1 : 'a node, n2 : 'a cursor) : unit = 
+  fun linkNode (n1 : 'a node, n2 : 'a cursor) : unit =
       (
        nodeNextp n1 := SOME n2;
        prevp n2 := SOME n1
        )
 
-  fun insertL (n1 : 'a cursor, e : 'a) : 'a cursor = 
+  fun insertL (n1 : 'a cursor, e : 'a) : 'a cursor =
       let
         val n2 = newData e
         val () = case !(prevp n1)
@@ -1377,7 +1377,7 @@ struct
       in n2
       end
 
-  fun insertR (n1 : 'a cursor, e : 'a) : 'a cursor = 
+  fun insertR (n1 : 'a cursor, e : 'a) : 'a cursor =
       let
         val n2 = newData e
         val () = case !(nextp n1)
@@ -1389,25 +1389,25 @@ struct
 
   fun next (n1 : 'a cursor) : 'a cursor option = !(nextp n1)
 
-  fun prev (n1 : 'a cursor) : 'a cursor option = 
+  fun prev (n1 : 'a cursor) : 'a cursor option =
       case !(prevp n1)
        of NONE => NONE
         | SOME (Start _) => NONE
         | SOME (Elt data) => SOME data
-                           
+
   fun getVal (D{data, ...} : 'a cursor) : 'a = data
 
-  fun layout (l : 'a t, f : 'a -> Layout.t) = 
+  fun layout (l : 'a t, f : 'a -> Layout.t) =
       LayoutUtils.bracketSeq (List.map (all l, f o getVal))
 
-  fun fromList (l : 'a list) : 'a t = 
+  fun fromList (l : 'a list) : 'a t =
       let
         val dl = empty()
-        fun loop (c, l) = 
+        fun loop (c, l) =
             (case l
               of [] => ()
                | a::l => loop(insertR (c, a), l))
-        val () = 
+        val () =
             case l
              of [] => ()
               | a::l => loop(insert (dl, a), l)
@@ -1417,7 +1417,7 @@ struct
 end
 *)
 
-signature STATS = 
+signature STATS =
 sig
   type t
 
@@ -1430,7 +1430,7 @@ sig
   val newStat : t * string * string -> unit
   val fromList : (string * string) list -> t
  (* Add all statistics in s2 to s1
-  * merge (s1, s2) => 
+  * merge (s1, s2) =>
   *   For every statistic s:
   *     if s was in s2 and not s1, it is added to s1, with s1.s = s2.s
   *     if s was in s2 and s1, s1.s is incremented by s2.s
@@ -1453,20 +1453,20 @@ sig
   val report : t -> unit
 end
 
-structure Stats :> STATS = 
+structure Stats :> STATS =
 struct
   structure ISD = ImpStringDict
   datatype count = C of (int ref) * (count list ref)
-           
+
   type t = (string * count) ISD.t
 
-  fun get (d, s) = 
-      (case ISD.lookup(d, s) 
+  fun get (d, s) =
+      (case ISD.lookup(d, s)
         of SOME (cmt, c) => c
          | NONE => Fail.fail ("stats.sml",
                               "get",
                               "unknown stat " ^ s))
-  fun addToStat (d, s, n) = 
+  fun addToStat (d, s, n) =
       let
         val C (r, _) = get(d, s)
       in r := !r + n
@@ -1474,28 +1474,28 @@ struct
 
   fun incStat (d, s) = addToStat(d, s, 1)
 
-  fun sumCount (C (r, counts)) = 
+  fun sumCount (C (r, counts)) =
       List.fold (!counts, !r, fn (c, s) => s + sumCount c)
   fun getStat (d, s) = sumCount(get(d, s))
   fun hasStat (d, s) = ISD.contains(d, s)
 
   fun new () = ISD.empty ()
-  fun newStat (d, s, cmt) = 
+  fun newStat (d, s, cmt) =
       let
         val c = C (ref 0, ref [])
       in ISD.insert(d, s, (cmt, c))
       end
 
-  fun fromList l = 
+  fun fromList l =
       let
-        val d = new () 
+        val d = new ()
         val () = List.foreach (l, fn (s, cmt) => newStat (d, s, cmt))
       in d
       end
 
-  fun merge (s1, s2) = 
+  fun merge (s1, s2) =
       let
-        fun help (s, (cmt, count)) = 
+        fun help (s, (cmt, count)) =
             case (ISD.lookup (s1, s))
              of SOME (cmt, C (_, c)) => c := count :: !c
               | NONE => ISD.insert (s1, s, (cmt, C (ref 0, ref [count])))
@@ -1515,13 +1515,13 @@ struct
       in s2
       end
 
-  fun layoutOne (s, (cmt, r)) = 
+  fun layoutOne (s, (cmt, r)) =
       let
         val i = sumCount r
-        val lo = 
-            if i > 0 then 
-              SOME (Layout.seq[Int.layout i, 
-                               Layout.str " ", 
+        val lo =
+            if i > 0 then
+              SOME (Layout.seq[Int.layout i,
+                               Layout.str " ",
                                Layout.str cmt])
             else
               NONE
@@ -1533,7 +1533,7 @@ struct
 end
 
 
-signature ImpQueue = 
+signature ImpQueue =
 sig
   type 'a t
   val new : unit -> 'a t
@@ -1546,21 +1546,21 @@ sig
   val isEmpty : 'a t -> bool
 end
 
-structure ImpQueue :> ImpQueue = 
+structure ImpQueue :> ImpQueue =
 struct
   type 'a t = 'a Queue.queue
 
   val new = Queue.mkQueue
 
-  fun enqueueList (q, l) = 
+  fun enqueueList (q, l) =
       let
         val () = List.foreach (l, fn a => Queue.enqueue(q, a))
       in ()
       end
 
-  fun fromList l = 
+  fun fromList l =
       let
-        val q = new() 
+        val q = new()
         val () = enqueueList(q, l)
       in q
       end
@@ -1611,7 +1611,7 @@ end;
 
 
 (* Fixed size imperative bit sets *)
-structure ImpBitSet :> IMP_BIT_SET = 
+structure ImpBitSet :> IMP_BIT_SET =
 struct
   structure BA = BitArray
   type t = BA.array
@@ -1622,7 +1622,7 @@ struct
   val empty : Int.t -> t =
     fn i => BA.array (i, false)
 
-  val copy : t -> t = 
+  val copy : t -> t =
     fn s => BA.extend0 (s, BA.length s)
 
   val insert   : t * Int.t -> unit = BA.setBit
@@ -1631,15 +1631,15 @@ struct
 
   val fromList   : Int.t * Int.t list -> t = BA.bits
 
-  val insertList   : t * Int.t list -> unit = 
+  val insertList   : t * Int.t list -> unit =
    fn (s, l) =>
       List.foreach (l, fn i => insert (s, i))
 
-  val insertVector : t * Int.t vector -> unit = 
+  val insertVector : t * Int.t vector -> unit =
    fn (s, l) =>
       Vector.foreach (l, fn i => insert (s, i))
 
-  val fromVector : Int.t * Int.t vector -> t = 
+  val fromVector : Int.t * Int.t vector -> t =
    fn (i, elts) =>
       let
         val s = empty i
@@ -1653,112 +1653,112 @@ struct
 
   val isEmpty : t -> bool = BA.isZero
 
-  val fold : t * 'b * (Int.t * 'b -> 'b) -> 'b = 
-   fn (s, a, f) => 
+  val fold : t * 'b * (Int.t * 'b -> 'b) -> 'b =
+   fn (s, a, f) =>
       BA.foldli (fn (i, b, a) => if b then f (i, a) else a) a s
 
-  val count : t -> int = 
+  val count : t -> int =
    fn s => fold (s, 0, fn (_, c) => c+1)
-      
+
   val equal : t * t -> bool = BA.equal
 
   val remove   : t * Int.t -> unit = BA.clrBit
 
-  val foreach : t * (Int.t -> unit) -> unit = 
-   fn (s, f) => 
+  val foreach : t * (Int.t -> unit) -> unit =
+   fn (s, f) =>
       BA.appi (fn (i, b) => if b then f i else ()) s
 
-  val forall       : t * (Int.t -> bool) -> bool = 
-   fn (s, f) => 
+  val forall       : t * (Int.t -> bool) -> bool =
+   fn (s, f) =>
       let
         val length = BA.length s
-        val rec loop = 
+        val rec loop =
          fn i =>
             if i = length then true
             else BA.sub (s, i) andalso loop(i+1)
       in loop 0
       end
 
-  val isSubset : t * t -> bool = 
+  val isSubset : t * t -> bool =
       fn (s1, s2) => BA.isZero(BA.andb(s1, BA.notb s2, BA.length s1))
-      
+
   (* binary operators modify first set *)
-  val union        : t * t -> unit = 
+  val union        : t * t -> unit =
       fn (s1, s2) => BA.union s1 s2
 
-  val intersection : t * t -> unit = 
+  val intersection : t * t -> unit =
       fn (s1, s2) => BA.intersection s1 s2
 
-  val difference   : t * t -> unit = 
+  val difference   : t * t -> unit =
       fn (s1, s2) => foreach (s2, fn i => (remove (s1, i)))
 
   val complement   : t -> unit = BA.complement
-      
-  val exists       : t * (Int.t -> bool) -> bool = 
-   fn (s, f) => 
+
+  val exists       : t * (Int.t -> bool) -> bool =
+   fn (s, f) =>
       let
         val length = BA.length s
-        val rec loop = 
+        val rec loop =
          fn i =>
             if i = length then false
             else BA.sub (s, i) orelse loop(i+1)
       in loop 0
       end
 
-  val partition    : t * (Int.t -> bool) -> {no: t, yes: t} = 
-   fn (s, p) => 
+  val partition    : t * (Int.t -> bool) -> {no: t, yes: t} =
+   fn (s, p) =>
       let
         val l = BA.length s
         val yes = empty l
         val no = empty l
-        val help = 
-         fn i => 
+        val help =
+         fn i =>
             if p i then
                insert (yes, i)
             else
               insert (no, i)
-        val () = 
+        val () =
             foreach (s, help)
-      in {yes = yes, 
+      in {yes = yes,
           no  = no}
       end
 
-  val keepAll : t * (Int.t -> bool) -> unit = 
-      fn (s, p) => 
+  val keepAll : t * (Int.t -> bool) -> unit =
+      fn (s, p) =>
          BA.modifyi (fn (i, b) => b andalso (p i)) s
 
-  val getAny : t -> Int.t option = 
-   fn s => 
+  val getAny : t -> Int.t option =
+   fn s =>
       let
         val length = BA.length s
-        val rec loop = 
-         fn i => 
-            if i = length then 
+        val rec loop =
+         fn i =>
+            if i = length then
               NONE
-            else if BA.sub (s, i) then 
+            else if BA.sub (s, i) then
               SOME i
-            else 
+            else
               loop(i+1)
       in loop 0
       end
 
-  val layout : t * (Int.t -> Layout.t) -> Layout.t = 
+  val layout : t * (Int.t -> Layout.t) -> Layout.t =
    fn (s, lf) =>
       let
         val elts = toList s
         val l = List.layout lf elts
       in l
       end
-end      
+end
 
-signature EQUIVALENCE_CLASS = 
+signature EQUIVALENCE_CLASS =
 sig
   type 'a t
   val new   : 'a -> 'a t
   (* Returns true iff previously disjoint *)
   val join  : 'a t * 'a t -> bool
-  (* joinWith (a, b, f) = joins a and b.  If a and b were not already equal, 
-   * it then sets the contents to be f(ad, bd), where ad and bd are 
+  (* joinWith (a, b, f) = joins a and b.  If a and b were not already equal,
+   * it then sets the contents to be f(ad, bd), where ad and bd are
    * the original contents of and b.
    *)
   val joinWith : 'a t * 'a t * ('a * 'a -> 'a) -> bool
@@ -1767,30 +1767,30 @@ sig
   val get   : 'a t -> 'a
 end
 
-structure EquivalenceClass :> EQUIVALENCE_CLASS = 
+structure EquivalenceClass :> EQUIVALENCE_CLASS =
 struct
 
-  datatype 'a tS = 
+  datatype 'a tS =
            Root of 'a * int
          | Child of 'a t
   withtype 'a t = 'a tS ref
 
-  val new   : 'a -> 'a t = 
+  val new   : 'a -> 'a t =
    fn a => ref (Root (a, 0))
-           
-  val rec find  : 'a t -> 'a t * 'a * int = 
-   fn a => 
+
+  val rec find  : 'a t -> 'a t * 'a * int =
+   fn a =>
       (case !a
         of Root (d, i) => (a, d, i)
-         | Child p => 
+         | Child p =>
            let
              val (p, d, i) = find p
              val () = a := Child p
            in (p, d, i)
            end)
 
-  val equal : 'a t * 'a t -> bool = 
-   fn (a, b) => 
+  val equal : 'a t * 'a t -> bool =
+   fn (a, b) =>
       let
         val (a, _, _) = find a
         val (b, _, _) = find b
@@ -1798,31 +1798,31 @@ struct
         a = b
       end
 
-  val set   : 'a t * 'a -> unit = 
-   fn (a, d) => 
+  val set   : 'a t * 'a -> unit =
+   fn (a, d) =>
       let
         val (a, _, ar) = find a
       in a := Root (d, ar)
       end
 
-  val get   : 'a t -> 'a = 
-   fn a => 
+  val get   : 'a t -> 'a =
+   fn a =>
       let
         val (_, d, _) = find a
       in d
       end
 
-  val join  : 'a t * 'a t -> bool = 
-   fn (a, b) => 
+  val join  : 'a t * 'a t -> bool =
+   fn (a, b) =>
       let
         val (a, ad, ar) = find a
         val (b, bd, br) = find b
       in
-        if (a = b) then 
+        if (a = b) then
           false
         else
           let
-            val (p, c, r) = 
+            val (p, c, r) =
                 case Int.compare (ar, br)
                  of LESS    => (b, a, br)
                   | GREATER => (a, b, ar)
@@ -1833,29 +1833,29 @@ struct
           end
       end
 
-  val joinWith : 'a t * 'a t * ('a * 'a -> 'a) -> bool = 
-   fn (a, b, f) => 
+  val joinWith : 'a t * 'a t * ('a * 'a -> 'a) -> bool =
+   fn (a, b, f) =>
       let
         val ad = get a
         val bd = get b
         val b = join (a, b)
-        val () = if b then 
+        val () = if b then
                    set (a, f (ad, bd))
                  else
                    ()
 
       in b
-      end      
+      end
 
 end;
 
-signature POLY_LATTICE = 
+signature POLY_LATTICE =
 sig
   type 'a t
 
   val top : 'a t
   val bot : 'a t
-  val elt : 'a -> 'a t 
+  val elt : 'a -> 'a t
 
   val isTop : 'a t -> bool
   val isBot : 'a t -> bool
@@ -1870,11 +1870,11 @@ sig
   val equal : ('a * 'a -> bool) -> ('a t * 'a t -> bool)
 end;
 
-structure PolyLattice :> POLY_LATTICE = 
+structure PolyLattice :> POLY_LATTICE =
 struct
-  datatype 'a t = 
-           Top 
-         | Bot 
+  datatype 'a t =
+           Top
+         | Bot
          | Elt of 'a
 
   val top = Top
@@ -1886,60 +1886,60 @@ struct
   val isElt = fn t => case t of Elt _ => true | _ => false
 
 
-  val get = 
-   fn t => 
-      (case t 
+  val get =
+   fn t =>
+      (case t
         of Elt e => SOME e
          | _ => NONE)
 
-      
-  val rec join = 
-   fn {lub} => 
-   fn (t1, t2) => 
+
+  val rec join =
+   fn {lub} =>
+   fn (t1, t2) =>
       case (t1, t2)
        of (Top, _) => Top
         | (_, Top) => Top
         | (Bot, _) => t2
         | (_, Bot) => t1
-        | (Elt e1, Elt e2) => 
+        | (Elt e1, Elt e2) =>
           (case lub (e1, e2)
             of SOME e => Elt e
              | NONE => Top)
 
-  local 
+  local
     structure L = Layout
   in
-  val layout = 
+  val layout =
       (fn layoutElt =>
-          (fn t => 
+          (fn t =>
               (case t
                 of Top => L.str "_T_"
                  | Bot => L.str "_B_"
-                 | Elt e => L.seq [L.str "E(", layoutElt e, 
+                 | Elt e => L.seq [L.str "E(", layoutElt e,
                                    L.str ")"])))
   end
 
-  val equal = 
+  val equal =
    fn eqT =>
-   fn (t1, t2) => 
-      (case (t1, t2) 
+   fn (t1, t2) =>
+      (case (t1, t2)
         of (Top, Top) => true
          | (Bot, Bot)  => true
          | (Elt e1, Elt e2) => eqT (e1, e2)
          | _ => false)
 end
 
-(* Semi-Lattices, and functors for injecting partially ordered sets into 
+(* Semi-Lattices, and functors for injecting partially ordered sets into
  * bounded semi-lattices.
  *)
-signature LATTICE = 
+signature LATTICE =
 sig
   type t
   type element
 
   val top : t
   val bot : t
-  val elt : element -> t 
+  val elt : element -> t
 
   val isTop : t -> bool
   val isBot : t -> bool
@@ -1957,26 +1957,26 @@ end;
  * structure.
  *)
 functor RecLatticeFn(type 'a element
-                     (* Given the join operation on the lattice, 
-                      * return the least upper bound of the elements if it exists.  
+                     (* Given the join operation on the lattice,
+                      * return the least upper bound of the elements if it exists.
                       * *)
-                     val lub : (('a * 'a) -> 'a) -> 
+                     val lub : (('a * 'a) -> 'a) ->
                                'a element * 'a element -> 'a element option)
         :>
          sig
            type t
            type element = t element
-                
+
            val top : t
            val bot : t
-           val elt :  element -> t 
-                                 
+           val elt :  element -> t
+
            val isTop : t -> bool
            val isBot : t -> bool
            val isElt : t -> bool
-                            
+
            val get : t -> element option
-                          
+
            val join : t * t -> t
 
            val layout : (element -> Layout.t) -> (t -> Layout.t)
@@ -1984,9 +1984,9 @@ functor RecLatticeFn(type 'a element
          end
   =
 struct
-  datatype t = 
-           Top 
-         | Bot 
+  datatype t =
+           Top
+         | Bot
          | Elt of t element
   type element = t element
   val top = Top
@@ -1998,41 +1998,41 @@ struct
   val isElt = fn t => case t of Elt _ => true | _ => false
 
 
-  val get = 
-   fn t => 
-      (case t 
+  val get =
+   fn t =>
+      (case t
         of Elt e => SOME e
          | _ => NONE)
 
-  val rec join = 
-   fn (t1, t2) => 
+  val rec join =
+   fn (t1, t2) =>
       case (t1, t2)
        of (Top, _) => Top
         | (_, Top) => Top
         | (Bot, _) => t2
         | (_, Bot) => t1
-        | (Elt e1, Elt e2) => 
+        | (Elt e1, Elt e2) =>
           (case lub join (e1, e2)
             of SOME e => Elt e
              | NONE => Top)
 
-  local 
+  local
     structure L = Layout
   in
-  val layout = 
+  val layout =
       (fn layoutElt =>
-          (fn t => 
+          (fn t =>
               (case t
                 of Top => L.str "_T_"
                  | Bot => L.str "_B_"
-                 | Elt e => L.seq [L.str "E(", layoutElt e, 
+                 | Elt e => L.seq [L.str "E(", layoutElt e,
                                    L.str ")"])))
   end
 
-  val equal = 
+  val equal =
    fn eqT =>
-   fn (t1, t2) => 
-      (case (t1, t2) 
+   fn (t1, t2) =>
+      (case (t1, t2)
         of (Top, Top) => true
          | (Bot, Bot)  => true
          | (Elt e1, Elt e2) => eqT (e1, e2)
@@ -2044,7 +2044,7 @@ end
 functor LatticeFn(type element
                   val lub : element * element -> element option
                   )
-        :> LATTICE where type element = element = 
+        :> LATTICE where type element = element =
 struct
   structure Lat = RecLatticeFn (struct
                                   type 'a element = element
@@ -2054,19 +2054,19 @@ struct
 end;
 
 (* Turn equality into a degenerate lub
- * for use in creating flat latttices 
+ * for use in creating flat latttices
  *)
 functor MkFlatFuns(type element
                    val equal : element * element -> bool
-                   ) 
+                   )
 : sig
     type element = element
     val lub : element * element -> element option
-  end = 
+  end =
 struct
   type element = element
-  val lub = 
-   fn (a, b) => 
+  val lub =
+   fn (a, b) =>
       if equal (a, b) then SOME a else NONE
 end;
 
@@ -2074,29 +2074,29 @@ end;
  *)
 functor FlatLatticeFn(type element
                       val equal : element * element -> bool
-                      ) 
-        :> LATTICE where type element = element = 
+                      )
+        :> LATTICE where type element = element =
 struct
-  structure Lat = LatticeFn(MkFlatFuns(struct 
+  structure Lat = LatticeFn(MkFlatFuns(struct
                                          type element = element
                                          val equal = equal
                                        end))
   open Lat
 end;
 
-(* A lattice whose elements consist of vectors of lattice elements. 
+(* A lattice whose elements consist of vectors of lattice elements.
  * The join of two equal length vectors is  the vector
- * of joins of their elements, and similarly for meets.  Unequal lengths 
- * meet at bottom and join at top. 
+ * of joins of their elements, and similarly for meets.  Unequal lengths
+ * meet at bottom and join at top.
  *)
 functor LatticeVectorLatticeFn(structure Lattice : LATTICE)
-        :> LATTICE where type element = Lattice.t Vector.t = 
+        :> LATTICE where type element = Lattice.t Vector.t =
 struct
-  val lub = 
-   fn (a, b) => 
+  val lub =
+   fn (a, b) =>
       if Vector.length a = Vector.length b then
         SOME (Vector.map2 (a, b, Lattice.join))
-      else 
+      else
         NONE
 
   structure Lat = LatticeFn(struct
@@ -2116,11 +2116,11 @@ functor OptionLatticeFn(type element
                         )
         :> LATTICE where type element = element option =
 struct
-  val lub = 
-      (fn (a, b) => 
+  val lub =
+      (fn (a, b) =>
           (case (a, b)
             of (NONE, NONE) => SOME NONE
-             | (SOME a, SOME b) => 
+             | (SOME a, SOME b) =>
                Option.map(lub (a, b), SOME)
              | _ => NONE))
 
@@ -2147,7 +2147,7 @@ struct
 end
 
 
-signature BACK_PATCH = 
+signature BACK_PATCH =
 sig
   type 'a t
   val new : unit -> 'a t
@@ -2157,32 +2157,32 @@ sig
   type ('a, 'b) func = ('a -> 'b) t
   val apply : ('a, 'b) func -> ('a -> 'b)
 end
-structure BackPatch :> BACK_PATCH = 
+structure BackPatch :> BACK_PATCH =
 struct
   type 'a t = 'a option ref
 
-  val new = 
+  val new =
    fn () => ref NONE
-  val fill = 
-   fn (b, a) => 
+  val fill =
+   fn (b, a) =>
       (case !b
         of SOME _ => Fail.fail ("BackPatch", "fill", "Already filled")
          | NONE => b := SOME a)
-  val get = 
-   fn b => 
+  val get =
+   fn b =>
       (case !b
         of SOME a => a
          | NONE => Fail.fail ("BackPatch", "get", "Not yet filled"))
 
   type ('a, 'b) func = ('a -> 'b) t
 
-  val apply = 
+  val apply =
    fn f => fn a => get f a
 
 end
 
 
-signature PARSER = 
+signature PARSER =
 sig
   type elt
   type stream
@@ -2192,11 +2192,11 @@ sig
   datatype 'a result = Success of stream * 'a | Failure | Error of pos * error
   val return : 'a -> 'a t
   val bind : 'a t -> ('a -> ('b t)) -> 'b t
-  val debug : 'a t * (pos -> unit) * (pos * 'a -> unit) * (unit -> unit) * (pos * error -> unit) -> 'a t 
+  val debug : 'a t * (pos -> unit) * (pos * 'a -> unit) * (unit -> unit) * (pos * error -> unit) -> 'a t
   val succeed : 'a -> 'a t
   val fail : 'a t
   val error : error -> 'a t
-  val map : 'a t * ('a -> 'b) -> 'b t 
+  val map : 'a t * ('a -> 'b) -> 'b t
   val parse : 'a t * stream -> 'a result
  (* infix 5 || &&*)
   val || : 'a t * 'a t -> 'a t
@@ -2211,8 +2211,8 @@ sig
   val any : 'a t list -> 'a t
   val all : 'a t list -> 'a list t
   val get : elt t
-  val satisfy : (elt -> bool) -> elt t 
-  val satisfyMap : (elt -> 'a option) -> 'a t 
+  val satisfy : (elt -> bool) -> elt t
+  val satisfyMap : (elt -> 'a option) -> 'a t
   val atEnd : unit t
   val zeroOrMore : 'a t -> 'a list t
   val oneOrMore : 'a t -> 'a list t
@@ -2229,7 +2229,7 @@ sig
   val required : 'a option t * error -> 'a t
   val succeeds : 'a t -> bool t
   val ignore : 'a t -> unit t
-  val $ : (unit -> 'a t) -> 'a t 
+  val $ : (unit -> 'a t) -> 'a t
   val $$ : ('a -> 'b t) -> 'a -> 'b t
   val between : 'a t -> 'b t -> 'c t -> 'c t
   val sepBy1 : 'a t -> 'b t -> 'a list t
@@ -2239,14 +2239,14 @@ sig
   val skipMany1 : 'a t -> unit t
 end (* signature PARSER *)
 
-signature CHAR_PARSER0 = 
+signature CHAR_PARSER0 =
 sig
   include PARSER where type elt = char
                    and type error = string
 end (* signature CHAR_PARSER0 *)
 
 
-signature CHAR_PARSER = 
+signature CHAR_PARSER =
 sig
   include CHAR_PARSER0
 
@@ -2268,10 +2268,10 @@ sig
   val newline  : char t
 end (* signature CHAR_PARSER *)
 
-functor CharParserF 
-  (structure Parser : CHAR_PARSER0) 
+functor CharParserF
+  (structure Parser : CHAR_PARSER0)
   :> CHAR_PARSER
-  where type 'a t   = 'a Parser.t  
+  where type 'a t   = 'a Parser.t
     and type stream = Parser.stream
     and type pos    = Parser.pos
   =
@@ -2304,7 +2304,7 @@ struct
 
 end
 
-(* Simple parser combinators 
+(* Simple parser combinators
  *)
 functor ParserF
   (type elt
@@ -2330,10 +2330,10 @@ struct
 
   val return : 'a -> 'a t = fn x => fn cs => Success (cs, x)
 
-  val bind : 'a t -> ('a -> ('b t)) -> 'b t = 
-   fn p => 
-   fn f => 
-   fn cs => 
+  val bind : 'a t -> ('a -> ('b t)) -> 'b t =
+   fn p =>
+   fn f =>
+   fn cs =>
        case p cs
         of Success (cs, a) => f a cs
          | Failure => Failure
@@ -2345,21 +2345,21 @@ struct
 
   val error : error -> 'a t = fn e => fn cs => Error (pos cs, e)
 
-  val map : 'a t * ('a -> 'b) -> 'b t = 
-   fn (p, f) => 
-   fn cs => 
+  val map : 'a t * ('a -> 'b) -> 'b t =
+   fn (p, f) =>
+   fn cs =>
       (case p cs
         of Success (cs, r) => Success (cs, f r)
          | Failure => Failure
          | Error pe => Error pe)
 
-  val debug : 'a t * (pos -> unit) * (pos * 'a -> unit) * (unit -> unit) * (pos * error -> unit) -> 'a t = 
-      fn (p, fp, fs, ff, fe) => 
-      fn cs => 
+  val debug : 'a t * (pos -> unit) * (pos * 'a -> unit) * (unit -> unit) * (pos * error -> unit) -> 'a t =
+      fn (p, fp, fs, ff, fe) =>
+      fn cs =>
          let
            val () = fp (pos cs)
            val res = p cs
-           val () = 
+           val () =
                (case p cs
                  of Success (cs, a) => fs (pos cs, a)
                   | Failure         => ff ()
@@ -2369,15 +2369,15 @@ struct
 
   val parse : 'a t * stream -> 'a result = fn (p, s) => p s
 
-  val get : elt t = 
-   fn cs => (case next cs 
+  val get : elt t =
+   fn cs => (case next cs
               of NONE => Failure
                | SOME arg => Success arg)
 
-  val satisfy : (elt -> bool) -> elt t = 
+  val satisfy : (elt -> bool) -> elt t =
    fn p => bind get (fn c => if p c then return c else fail)
 
-  val satisfyMap : (elt -> 'a option) -> 'a t  = 
+  val satisfyMap : (elt -> 'a option) -> 'a t  =
    fn f => bind get (fn c => case f c of SOME a => return a | NONE => fail)
 
   val atEnd : unit t =
@@ -2387,12 +2387,12 @@ struct
 
   val ignore : 'a t -> unit t = fn p => map (p, ignore)
 
-  val || : 'a t * 'a t -> 'a t = 
-   fn (p1, p2) => fn cs => case p1 cs 
+  val || : 'a t * 'a t -> 'a t =
+   fn (p1, p2) => fn cs => case p1 cs
                             of Failure => p2 cs
                              | result => result
-                                         
-  val && : 'a t * 'b t -> ('a * 'b) t = 
+
+  val && : 'a t * 'b t -> ('a * 'b) t =
    fn (p1, p2) => bind p1 (fn a => bind p2 (fn b => return (a, b)))
 
   infix || &&
@@ -2403,14 +2403,14 @@ struct
   val -:: : unit t * 'a List.t t -> 'a List.t t = -&&
   val ::: : 'a t * 'a List.t t -> 'a List.t t = fn (p1, p2) => map (p1 && p2, fn (a, l) => a::l)
 
-  val rec any : 'a t list -> 'a t = 
-   fn l => 
+  val rec any : 'a t list -> 'a t =
+   fn l =>
       (case l
         of [] => fail
          | p::ps => p || any ps)
-      
-  val rec all : 'a t list -> 'a list t = 
-   fn l => 
+
+  val rec all : 'a t list -> 'a list t =
+   fn l =>
       (case l
         of [] => return []
          | p::ps => map (p && (all ps), List.cons))
@@ -2428,10 +2428,10 @@ struct
 
   fun seqSepV (p : 'a t, sep : unit t) : 'a Vector.t t = map (seqSep (p, sep), Vector.fromList)
 
-  val optional : 'a t -> 'a option t = 
+  val optional : 'a t -> 'a option t =
    fn p => (bind p (fn a => return (SOME a))) || (return NONE)
 
-  val required : 'a option t * error -> 'a t = 
+  val required : 'a option t * error -> 'a t =
    fn (p, e) =>
       bind p (fn opt => case opt of SOME a => return a | NONE => fail) || error e
 
@@ -2445,7 +2445,7 @@ struct
       let
         fun pr () =
             map (right, fn () => []) ||
-            map (sep && item && $ pr, fn ((_, i), is) => i::is) || 
+            map (sep && item && $ pr, fn ((_, i), is) => i::is) ||
             error err
         val p = map (right, fn () => []) || map (item && $ pr, fn (i, is) => i::is)
         val p = map (left && p, #2)
@@ -2454,16 +2454,16 @@ struct
 
   fun sequenceV x : 'a Vector.t t = map (sequence x, Vector.fromList)
 
-  fun between openP closeP p = 
-      bind openP  (fn _ => 
-      bind p      (fn v => 
+  fun between openP closeP p =
+      bind openP  (fn _ =>
+      bind p      (fn v =>
       bind closeP (fn _ => return v)))
 
   fun optionalWith v p = p || return v
 
-  fun sepBy1 p sep = 
-      bind p (fn x => 
-      bind (zeroOrMore (bind sep (fn _ => p))) (fn rest => 
+  fun sepBy1 p sep =
+      bind p (fn x =>
+      bind (zeroOrMore (bind sep (fn _ => p))) (fn rest =>
       return (x::rest)))
   fun sepBy p sep  = sepBy1 p sep || return []
 
@@ -2472,7 +2472,7 @@ struct
   fun skipMany1 p = bind p (fn _ => skipMany p)
 end (* functor ParserF *)
 
-structure StringParser = 
+structure StringParser =
   ParserF(type elt = char
           type stream = string * int
           type pos = int
@@ -2516,32 +2516,32 @@ structure FileParser =
           fun next s = Option.map (InStreamWithPos.input1 s, Utils.flip2))
 
 
-structure UnParser : 
+structure UnParser :
   sig
     type ('a, 'b) t
-    val return : 'b -> ('a, 'b) t 
-    val bind : ('a, 'b) t -> ('b -> ('a, 'c) t) -> ('a, 'c) t 
+    val return : 'b -> ('a, 'b) t
+    val bind : ('a, 'b) t -> ('b -> ('a, 'c) t) -> ('a, 'c) t
     val base : ('a -> 'b) -> ('a, 'b) t
-    val try : ('a -> 'b option) -> ('a, 'b) t 
-    val run : ('a, 'b) t -> 'a -> 'b option 
+    val try : ('a -> 'b option) -> ('a, 'b) t
+    val run : ('a, 'b) t -> 'a -> 'b option
     val satisfy : ('a -> bool) -> ('a, 'a) t
-    val compose : ('a, 'b) t * ('b, 'c) t -> ('a, 'c) t 
-    val || : ('a, 'b) t * ('a, 'b) t -> ('a, 'b) t 
-    val && : ('a, 'b) t * ('a, 'c) t -> ('a, 'b * 'c) t 
-    val layout : ('a, 'b) t -> ('b -> 'c) -> ('a, 'c) t 
+    val compose : ('a, 'b) t * ('b, 'c) t -> ('a, 'c) t
+    val || : ('a, 'b) t * ('a, 'b) t -> ('a, 'b) t
+    val && : ('a, 'b) t * ('a, 'c) t -> ('a, 'b * 'c) t
+    val layout : ('a, 'b) t -> ('b -> 'c) -> ('a, 'c) t
     val tryLayout : ('a, 'b) t -> ('b -> 'c option) -> ('a, 'c) t
-    val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t 
-    val pNil  : ('a list, unit) t 
-    val pCons : ('a list, 'a * ('a list)) t 
+    val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t
+    val pNil  : ('a list, unit) t
+    val pCons : ('a list, 'a * ('a list)) t
     val $ : (unit -> ('a, 'b) t) -> ('a, 'b) t
     val zeroOrMore : ('a, 'b) t -> ('a list, 'b list) t
     val oneOrMore : ('a, 'b) t -> ('a list, 'b list) t
-  end =  
+  end =
 struct
 
   type ('a, 'b) t = 'a -> 'b option
 
-  val return : 'b -> ('a, 'b) t = 
+  val return : 'b -> ('a, 'b) t =
    fn b => fn a => SOME b
 
   val base : ('a -> 'b) -> ('a, 'b) t = fn f => fn a => SOME (f a)
@@ -2550,43 +2550,43 @@ struct
   val run : ('a, 'b) t -> 'a -> 'b option = fn a => a
   val put = SOME
   val fail = NONE
-             
+
   val satisfy : ('a -> bool) -> ('a, 'a) t = fn p => fn a => if p a then put a else fail
 
-  val bind : ('a, 'b) t -> ('b -> ('a, 'c) t) -> ('a, 'c) t = 
-   fn pp => 
-   fn f => 
+  val bind : ('a, 'b) t -> ('b -> ('a, 'c) t) -> ('a, 'c) t =
+   fn pp =>
+   fn f =>
    fn a => (case pp a
              of SOME b => f b a
               | NONE => NONE)
 
-  val tryLayout : ('a, 'b) t -> ('b -> 'c option) -> ('a, 'c) t = 
+  val tryLayout : ('a, 'b) t -> ('b -> 'c option) -> ('a, 'c) t =
    fn pp => fn f => Utils.Option.compose (f, pp)
 
-  val compose : ('a, 'b) t * ('b, 'c) t -> ('a, 'c) t = 
-   fn (p1, p2) => 
-   fn a => 
+  val compose : ('a, 'b) t * ('b, 'c) t -> ('a, 'c) t =
+   fn (p1, p2) =>
+   fn a =>
       (case p1 a
         of SOME b => p2 b
          | NONE => NONE)
 
-  val || : ('a, 'b) t * ('a, 'b) t -> ('a, 'b) t = 
-   fn (pp1, pp2) => 
+  val || : ('a, 'b) t * ('a, 'b) t -> ('a, 'b) t =
+   fn (pp1, pp2) =>
    fn a => (case pp1 a
              of NONE => pp2 a
               | success => success)
 
-  val && : ('a, 'b) t * ('a, 'c) t -> ('a, 'b * 'c) t = 
-   fn (pp1, pp2) => 
+  val && : ('a, 'b) t * ('a, 'c) t -> ('a, 'b * 'c) t =
+   fn (pp1, pp2) =>
       bind pp1 (fn b1 => bind pp2 (fn b2 => return (b1, b2)))
-      
-  val layout : ('a, 'b) t -> ('b -> 'c) -> ('a, 'c) t = 
+
+  val layout : ('a, 'b) t -> ('b -> 'c) -> ('a, 'c) t =
    fn pp => fn f => fn a => (case pp a
                               of SOME l => SOME (f l)
                                | NONE  => NONE)
-                            
-  val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t = 
-   fn (p1, p2) => 
+
+  val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t =
+   fn (p1, p2) =>
    fn (a, c) => case p1 a
                  of SOME b => (case p2 c
                                 of SOME d => SOME (b, d)
@@ -2613,37 +2613,37 @@ struct
         val c : ('a list, 'b list) t = layout b (op ::)
       in c
       end
-      
+
 end (* UnParser *)
 
-signature PARSER_UN_PARSER = 
+signature PARSER_UN_PARSER =
 sig
   type ('env, 'a, 'b) t
   structure Parser : PARSER
   val get : ('env, 'a, 'b) t -> 'env -> {parse : 'a Parser.t, layout : ('a, 'b) UnParser.t}
   val satisfy : (Parser.elt -> bool) -> ('env, Parser.elt, Parser.elt) t
-  val layout : ('b -> 'c) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t 
+  val layout : ('b -> 'c) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t
   val return : 'a * 'b -> ('env, 'a, 'b) t
   val bind : ('env, 'a, 'b) t -> ('a -> 'a Parser.t) * ('b -> ('a, 'd) UnParser.t) -> ('env, 'a, 'd) t
   val withEnv : ('env -> ('env, 'a, 'b) t) -> ('env, 'a, 'b) t
-  val || : ('env, 'a, 'b) t * ('env, 'a, 'b) t -> ('env, 'a, 'b) t 
-  val && : ('env, 'a, 'b) t * ('env, 'c, 'd) t -> ('env, 'a * 'c, 'b * 'd) t 
-  val zeroOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t 
-  val oneOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t 
-  val parserTry : ('a -> 'b option) -> 'a Parser.t -> 'b Parser.t 
-  val leftIsoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t 
-  val leftIsoPartialIn : ('a -> 'b option) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t 
+  val || : ('env, 'a, 'b) t * ('env, 'a, 'b) t -> ('env, 'a, 'b) t
+  val && : ('env, 'a, 'b) t * ('env, 'c, 'd) t -> ('env, 'a * 'c, 'b * 'd) t
+  val zeroOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t
+  val oneOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t
+  val parserTry : ('a -> 'b option) -> 'a Parser.t -> 'b Parser.t
+  val leftIsoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t
+  val leftIsoPartialIn : ('a -> 'b option) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t
   val leftIsoPartial : ('a -> 'b option) * ('b -> 'a option) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t
-  val leftIso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t 
+  val leftIso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t
   val rightIso : ('b -> 'c) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t
   val rightIsoPartial : ('b -> 'c option) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t
-  val iso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t 
-  val isoPartial : ('a -> 'b option) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t 
-  val isoPartialIn : ('a -> 'b option) * ('b -> 'a ) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t 
-  val isoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t 
+  val iso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t
+  val isoPartial : ('a -> 'b option) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t
+  val isoPartialIn : ('a -> 'b option) * ('b -> 'a ) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t
+  val isoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t
 end (* signature PARSER_UN_PARSER *)
 
-functor ParserUnParserF(structure Parser : PARSER) 
+functor ParserUnParserF(structure Parser : PARSER)
 :> PARSER_UN_PARSER where type 'a Parser.t = 'a Parser.t
                       and type Parser.elt = Parser.elt
                       and type Parser.stream = Parser.stream
@@ -2656,66 +2656,66 @@ struct
 
   type ('env, 'a, 'b) t = 'env -> {parse : 'a Parser.t, layout : ('a, 'b) UP.t}
   val get = fn pup => pup
-  val satisfy : (Parser.elt -> bool) -> ('env, Parser.elt, Parser.elt) t = 
+  val satisfy : (Parser.elt -> bool) -> ('env, Parser.elt, Parser.elt) t =
    fn p => fn s => {parse = Parser.satisfy p,
                     layout = UP.satisfy p}
 
-  val debugParser : ('env, 'a, 'b) t 
+  val debugParser : ('env, 'a, 'b) t
                     * (Parser.pos -> unit)
-                    * (Parser.pos * 'a -> unit) 
-                    * (unit -> unit) 
-                    * (Parser.pos * Parser.error -> unit) -> ('env, 'a, 'b) t = 
-   fn (pup, fp, fs, ff, fe) => 
-   fn s => 
+                    * (Parser.pos * 'a -> unit)
+                    * (unit -> unit)
+                    * (Parser.pos * Parser.error -> unit) -> ('env, 'a, 'b) t =
+   fn (pup, fp, fs, ff, fe) =>
+   fn s =>
       let
         val {parse, layout} = pup s
       in {parse = Parser.debug (parse, fp, fs, ff, fe),
           layout = layout}
       end
 
-  val layout : ('b -> 'c) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t = 
-   fn f => 
-   fn p => 
-   fn s => 
+  val layout : ('b -> 'c) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t =
+   fn f =>
+   fn p =>
+   fn s =>
       let
         val {parse, layout} = p s
-      in {parse = parse, 
+      in {parse = parse,
           layout = UP.layout layout f}
       end
-                                 
-  val return : 'a * 'b -> ('env, 'a, 'b) t = 
-   fn (a, b) => 
-   fn s => 
+
+  val return : 'a * 'b -> ('env, 'a, 'b) t =
+   fn (a, b) =>
+   fn s =>
       {parse = Parser.return a,
        layout = UP.return b}
 
-  val bind : ('env, 'a, 'b) t -> ('a -> 'a Parser.t) * ('b -> ('a, 'd) UP.t) -> ('env, 'a, 'd) t = 
-   fn p => 
-   fn (f, g) => 
-   fn s => 
-      let 
+  val bind : ('env, 'a, 'b) t -> ('a -> 'a Parser.t) * ('b -> ('a, 'd) UP.t) -> ('env, 'a, 'd) t =
+   fn p =>
+   fn (f, g) =>
+   fn s =>
+      let
         val {parse, layout} = p s
       in
         {parse = Parser.bind parse f,
          layout = UP.bind layout g}
       end
 
-  val withEnv : ('env -> ('env, 'a, 'b) t) -> ('env, 'a, 'b) t = 
+  val withEnv : ('env -> ('env, 'a, 'b) t) -> ('env, 'a, 'b) t =
    fn f => fn s => f s s
 
-  val || : ('env, 'a, 'b) t * ('env, 'a, 'b) t -> ('env, 'a, 'b) t = 
-   fn (pup1, pup2) => 
-   fn s => 
+  val || : ('env, 'a, 'b) t * ('env, 'a, 'b) t -> ('env, 'a, 'b) t =
+   fn (pup1, pup2) =>
+   fn s =>
       let
         val {parse = p1, layout = l1} = pup1 s
         val {parse = p2, layout = l2} = pup2 s
       in
         {parse = Parser.|| (p1, p2), layout = UP.|| (l1, l2)}
       end
-      
-  val && : ('env, 'a, 'b) t * ('env, 'c, 'd) t -> ('env, 'a * 'c, 'b * 'd) t = 
-   fn (pup1, pup2) => 
-   fn s => 
+
+  val && : ('env, 'a, 'b) t * ('env, 'c, 'd) t -> ('env, 'a * 'c, 'b * 'd) t =
+   fn (pup1, pup2) =>
+   fn s =>
         let
           val {parse = p1, layout = l1} = pup1 s
           val {parse = p2, layout = l2} = pup2 s
@@ -2724,34 +2724,34 @@ struct
            layout = UP.pair (l1, l2)}
         end
 
-  val zeroOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t = 
-   fn pup => 
-   fn s => 
+  val zeroOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t =
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
       in {parse = Parser.zeroOrMore parse,
           layout = UP.zeroOrMore layout}
       end
 
-  val oneOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t = 
-   fn pup => 
-   fn s => 
+  val oneOrMore : ('env, 'a, 'b) t -> ('env, 'a list, 'b list) t =
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
       in {parse = Parser.oneOrMore parse,
           layout = UP.oneOrMore layout}
       end
-         
 
-  val parserTry : ('a -> 'b option) -> 'a Parser.t -> 'b Parser.t = 
-   fn fin => 
-   fn parse => 
+
+  val parserTry : ('a -> 'b option) -> 'a Parser.t -> 'b Parser.t =
+   fn fin =>
+   fn parse =>
       Parser.bind parse (fn a => (case fin a of SOME b => Parser.return b | NONE => Parser.fail))
 
-  val leftIsoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t = 
-   fn (fin, fout) => 
-   fn pup => 
-   fn s => 
+  val leftIsoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t =
+   fn (fin, fout) =>
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
       in
@@ -2759,43 +2759,43 @@ struct
          layout = UP.compose (UP.try fout, layout)}
       end
 
-  val leftIsoPartialIn : ('a -> 'b option) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t = 
-   fn (fin, fout) => 
-   fn pup => 
-   fn s => 
+  val leftIsoPartialIn : ('a -> 'b option) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t =
+   fn (fin, fout) =>
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
-      in 
+      in
         {parse = parserTry fin parse,
          layout = UP.compose (UP.base fout, layout)}
       end
 
-  val leftIsoPartial : ('a -> 'b option) * ('b -> 'a option) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t = 
-   fn (fin, fout) => 
-   fn pup => 
-   fn s => 
+  val leftIsoPartial : ('a -> 'b option) * ('b -> 'a option) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t =
+   fn (fin, fout) =>
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
-      in 
+      in
         {parse = parserTry fin parse,
          layout = UP.compose (UP.try fout, layout)}
       end
 
-  val leftIso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t = 
-   fn (fin, fout) => 
-   fn pup => 
-   fn s => 
+  val leftIso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'c) t -> ('env, 'b, 'c) t =
+   fn (fin, fout) =>
+   fn pup =>
+   fn s =>
       let
-        val {parse, layout} = pup s 
-      in 
+        val {parse, layout} = pup s
+      in
         {parse =
          let
-           val a : 'a Parser.t = parse 
+           val a : 'a Parser.t = parse
            val b : 'a -> 'b = fin
            val c : 'b Parser.t = Parser.map (a, b)
          in c
          end,
-         layout = 
+         layout =
          let
            val f : 'b -> 'a = fout
            val a : ('b, 'a) UP.t = UP.base f
@@ -2807,42 +2807,42 @@ struct
 
   val rightIso : ('b -> 'c) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t = layout
 
-  val rightIsoPartial : ('b -> 'c option) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t = 
-   fn f => 
-   fn pup => 
-   fn s => 
+  val rightIsoPartial : ('b -> 'c option) -> ('env, 'a, 'b) t -> ('env, 'a, 'c) t =
+   fn f =>
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
       in {parse = parse,
           layout = UP.tryLayout layout f}
       end
 
-  val iso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t = 
+  val iso : ('a -> 'b) * ('b -> 'a) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t =
    fn (fin, fout) => (rightIso fin) o (leftIso (fin, fout))
-                     
-  val isoPartial : ('a -> 'b option) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t = 
-   fn (fin, fout) => 
-   fn pup => 
-   fn s => 
+
+  val isoPartial : ('a -> 'b option) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t =
+   fn (fin, fout) =>
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
       in {parse = parserTry fin parse,
           layout = UP.tryLayout (UP.compose (UP.try fout, layout)) fin}
       end
 
-  val isoPartialIn : ('a -> 'b option) * ('b -> 'a ) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t = 
-   fn (fin, fout) => 
-   fn pup => 
-   fn s => 
+  val isoPartialIn : ('a -> 'b option) * ('b -> 'a ) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t =
+   fn (fin, fout) =>
+   fn pup =>
+   fn s =>
       let
         val {parse, layout} = pup s
       in  {parse = parserTry fin parse,
            layout = UP.tryLayout (UP.compose (UP.base fout, layout)) fin}
       end
 
-  val isoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t = 
-   fn (fin, fout) => 
-   fn pup => 
+  val isoPartialOut : ('a -> 'b) * ('b -> 'a option) -> ('env, 'a, 'a) t -> ('env, 'b, 'b) t =
+   fn (fin, fout) =>
+   fn pup =>
    fn s =>
       let
         val {parse, layout} = pup s
@@ -2855,15 +2855,15 @@ end (* ParserUnParserF *)
 structure FileParserUnParser = ParserUnParserF(structure Parser = FileParser);
 structure StringParserUnParser = ParserUnParserF(structure Parser = StringParser);
 
-signature BIJECTION = 
+signature BIJECTION =
 sig
   type ('a, 'b) t = {inject : 'a -> 'b,
                      project : 'b -> 'a}
   val compose : ('a, 'b) t * ('b, 'c) t -> ('a, 'c) t
-  val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t 
+  val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t
 end (* signature BIJECTION *)
 
-structure Bijection :> BIJECTION = 
+structure Bijection :> BIJECTION =
 struct
 
   type ('a, 'b) t = {inject : 'a -> 'b,
@@ -2871,22 +2871,22 @@ struct
 
   val compose : ('a, 'b) t * ('b, 'c) t -> ('a, 'c) t =
    fn ({inject = inj1, project = proj1},
-       {inject = inj2, project = proj2}) => 
+       {inject = inj2, project = proj2}) =>
       {inject = inj2 o inj1,
        project = proj1 o proj2}
 
-  val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t = 
+  val pair : ('a, 'b) t * ('c, 'd) t -> ('a * 'c, 'b * 'd) t =
    fn ({inject = inj1, project = proj1},
-       {inject = inj2, project = proj2}) => 
+       {inject = inj2, project = proj2}) =>
       {inject = fn (a, c) => (inj1 a, inj2 c),
        project = fn (b, d) => (proj1 b, proj2 d)}
 
 end (* structure Bijection *)
 
-signature FINITE_ORDINAL = 
+signature FINITE_ORDINAL =
 sig
-  structure Base : 
-  sig 
+  structure Base :
+  sig
     type t
     val compare : t Compare.t
     val eq      : t * t -> bool
@@ -2894,25 +2894,25 @@ sig
   end
   type 'a t
   val base : Base.t -> 'a t
-  val unBase : 'a t -> Base.t 
+  val unBase : 'a t -> Base.t
   val basePair : Base.t * Base.t -> 'a t
   val baseVector : Base.t Vector.t -> 'a t
-  val pair : 'a t * 'b t -> 'c t 
+  val pair : 'a t * 'b t -> 'c t
   val shift : Base.t * 'a t -> 'b t
   val cast : 'a t -> 'b t
   val compare : ('a t) Compare.t
   val eq : 'a t * 'a t -> bool
-  val hash : 'a t -> Word32.word 
+  val hash : 'a t -> Word32.word
 end (* signature FINITE_ORDINAL *)
 
-functor FiniteOrdinalF(structure Base : 
-                       sig 
+functor FiniteOrdinalF(structure Base :
+                       sig
                          type t
                          val zero    : t
                          val compare : t Compare.t
                          val eq      : t * t -> bool
                          val hash    : t -> Word32.word
-                       end) :> FINITE_ORDINAL where type Base.t = Base.t = 
+                       end) :> FINITE_ORDINAL where type Base.t = Base.t =
 struct
 
   structure Base = Base
@@ -2921,10 +2921,10 @@ struct
 
   datatype 'a t = FOrd of {hash : Word32.word, rep : rep}
 
-  val base : Base.t -> 'a t = 
+  val base : Base.t -> 'a t =
       fn bs => FOrd {hash = Base.hash bs, rep = FoBase bs}
 
-  val pair : 'a t * 'b t -> 'c t = 
+  val pair : 'a t * 'b t -> 'c t =
       fn (FOrd {hash = h1, rep = r1},
           FOrd {hash = h2, rep = r2}) => FOrd {hash = h1 + Word32.<< (h2, 0w5) + h2 + 0w720,
                                                rep = FoPair (r1, r2)}
@@ -2933,52 +2933,52 @@ struct
 
   val basePair : Base.t * Base.t -> 'a t = fn (a, b) => pair (base a, base b)
 
-  val baseVector : Base.t Vector.t -> 'a t = 
+  val baseVector : Base.t Vector.t -> 'a t =
    fn v => Vector.fold (v, base Base.zero, shift)
 
-  val unBase : 'a t -> Base.t = 
+  val unBase : 'a t -> Base.t =
    fn FOrd fo => (case #rep fo
                    of FoBase base => base
-                    | FoPair _    => Fail.fail ("utils.sml", 
-                                                "FiniteOrdinalF.unBase", 
+                    | FoPair _    => Fail.fail ("utils.sml",
+                                                "FiniteOrdinalF.unBase",
                                                 "Not a base ordinal"))
 
   val cast : 'a t -> 'b t = fn FOrd {hash, rep} => FOrd {hash = hash, rep = rep}
 
-  val rec compareRep : rep Compare.t = 
-   fn p => 
+  val rec compareRep : rep Compare.t =
+   fn p =>
       (case p
         of (FoBase b1, FoBase b2) => Base.compare (b1, b2)
          | (_, FoBase _)          => GREATER
          | (FoBase _, _)          => LESS
          | (FoPair p1, FoPair p2) => Compare.pair (compareRep, compareRep) (p1, p2))
 
-  val compare : ('a t) Compare.t = 
-   fn (FOrd {hash=h1, rep=r1}, FOrd {hash = h2, rep = r2}) => 
-      (case Word32.compare (h1, h2) 
+  val compare : ('a t) Compare.t =
+   fn (FOrd {hash=h1, rep=r1}, FOrd {hash = h2, rep = r2}) =>
+      (case Word32.compare (h1, h2)
         of EQUAL => compareRep (r1, r2)
          | other => other)
-      
-  val rec eqRep : rep * rep -> bool = 
-   fn p => 
+
+  val rec eqRep : rep * rep -> bool =
+   fn p =>
       (case p
         of (FoBase b1, FoBase b2) => Base.eq (b1, b2)
-         | (FoPair (r11, r12), 
+         | (FoPair (r11, r12),
             FoPair (r21, r22))    => eqRep (r11, r21) andalso eqRep (r12, r22)
          | (_, FoBase _)          => false
          | (FoBase _, _)          => false)
 
-  val eq : 'a t * 'a t -> bool = 
-   fn (FOrd {hash=h1, rep=r1}, FOrd {hash = h2, rep = r2}) => 
+  val eq : 'a t * 'a t -> bool =
+   fn (FOrd {hash=h1, rep=r1}, FOrd {hash = h2, rep = r2}) =>
       (h1 = h2) andalso eqRep (r1, r2)
 
-  val hash : 'a t -> Word32.word = 
+  val hash : 'a t -> Word32.word =
    fn FOrd {hash, rep} => hash
 
 end (* functor FiniteOrdinalF *)
 
-structure IntFiniteOrdinal = FiniteOrdinalF(structure Base = 
-                                            struct 
+structure IntFiniteOrdinal = FiniteOrdinalF(structure Base =
+                                            struct
                                               type t = Int32.t
                                               val zero    : t = 0
                                               val compare : t Compare.t = Int32.compare
@@ -3005,27 +3005,27 @@ end;
 signature TOKEN_PARSER =
 sig
   structure Parser : CHAR_PARSER
-  type 'a t 
+  type 'a t
   val identifier       : string t
-  val reserved         : string -> unit t 
-  val operator         : string t 
-  val reservedOp       : string -> unit t 
-        
-  val charLiteral      : int t 
-  val stringLiteral    : string t 
-  val natural          : IntInf.t t 
-  val integer          : IntInf.t t 
-  val float            : Rat.t t 
-  val naturalOrFloat   : (IntInf.t, Rat.t) Utils.oneof t 
-  val decimal          : IntInf.t t 
-  val hexadecimal      : IntInf.t t 
-  val octal            : IntInf.t t 
+  val reserved         : string -> unit t
+  val operator         : string t
+  val reservedOp       : string -> unit t
 
-  val symbol           : string -> string t 
-  val lexeme           : 'a t -> 'a t 
-  val whiteSpace       : unit t 
+  val charLiteral      : int t
+  val stringLiteral    : string t
+  val natural          : IntInf.t t
+  val integer          : IntInf.t t
+  val float            : Rat.t t
+  val naturalOrFloat   : (IntInf.t, Rat.t) Utils.oneof t
+  val decimal          : IntInf.t t
+  val hexadecimal      : IntInf.t t
+  val octal            : IntInf.t t
 
-  val parens           : 'a t -> 'a t 
+  val symbol           : string -> string t
+  val lexeme           : 'a t -> 'a t
+  val whiteSpace       : unit t
+
+  val parens           : 'a t -> 'a t
   val braces           : 'a t -> 'a t
   val angles           : 'a t -> 'a t
   val brackets         : 'a t -> 'a t
@@ -3037,11 +3037,11 @@ sig
   val semiSep          : 'a t -> ('a list) t
   val semiSep1         : 'a t -> ('a list) t
   val commaSep         : 'a t -> ('a list) t
-  val commaSep1        : 'a t -> ('a list) t                
+  val commaSep1        : 'a t -> ('a list) t
 end;
 
-functor TokenParserF (structure LanguageDef : LANGUAGE_DEF) 
-  :> TOKEN_PARSER 
+functor TokenParserF (structure LanguageDef : LANGUAGE_DEF)
+  :> TOKEN_PARSER
   where type 'a t = 'a LanguageDef.Parser.t =
 struct
   structure U = Utils
@@ -3060,21 +3060,21 @@ struct
   val zero    = I.fromInt 0
   val one     = I.fromInt 1
   val ten     = I.fromInt 10
-  val eight   = I.fromInt 8 
+  val eight   = I.fromInt 8
   val sixteen = I.fromInt 16
-  
+
   fun invert r = let val (n, d) = R.toInts r in R.rat (d, n) end
 
-  val escMap = List.zip (explode "abfnrtv\\\"'", explode "\^A\^B\^F\n\r\t\^V\\\"'") 
+  val escMap = List.zip (explode "abfnrtv\\\"'", explode "\^A\^B\^F\n\r\t\^V\\\"'")
 
-  val oneLineComment = 
-      oneString L.commentLine                 >> 
+  val oneLineComment =
+      oneString L.commentLine                 >>
       skipMany (satisfy (fn c => c <> #"\n")) >>
       return ()
 
   val startEnd = explode (L.commentEnd ^ L.commentStart)
 
-  fun inCommentMulti () = 
+  fun inCommentMulti () =
       (oneString L.commentEnd >> return ()) ||
       ($ multiLineComment >> $ inCommentMulti) ||
       (skipMany1 (noneOf startEnd) >> $ inCommentMulti) ||
@@ -3087,8 +3087,8 @@ struct
   and multiLineComment () = oneString L.commentStart >> $ inComment
 
   val simpleSpace = skipMany1 (satisfy Char.isSpace)
-  val whiteSpace = 
-      let 
+  val whiteSpace =
+      let
         val noLine  = String.isEmpty L.commentLine
         val noMulti = String.isEmpty L.commentStart
       in case (noLine, noMulti)
@@ -3101,62 +3101,62 @@ struct
   fun lexeme p = p >>= (fn x => whiteSpace >> return x)
   fun symbol name = lexeme (oneString name)
 
-  val theReservedNames = 
+  val theReservedNames =
       if L.caseSensitive
         then L.reservedNames
         else List.map (L.reservedNames, String.toLower)
 
-  val ident = 
+  val ident =
       L.identStart             >>= (fn c =>
-      zeroOrMore L.identLetter >>= (fn cs => 
+      zeroOrMore L.identLetter >>= (fn cs =>
       return (implode (c :: cs))))
 
   fun isReserved names name = List.exists (names, fn n => n = name)
-  fun isReservedName name = 
+  fun isReservedName name =
       let val caseName = if L.caseSensitive then name
-                           else String.toLower name 
+                           else String.toLower name
       in isReserved theReservedNames caseName
       end
 
-  val identifier = 
+  val identifier =
       lexeme (ident >>= (fn name =>
               if isReservedName name
                 then error ("reserved word " ^ name)
                 else return name))
 
-  fun caseString name = 
-      if L.caseSensitive 
+  fun caseString name =
+      if L.caseSensitive
         then oneString name
         else let
-               fun caseChar c = 
-                   if Char.isAlpha c 
+               fun caseChar c =
+                   if Char.isAlpha c
                      then oneChar (Char.toLower c) || oneChar (Char.toUpper c)
                      else oneChar c
-               fun walk []        = return () 
+               fun walk []        = return ()
                  | walk (c :: cs) = caseChar c >> walk cs
-             in 
+             in
                walk (explode name) >> return name
              end
-                                          
+
   fun reserved name = lexeme (caseString name >> notFollowedBy (L.identLetter))
 
-  val oper = 
+  val oper =
       L.opStart             >>= (fn c =>
       zeroOrMore L.opLetter >>= (fn cs =>
       return (implode (c :: cs))))
 
   fun isReservedOp name = isReserved L.reservedOpNames name
 
-  val operator = 
-      lexeme (oper >>= (fn name => 
+  val operator =
+      lexeme (oper >>= (fn name =>
               if isReservedOp name
                 then error ("reserved operator " ^ name)
                 else return name))
 
   fun reservedOp name = lexeme (oneString name >> notFollowedBy L.opLetter)
-                                    
-  fun number base baseDigit = 
-      oneOrMore baseDigit >>= (fn digits => 
+
+  fun number base baseDigit =
+      oneOrMore baseDigit >>= (fn digits =>
       return (List.fold (digits, zero,
               fn (d, x) => (I.+ (I.* (base, x), digitToInt d)))))
 
@@ -3164,12 +3164,12 @@ struct
   val hexadecimal = (oneChar #"x" || oneChar #"X") >> number sixteen hexDigit
   val octal = (oneChar #"o" || oneChar #"O") >> number eight octDigit
 
-  val charEsc = 
+  val charEsc =
       let fun parseEsc (c, code) = oneChar c >> return (ord code)
       in any (List.map (escMap, parseEsc))
       end
-  val charNum = 
-      (decimal || 
+  val charNum =
+      (decimal ||
        (oneChar #"o" >> number eight octDigit) ||
        (* we only handle two characters after \x since this is what is expected from GHC's -fext-core *)
        (oneChar #"x" >> hexDigit >>= (fn c => hexDigit >>= (fn d => return (16 * digitToInt c + digitToInt d))))) >>=
@@ -3179,41 +3179,41 @@ struct
 
   val charLetter = satisfy (fn c => (c <> #"'" andalso c <> #"\\" andalso ord c > 22))
   val charEscape = oneChar #"\\" >> escapeCode
-  val characterChar = (charLetter >>= (fn c => return (ord c))) || charEscape 
-  val charLiteral = lexeme (between (oneChar #"'") (oneChar #"'") characterChar) 
+  val characterChar = (charLetter >>= (fn c => return (ord c))) || charEscape
+  val charLiteral = lexeme (between (oneChar #"'") (oneChar #"'") characterChar)
 
   val escapeEmpty = oneChar #"&"
   val escapeGap = oneOrMore space >> oneChar #"\\"
-  val stringEscape = 
-      oneChar #"\\" >> 
-      ((escapeGap   >> return NONE) || 
+  val stringEscape =
+      oneChar #"\\" >>
+      ((escapeGap   >> return NONE) ||
        (escapeEmpty >> return NONE) ||
        (escapeCode  >>= (fn c => if c > 255 (* TODO: may need to support for wide character in the future *)
-                                   then Fail.fail ("Utils", "TokenParserF:stringEscape", 
-                                                   "got wide char " ^ Int.toString c ^ "\n") 
+                                   then Fail.fail ("Utils", "TokenParserF:stringEscape",
+                                                   "got wide char " ^ Int.toString c ^ "\n")
                                    else return (SOME (chr c)))))
   val stringLetter = satisfy (fn c => c <> #"\"" andalso c <> #"\\" andalso ord c > 22)
   val stringChar = (stringLetter >>= return o SOME) || stringEscape
-  val stringLiteral = 
-      lexeme (between (oneChar #"\"") (oneChar #"\"") 
-                      (zeroOrMore stringChar)          >>= (fn str => 
+  val stringLiteral =
+      lexeme (between (oneChar #"\"") (oneChar #"\"")
+                      (zeroOrMore stringChar)          >>= (fn str =>
               return (String.implode (List.keepAllMap (str, UF.id)))))
 
   val zeroNumber = oneChar #"0" >> (hexadecimal || octal || decimal || return 0)
   val nat = zeroNumber || decimal
   val natural = lexeme nat
-  val sign = 
+  val sign =
       (oneChar #"-" >> return I.~)   ||
       (oneChar #"+" >> return UF.id) ||
       return UF.id
-  val intnum = 
+  val intnum =
       lexeme sign >>= (fn f =>
       nat         >>= (fn n =>
       return (f n)))
   val integer = lexeme intnum
 
-  val exponent = 
-      let fun power e = 
+  val exponent =
+      let fun power e =
               let fun pow n e = if e = zero
                                   then n
                                   else pow (I.* (ten, n)) (I.- (e, 1))
@@ -3226,21 +3226,21 @@ struct
          return (power (f e))))
       end
 
-  val fraction = 
+  val fraction =
       let fun opr (d, f) = R./ (R.+ (f, R.fromIntInf (digitToInt d)), R.fromInt 10)
-      in oneChar #"."    >> 
-         oneOrMore digit >>= (fn digits => 
+      in oneChar #"."    >>
+         oneOrMore digit >>= (fn digits =>
          return (List.foldr (digits, R.zero, opr)))
       end
-  fun fractExponent n = 
-      (fraction                    >>= (fn fract => 
+  fun fractExponent n =
+      (fraction                    >>= (fn fract =>
        optionalWith R.one exponent >>= (fn expo  =>
        return (R.* (R.+ (n, fract), expo))))) ||
-      (exponent                    >>= (fn expo  => 
+      (exponent                    >>= (fn expo  =>
        return (R.* (n, expo))))
   fun fractFloat n = fractExponent (R.fromIntInf n) >>= (return o U.Inr)
   val decimalFloat = decimal >>= (fn n => optionalWith (U.Inl n) (fractFloat n))
-  val zeroNumFloat = 
+  val zeroNumFloat =
       ((hexadecimal || octal) >>= return o U.Inl) ||
       decimalFloat                                ||
       fractFloat zero                             ||
@@ -3266,16 +3266,16 @@ struct
   fun commaSep1 p = sepBy1 p comma
 end
 
-signature DEP_GRAPH = 
+signature DEP_GRAPH =
 sig
   (* This module implements a structure for building up dataflow
    * graphs over a 2 point lattice.  Nodes are either top, bottom, the join
    * of two other nodes, or the meet of two other nodes.  The nodes
    * carry data which is used only for debugging.  As a mnemonic,
    * the join operation is referred to as disjuncion (top if either are top)
-   * and the meet operation is referred to as conjuction (top if both are top) 
+   * and the meet operation is referred to as conjuction (top if both are top)
    *)
-  datatype 'a status = 
+  datatype 'a status =
            DgTop of 'a option                                    (* Top *)
          | DgDisj of 'a option * ('a status ref * 'a status ref) (* Join. Top if either are top, else bottom *)
          | DgConj of 'a option * ('a status ref * 'a status ref) (* Meet. Top if both are top, else bottom *)
@@ -3289,7 +3289,7 @@ sig
    *    to Top, under the assumption that N is Bottom.
    *   It is the conjunction (meet) of two nodes, both of which decide to Top,
    *    under the assumption that N is Bottom
-   * In all other cases, N is Bottom.  
+   * In all other cases, N is Bottom.
    *)
   val decide : 'a t -> unit
   (* If Bot is a safe approximation, then this faster decision procedure can be used.
@@ -3297,24 +3297,24 @@ sig
    * If this is not the case, then the full decision procedure should be used.
    *)
   val unsafeDecide : 'a t -> unit
-  val info : 'a t -> 'a option 
+  val info : 'a t -> 'a option
   (* both (a, b) makes a Top iff it would otherwise be Top and b is Top *)
   val both : 'a t * 'a t -> unit
   (* either (a, b) makes a Top iff a would otherwise be Top or b is Top *)
-  val either : 'a t * 'a t -> unit 
-  val layout : 'a t * Layout.t * Layout.t * ('a option -> Layout.t) -> Layout.t 
+  val either : 'a t * 'a t -> unit
+  val layout : 'a t * Layout.t * Layout.t * ('a option -> Layout.t) -> Layout.t
 end
 
-structure DepGraph :> DEP_GRAPH = 
+structure DepGraph :> DEP_GRAPH =
 struct
   (* This module implements a structure for building up dataflow
    * graphs over a 2 point lattice.  Nodes are either top, bottom, the join
    * of two other nodes, or the meet of two other nodes.  The nodes
    * carry data which is used only for debugging.  As a mnemonic,
    * the join operation is referred to as disjuncion (top if either are top)
-   * and the meet operation is referred to as conjuction (top if both are top) 
+   * and the meet operation is referred to as conjuction (top if both are top)
    *)
-  datatype 'a status = 
+  datatype 'a status =
            DgTop of 'a option                  (* Top *)
          | DgDisj of 'a option * ('a t * 'a t) (* Join. Top if either are top, else bottom *)
          | DgConj of 'a option * ('a t * 'a t) (* Meet. Top if both are top, else bottom *)
@@ -3328,31 +3328,31 @@ struct
    *    to Top, under the assumption that N is Bottom.
    *   It is the conjunction (meet) of two nodes, both of which decide to Top,
    *    under the assumption that N is Bottom
-   * In all other cases, N is Bottom.  
+   * In all other cases, N is Bottom.
    *)
-  val decide : 'a t -> unit = 
-   fn r => 
+  val decide : 'a t -> unit =
+   fn r =>
       let
-        val rec unwind = 
-         fn trail => 
-            (case trail 
+        val rec unwind =
+         fn trail =>
+            (case trail
               of [] => ()
                | (r, n)::trail => (r := n;unwind trail))
 
-        val rec loop = 
-         fn (r as ref node) => 
+        val rec loop =
+         fn (r as ref node) =>
             case node
              of DgTop _            => []
               | DgBot _            => []
-              | DgDisj (a, (r1, r2)) => 
+              | DgDisj (a, (r1, r2)) =>
                 let
                   val () = r := DgBot a
                   val trail1 = loop r1
                   val trail2 = loop r2
-                  val trail = 
+                  val trail =
                       case (!r1, !r2)
                        of (DgBot _, DgBot _) => (r, node)::trail1@trail2
-                        | (_      , _      ) => 
+                        | (_      , _      ) =>
                           let
                             val () = unwind trail1
                             val () = unwind trail2
@@ -3361,14 +3361,14 @@ struct
                           end
                 in trail
                 end
-              | DgConj (a, (r1, r2)) => 
+              | DgConj (a, (r1, r2)) =>
                 let
                   val () = r := DgBot a
                   val trail1 = loop r1
                   val trail2 = loop r2
-                  val trail = 
+                  val trail =
                       case (!r1, !r2)
-                       of (DgTop _, DgTop _) => 
+                       of (DgTop _, DgTop _) =>
                           let
                             val () = unwind trail1
                             val () = unwind trail2
@@ -3386,36 +3386,36 @@ struct
    * Bot is a safe approximation if it is always valid to use Bot as the value of a node.
    * If this is not the case, then the full decision procedure should be used.
    *)
-  val rec unsafeDecide : 'a t -> unit = 
-   fn r => 
+  val rec unsafeDecide : 'a t -> unit =
+   fn r =>
       case !r
        of DgTop _            => ()
         | DgBot _            => ()
-        | DgDisj (a, (r1, r2)) => 
+        | DgDisj (a, (r1, r2)) =>
           let
             val () = r := DgBot a
             val () = decide r1
             val () = decide r2
-            val () = 
+            val () =
                 case (!r1, !r2)
                  of (DgBot _, DgBot _) => ()
                   | (_      , _      ) => r := DgTop a
           in ()
           end
-        | DgConj (a, (r1, r2)) => 
+        | DgConj (a, (r1, r2)) =>
           let
             val () = r := DgBot a
             val () = decide r1
             val () = decide r2
-            val () = 
+            val () =
                 case (!r1, !r2)
                  of (DgTop _, DgTop _) => r := DgTop a
                   | (_      , _      ) => ()
           in ()
           end
 
-  val info : 'a t -> 'a option = 
-   fn r => 
+  val info : 'a t -> 'a option =
+   fn r =>
       (case !r
         of DgTop a       => a
          | DgBot a       => a
@@ -3424,23 +3424,23 @@ struct
 
 
   (* both (a, b) makes a Top iff it would otherwise be Top and b is Top *)
-  val both : 'a t * 'a t -> unit = 
-   fn (r1, r2) => 
+  val both : 'a t * 'a t -> unit =
+   fn (r1, r2) =>
       case !r1
        of DgBot _ => ()
         | _       =>  r1 := DgConj (info r1, (ref (!r1), r2))
 
   (* either (a, b) makes a Top iff a would otherwise be Top or b is Top *)
-  val either : 'a t * 'a t -> unit = 
-   fn (r1, r2) => 
+  val either : 'a t * 'a t -> unit =
+   fn (r1, r2) =>
       case !r1
        of DgTop _ => ()
         | _       => r1 := DgDisj (info r1, (ref (!r1), r2))
 
   structure L = Layout
   structure LU = LayoutUtils
-  val layout : 'a t * L.t * L.t * ('a option -> L.t) -> L.t = 
-   fn (r, t, b, la) => 
+  val layout : 'a t * L.t * L.t * ('a option -> L.t) -> L.t =
+   fn (r, t, b, la) =>
       case !r
        of DgTop a              => t
         | DgConj (a, (r1, r2)) => L.seq [L.str "/\\", LU.parenSeq [la (info r1), la (info r2)]]

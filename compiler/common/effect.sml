@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -21,7 +21,7 @@
 signature EFFECT =
 sig
 
-  eqtype set 
+  eqtype set
   eqtype effect
 
   val Total     : set
@@ -30,16 +30,16 @@ sig
   val Heap      : set  (* Any heap ops *)
   val Init      : set  (* InitGen/InitRead/InitWrite *)
   val HeapInit  : set  (* Heap or Init *)
-  val Control   : set  (* Any control, including Partial*) 
+  val Control   : set  (* Any control, including Partial*)
   val Any       : set  (* All effects *)
 
-  val Partial   : effect 
-  val Io        : effect 
-  val HeapGen   : effect 
-  val HeapRead  : effect 
-  val HeapWrite : effect 
-  val Throws    : effect 
-  val Returns   : effect 
+  val Partial   : effect
+  val Io        : effect
+  val HeapGen   : effect
+  val HeapRead  : effect
+  val HeapWrite : effect
+  val Throws    : effect
+  val Returns   : effect
   val Fails     : effect
 
   val InitGen   : effect  (* allocates not fully initialised objects *)
@@ -58,10 +58,10 @@ sig
   val InitGenS   : set
   val InitReadS  : set
   val InitWriteS : set
-                
+
   val effects   : effect list
 
-  val isEmpty  : set -> bool                
+  val isEmpty  : set -> bool
   val contains : set * effect -> bool
   val subset   : set * set -> bool
 
@@ -88,7 +88,7 @@ structure Effect :> EFFECT = struct
 
   type set = WordN.word
   type effect = WordN.word
-                 
+
   val Total     : set = WordN.fromInt 0x0
 
   fun lshift (a,b) = WordN.<<(WordN.fromInt a, WordN.fromInt b)
@@ -121,7 +121,7 @@ structure Effect :> EFFECT = struct
 
   val effects = [Partial, Io, HeapGen, HeapRead, HeapWrite, Throws, Returns, Fails, InitGen, InitRead, InitWrite]
 
-  fun isEmpty (a : set) = (a = (WordN.fromInt 0))                 
+  fun isEmpty (a : set) = (a = (WordN.fromInt 0))
   fun contains (a : set, b : effect) = not (WordN.andb(a, b) = (WordN.fromInt 0))
   fun subset (a : set, b : set) = WordN.orb (a, b) = b
 
@@ -168,7 +168,7 @@ structure Effect :> EFFECT = struct
     structure L = Layout
     structure LU = LayoutUtils
   in
-  fun layout s = 
+  fun layout s =
       let
         val (l1, s) = if subset (PAny, s) then (L.str "A", difference (s, PAny)) else (L.empty, s)
         fun doOne e = if contains (s, e) then LU.char (effectToChar e) else L.empty

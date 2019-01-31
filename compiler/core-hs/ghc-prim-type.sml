@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -14,22 +14,22 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
 
-(* 
+(*
  * Definition of primitive types from GHC.Prim.
  *)
-signature GHC_PRIM_TYPE = 
+signature GHC_PRIM_TYPE =
 sig
-  datatype 'a primTy = Bool | Int | Int64 | Word | Word64 | Char | Addr | Double | 
-                    Float | ByteArray | MutableByteArray of 'a | Array of 'a | MutableArray of 'a * 'a | 
+  datatype 'a primTy = Bool | Int | Int64 | Word | Word64 | Char | Addr | Double |
+                    Float | ByteArray | MutableByteArray of 'a | Array of 'a | MutableArray of 'a * 'a |
                     ImmutableArray of 'a | StrictImmutableArray of 'a |
                     UnboxedWordArray | UnboxedWord8Array | UnboxedWord16Array | UnboxedWord32Array |
                     UnboxedWord64Array | UnboxedIntArray | UnboxedInt8Array | UnboxedInt16Array | UnboxedInt32Array |
                     UnboxedInt64Array | UnboxedFloatArray | UnboxedDoubleArray | UnboxedCharArray | UnboxedAddrArray |
-                    WeakPtr of 'a | StablePtr of 'a | StableName | State of 'a | MutVar of 'a * 'a | MVar of 'a * 'a | 
-                    ThreadId | Tuple of 'a list | Integer | Ref | LiftedKind | EqTy of 'a * 'a * 'a 
+                    WeakPtr of 'a | StablePtr of 'a | StableName | State of 'a | MutVar of 'a * 'a | MVar of 'a * 'a |
+                    ThreadId | Tuple of 'a list | Integer | Ref | LiftedKind | EqTy of 'a * 'a * 'a
 
   val hsToPrimTy : ((CoreHs.ty -> 'a) * CoreHs.ty) -> 'a primTy option
-  val mapPrimTy : ('a primTy * ('a -> 'b)) -> 'b primTy 
+  val mapPrimTy : ('a primTy * ('a -> 'b)) -> 'b primTy
   val eqPrimTy : ('a * 'a -> bool) -> 'a primTy * 'a primTy -> bool
   val hashPrimTy : ('a -> word) -> 'a primTy -> word
   val isRefTy : 'a primTy -> bool
@@ -42,14 +42,14 @@ struct
   structure CHP = CoreHsPrims
   structure CL = CoreHsLayout
 
-  datatype 'a primTy = Bool | Int | Int64 | Word | Word64 | Char | Addr | Double | 
-                    Float | ByteArray | MutableByteArray of 'a | Array of 'a | MutableArray of 'a * 'a | 
+  datatype 'a primTy = Bool | Int | Int64 | Word | Word64 | Char | Addr | Double |
+                    Float | ByteArray | MutableByteArray of 'a | Array of 'a | MutableArray of 'a * 'a |
                     ImmutableArray of 'a | StrictImmutableArray of 'a |
                     UnboxedWordArray | UnboxedWord8Array | UnboxedWord16Array | UnboxedWord32Array |
                     UnboxedWord64Array | UnboxedIntArray | UnboxedInt8Array | UnboxedInt16Array | UnboxedInt32Array |
                     UnboxedInt64Array | UnboxedFloatArray | UnboxedDoubleArray | UnboxedCharArray | UnboxedAddrArray |
-                    WeakPtr of 'a | StablePtr of 'a | StableName | State of 'a | MutVar of 'a * 'a | MVar of 'a * 'a | 
-                    ThreadId | Tuple of 'a list | Integer | Ref | LiftedKind | EqTy of 'a * 'a * 'a 
+                    WeakPtr of 'a | StablePtr of 'a | StableName | State of 'a | MutVar of 'a * 'a | MVar of 'a * 'a |
+                    ThreadId | Tuple of 'a list | Integer | Ref | LiftedKind | EqTy of 'a * 'a * 'a
 
   val hsPrimTy0 = [ (CHP.tIntzh,                Int)
                   , (CHP.tInt64zh,              Int64)
@@ -95,7 +95,7 @@ struct
                   ]
   val hsPrimTy3 = [ (CH.Tcon CHP.tcEqzh, EqTy) ]
 
-  fun hsToPrimTy (toTy, t) = 
+  fun hsToPrimTy (toTy, t) =
       let
         fun lookup (((k,v)::xs), w) = if k = w then SOME v else lookup (xs, w)
           | lookup ([], w)          = NONE
@@ -109,18 +109,18 @@ struct
             (case lookup (hsPrimTy2, f)
               of SOME f => SOME (f (toTy a, toTy b))
               | _ => NONE)
-           | CH.Tapp (f, a) => 
+           | CH.Tapp (f, a) =>
             (case lookup (hsPrimTy1, f)
               of SOME f => SOME (f (toTy a))
                | _ => NONE)
-           | _ => 
+           | _ =>
             (case lookup (hsPrimTy0, t)
               of SOME t => SOME t
                | _ => NONE)
       end
 
-  fun mapPrimTy (ty, f) =    
-      (case ty 
+  fun mapPrimTy (ty, f) =
+      (case ty
         of Int                    => Int
         |  Int64                  => Int64
         |  Integer                => Integer
@@ -151,7 +151,7 @@ struct
         |  ByteArray              => ByteArray
         |  MutableArray (a,b)     => MutableArray (f a, f b)
         |  MutableByteArray a     => MutableByteArray (f a)
-        |  ThreadId               => ThreadId 
+        |  ThreadId               => ThreadId
         |  State a                => State (f a)
         |  WeakPtr a              => WeakPtr (f a)
         |  StablePtr a            => StablePtr (f a)
@@ -163,7 +163,7 @@ struct
         |  LiftedKind             => LiftedKind
         |  EqTy (a, b, c)         => EqTy (f a, f b, f c))
 
-fun eqPrimTy f (ty1, ty2) =    
+fun eqPrimTy f (ty1, ty2) =
       (case (ty1, ty2)
         of (Int                    , Int) => true
         |  (Int64                  , Int64) => true
@@ -209,7 +209,7 @@ fun eqPrimTy f (ty1, ty2) =
         |  _ => false)
 
   val hashPrimTy = fn f => fn ty =>
-      (case ty 
+      (case ty
         of Int                    => 0w1
         |  Int64                  => 0w2
         |  Integer                => 0w3
@@ -252,8 +252,8 @@ fun eqPrimTy f (ty1, ty2) =
         |  LiftedKind             => 0w40
         |  EqTy (a, b, c)         => TypeRep.hash4 (0w41, f a, f b, f c))
 
-  fun isRefTy ty =    
-      (case ty 
+  fun isRefTy ty =
+      (case ty
         of Int                    => false
         |  Int64                  => false
         |  Integer                => false
@@ -261,7 +261,7 @@ fun eqPrimTy f (ty1, ty2) =
         |  Word                   => false
         |  Word64                 => false
         |  Char                   => false
-        |  Double                 => false 
+        |  Double                 => false
         |  Float                  => false
         |  ThreadId               => false
         |  LiftedKind             => false
@@ -281,7 +281,7 @@ struct
   structure L = Layout
   structure LU = LayoutUtils
 
-  fun layoutPrimTy layoutTy 
+  fun layoutPrimTy layoutTy
     = fn Int                    => L.str "#int"
       |  Int64                  => L.str "#int64"
       |  Integer                => L.str "#integer"
@@ -323,4 +323,4 @@ struct
       |  ThreadId               => L.str "#threadId"
       |  EqTy (a, b, c)         => L.seq [L.str "#eq ", layoutTy a, layoutTy b, layoutTy c]
       |  Tuple tys              => L.seq [L.str "#tuple ", LU.sequence ("(", ")", ",") (List.map (tys, layoutTy))]
-end 
+end

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -39,7 +39,7 @@
  * As an example, if we use an element type with two unrelated elements a and b,
  * then the lattice induced by the lub operation is (schematically)
  * as follows:
- * 
+ *
  *     ----------- <> --------------------
  *     |                                 |
  *                 etc
@@ -57,14 +57,14 @@
  *
  * If the element type has a non-trivial lattice structure, then
  * the above is extended with additional points and edges using
- * the pointwise relation induced by the lattice structure of the 
+ * the pointwise relation induced by the lattice structure of the
  * element type.
  *)
-                                          
+
 
 signature MIL_REP_SEQ = sig
 
-  datatype 'a t = 
+  datatype 'a t =
            Seq of 'a            (* [a] *)
          | SeqCons of 'a * 'a t (* <a, S> *)
          | SeqZ                 (* <> *)
@@ -76,13 +76,13 @@ signature MIL_REP_SEQ = sig
    * SOME (SOME a) => Seq a
    *)
   val deconstruct : 'a t -> ('a Vector.t * 'a option option)
-           
+
   val lub : ('a * 'a -> 'a option) -> (('a t * 'a t) -> 'a t option)
 
   val union : ('a t * 'a t) -> 'a t * (('a * 'a) list)
 
   val layout : ('a -> Layout.t) -> ('a t -> Layout.t)
-                  
+
   val fold : 'a t * 'acc * ('a * 'acc -> 'acc) -> 'acc
 
   val foreach : 'a t * ('a -> unit) -> unit
@@ -101,7 +101,7 @@ signature MIL_REP_SEQ = sig
   val fromVectorClosed : 'a Vector.t -> 'a t
   val fromVector : 'a Vector.t * 'a t -> 'a t
 
- (* tabulate (length, term, f) => <a0, <a1, ... <ai, term>>> 
+ (* tabulate (length, term, f) => <a0, <a1, ... <ai, term>>>
   *   where i = length-1.
   *)
   val tabulate : int * 'a t * (int -> 'a) -> 'a t
@@ -116,22 +116,22 @@ signature MIL_REP_SEQ = sig
 
 end
 
-structure MilRepSeq :> MIL_REP_SEQ = 
+structure MilRepSeq :> MIL_REP_SEQ =
 struct
   structure L = Layout
   structure LU = LayoutUtils
 
-  datatype 'a t = 
+  datatype 'a t =
            Seq of 'a            (* [a] *)
          | SeqCons of 'a * 'a t (* <a, S> *)
          | SeqZ                 (* <> *)
          | SeqBot               (* ... *)
 
   val deconstruct =
-   fn s => 
+   fn s =>
       let
-        val rec loop = 
-         fn (acc, s) => 
+        val rec loop =
+         fn (acc, s) =>
             (case s
               of Seq a => (acc, SOME (SOME a))
                | SeqZ => (acc, SOME NONE)
@@ -142,14 +142,14 @@ struct
       in (elts, terminator)
       end
 
-  val rec lub = 
-   fn eltLub => 
+  val rec lub =
+   fn eltLub =>
       Try.lift
-      (fn (s1, s2) => 
+      (fn (s1, s2) =>
           let
             val eltLub' = Try.<- o eltLub
             val lub' = Try.<- o (lub eltLub)
-            val s = 
+            val s =
                 (case (s1, s2)
                   of (SeqBot, _) => s2
                    | (_, SeqBot) => s1
@@ -173,16 +173,16 @@ struct
           in s
           end)
 
-  val rec union = 
-      fn (s1, s2) => 
+  val rec union =
+      fn (s1, s2) =>
          let
-           val add = 
+           val add =
             fn ((s, edges2), edges1) => (s, edges1 @ edges2)
-           val s = 
+           val s =
                (case (s1, s2)
                  of (SeqBot, _) => (s2, [])
                   | (_, SeqBot) => (s1, [])
-                                   
+
                   | (Seq a1, Seq a2) => (Seq a1, [(a1, a2)])
                   | (Seq a1, SeqZ) => (Seq a1, [])
                   | (SeqZ, Seq a2) => (Seq a2, [])
@@ -190,7 +190,7 @@ struct
                   | (Seq a1, SeqCons (a2, s3)) => add (union (s1, s3), [(a1, a2)])
                   | (SeqCons (a1, s3), Seq a2) => add (union (s3, s2), [(a1, a2)])
 
-                  | (SeqCons (a1, s1), SeqCons (a2, s2)) => 
+                  | (SeqCons (a1, s1), SeqCons (a2, s2)) =>
                     let
                       val (s, edges) = union (s1, s2)
                       val edges = (a1, a2) :: edges
@@ -203,27 +203,27 @@ struct
                   | (SeqZ, SeqZ)     => (SeqZ, []))
             in s
             end
-      
-  val layout = 
-   fn layoutElt => 
-      (fn s => 
+
+  val layout =
+   fn layoutElt =>
+      (fn s =>
           let
-            val rec gather = 
-             fn s => 
+            val rec gather =
+             fn s =>
                 (case s
                   of SeqZ => []
                    | SeqBot => [L.str "..."]
                    | SeqCons (a, b) => (layoutElt a)::(gather b)
                    | _ => [layout' s])
-            and rec layout' = 
-             fn s => 
+            and rec layout' =
+             fn s =>
                 (case s
                   of SeqZ => L.str "<>"
                    | SeqBot => L.str "<...>"
-                   | Seq s => L.seq [L.str "<.", 
+                   | Seq s => L.seq [L.str "<.",
                                      layoutElt s,
                                      L.str ".>"]
-                   | SeqCons _ => 
+                   | SeqCons _ =>
                      let
                        val elts = gather s
                        val elts = L.separateRight (elts, ",")
@@ -235,16 +235,16 @@ struct
           in layout' s
           end)
 
-  val rec fold = 
-   fn (seq, a, f) => 
+  val rec fold =
+   fn (seq, a, f) =>
       (case seq
         of Seq e => f (e, a)
          | SeqCons (e, s2) => fold(s2, f (e, a), f)
          | SeqBot => a
          | SeqZ => a)
-      
-  val rec foreach = 
-   fn (seq, f) => 
+
+  val rec foreach =
+   fn (seq, f) =>
       (case seq
         of Seq e => f e
          | SeqCons (e, s2) => (f e;
@@ -252,11 +252,11 @@ struct
          | SeqZ => ()
          | SeqBot => ())
 
-  val rec filter = 
-   fn (seq, f) => 
+  val rec filter =
+   fn (seq, f) =>
       (case seq
         of Seq e => if f e then SeqZ else seq
-         | SeqCons (e, s2) => 
+         | SeqCons (e, s2) =>
            let
              val s2 = filter (s2, f)
            in
@@ -265,20 +265,20 @@ struct
          | SeqZ => seq
          | SeqBot => seq)
 
-  val rec seq2OpenSeq = 
-   fn seq => 
+  val rec seq2OpenSeq =
+   fn seq =>
       case seq
        of Seq _ => seq
         | SeqCons (e, s2) => SeqCons(e, seq2OpenSeq s2)
         | SeqZ => SeqBot
         | SeqBot => seq
 
-  val fromVectorMap = 
-   fn (vec, f) => Vector.foldr (vec, SeqZ, 
+  val fromVectorMap =
+   fn (vec, f) => Vector.foldr (vec, SeqZ,
                                 (fn (e, s) => SeqCons(f e, s)))
 
-  val fromVector = 
-   fn (vec, term) => Vector.foldr (vec, term, 
+  val fromVector =
+   fn (vec, term) => Vector.foldr (vec, term,
                                    (fn (e, s) => SeqCons(e, s)))
   val fromVectorClosed =
    fn vec => fromVector (vec, SeqZ)
@@ -286,11 +286,11 @@ struct
   val fromVectorOpen =
    fn vec => fromVector (vec, SeqBot)
 
-  val tabulate = 
-   fn (count, base, f) => 
+  val tabulate =
+   fn (count, base, f) =>
       let
-        val rec loop = 
-         fn (index) => 
+        val rec loop =
+         fn (index) =>
             if index >= count then
               base
             else
@@ -304,16 +304,16 @@ struct
   val seq3 = fn (a, b, c) => SeqCons (a, seq2 (b, c))
   val seq4 = fn (a, b, c, d) => SeqCons (a, seq3 (b, c, d))
 
-  val equal = 
-   fn equalA => 
+  val equal =
+   fn equalA =>
       let
-        val rec eq = 
-         fn (s1, s2) => 
+        val rec eq =
+         fn (s1, s2) =>
             let
-              val isEqual = 
+              val isEqual =
                   (case (s1, s2)
                     of (Seq a1, Seq a2) => equalA (a1, a2)
-                     | (SeqCons (a1, s1), SeqCons (a2, s2)) => 
+                     | (SeqCons (a1, s1), SeqCons (a2, s2)) =>
                        equalA (a1, a2) andalso eq (s1, s2)
                      | (SeqZ, SeqZ) => true
                      | (SeqBot, SeqBot) => true

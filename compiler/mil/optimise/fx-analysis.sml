@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -43,10 +43,10 @@ struct
 
   val passname = "MilFxAnalysis"
 
-  val fail = 
+  val fail =
    fn (f, m) => Fail.fail ("fx-analysis.sml", f, m)
 
-  val mkDebug = 
+  val mkDebug =
    fn (tag, description) => PD.mkDebug (passname^":"^tag, description)
 
   val (debugPassD, debugPass) =
@@ -63,14 +63,14 @@ struct
                          val name = passname
                          val indent = 2)
 
-  structure Click = 
+  structure Click =
   struct
     val stats = []
   end (* structure Click *)
 
   val stats = Click.stats
   val debugs = [debugPassD, showDataflowD, showWorksetD]
-    
+
   datatype fnInfo = FI of {fxMax : M.effects,     (* Annotation gives limit to max effects *)
                            fx : M.effects,        (* Inferred effect *)
                            canExit : bool,        (* Does annotation allow exit *)
@@ -84,13 +84,13 @@ struct
       ,(fiSetConts, fiGetConts)) =
       let
         val r2t = fn (FI {fxMax, fx, canExit, exits, conts}) => (fxMax, fx, canExit, exits, conts)
-        val t2r = fn (fxMax, fx, canExit, exits, conts) => FI {fxMax = fxMax, fx = fx, canExit = canExit, 
+        val t2r = fn (fxMax, fx, canExit, exits, conts) => FI {fxMax = fxMax, fx = fx, canExit = canExit,
                                                                exits = exits, conts = conts}
-      in 
+      in
         FunctionalUpdate.mk5 (r2t, t2r)
       end
 
-  val layoutFnInfoDataflow = 
+  val layoutFnInfoDataflow =
    fn (FI {fx, exits, ...}) => L.seq [FX.layout fx, if exits then L.str ", EXITS" else L.empty]
 
   structure State =
@@ -103,67 +103,67 @@ struct
         let
           val r2t = fn (S {functions}) => functions
           val t2r = fn (functions) => S {functions = functions}
-        in 
+        in
           FunctionalUpdate.mk1 (r2t, t2r)
         end
 
   end
 
-  structure Env = 
+  structure Env =
   struct
     datatype t = E of {current : M.variable, pd : PassData.t, st : M.symbolTable}
 
-    val mk : M.variable * PassData.t * M.symbolTable -> t = 
+    val mk : M.variable * PassData.t * M.symbolTable -> t =
      fn (current, pd, symbolTable) => E {current = current, pd = pd, st = symbolTable}
-                                                                         
-    val ((setCurrent, getCurrent), 
-         (_, getPd), 
+
+    val ((setCurrent, getCurrent),
+         (_, getPd),
          (_, getSt)) =
         FunctionalUpdate.mk3 (fn (E {current, pd, st}) => (current, pd, st),
                               fn (current, pd, st) => E {current = current, pd = pd, st = st})
-                             
+
     val getConfig = PD.getConfig o getPd
     val getSi = I.SymbolInfo.SiTable o getSt
   end
 
-  val layoutVariable : State.t * Env.t * M.variable -> Layout.t = 
+  val layoutVariable : State.t * Env.t * M.variable -> Layout.t =
    fn (state, env, v) => ML.layoutVariable (Env.getConfig env, Env.getSi env, v)
 
   val stringOfVariable : State.t * Env.t * M.variable -> string = Layout.toString o layoutVariable
 
-  val setCurrentFunction : State.t * Env.t * M.variable -> Env.t = 
+  val setCurrentFunction : State.t * Env.t * M.variable -> Env.t =
    fn (state, env, f) => Env.setCurrent (env, f)
 
   val getCurrentFunction : State.t * Env.t -> M.variable =
    fn (state, env) => Env.getCurrent env
 
-  val hasFnInfo : State.t * Env.t * M.variable -> bool = 
+  val hasFnInfo : State.t * Env.t * M.variable -> bool =
    fn (state, env, f) => isSome (VD.lookup (State.getFunctions state, f))
 
-  val getFnInfoRef : State.t * Env.t * M.variable -> fnInfo ref = 
-   fn (state, env, f) => 
+  val getFnInfoRef : State.t * Env.t * M.variable -> fnInfo ref =
+   fn (state, env, f) =>
       (case VD.lookup (State.getFunctions state, f)
         of SOME fir => fir
          | NONE     => fail ("getFnInfoRef", "No info for function: " ^ stringOfVariable (state, env, f)))
 
   val getFnInfo : State.t * Env.t * M.variable -> fnInfo = ! o getFnInfoRef
 
-  val getFnInfoRef' : State.t * Env.t * M.variable -> fnInfo ref Option.t = 
+  val getFnInfoRef' : State.t * Env.t * M.variable -> fnInfo ref Option.t =
    fn (state, env, f) => VD.lookup (State.getFunctions state, f)
 
-  val getFnInfo' : State.t * Env.t * M.variable -> fnInfo Option.t = 
+  val getFnInfo' : State.t * Env.t * M.variable -> fnInfo Option.t =
    fn (state, env, v) => Option.map (getFnInfoRef' (state, env, v), !)
 
-  val getCurrentFnInfo : State.t * Env.t -> fnInfo = 
-   fn (state, env) => 
+  val getCurrentFnInfo : State.t * Env.t -> fnInfo =
+   fn (state, env) =>
       let
         val f = getCurrentFunction (state, env)
         val fi = getFnInfo (state, env, f)
       in fi
       end
 
-  val updateCurrentFnInfo : State.t * Env.t * fnInfo -> unit = 
-   fn (state, env, fi) => 
+  val updateCurrentFnInfo : State.t * Env.t * fnInfo -> unit =
+   fn (state, env, fi) =>
       let
         val f = getCurrentFunction (state, env)
         val r = getFnInfoRef (state, env, f)
@@ -172,8 +172,8 @@ struct
       end
 
   local
-    val getCurrentFnInfoRecord = 
-     fn (state, env) => 
+    val getCurrentFnInfoRecord =
+     fn (state, env) =>
         let
           val FI r = getCurrentFnInfo (state, env)
         in r
@@ -184,18 +184,18 @@ struct
   end
 
   (* For every function, we start with the assumption that it has no
-   * effects, can not exit, and has no internal cut targets.  On each 
+   * effects, can not exit, and has no internal cut targets.  On each
    * iteration, we update this information based on the previously
    * computed information, and repeat until we reach a fixed point.
    * *)
-    
-  val addExitsToCurrent : State.t * Env.t * bool -> unit = 
-   fn (state, env, callExits) => 
-      if callExits then 
+
+  val addExitsToCurrent : State.t * Env.t * bool -> unit =
+   fn (state, env, callExits) =>
+      if callExits then
         let
           val fi = getCurrentFnInfo (state, env)
           val canExit = fiGetCanExit fi
-          val exits = canExit 
+          val exits = canExit
           val fi = fiSetExits (fi, exits)
           val () = updateCurrentFnInfo (state, env, fi)
         in ()
@@ -203,8 +203,8 @@ struct
       else
         ()
 
-  val addEffectsToCurrent : State.t * Env.t * M.effects -> unit = 
-   fn (state, env, callFx) => 
+  val addEffectsToCurrent : State.t * Env.t * M.effects -> unit =
+   fn (state, env, callFx) =>
       let
         val fi = getCurrentFnInfo (state, env)
         val fxMax = fiGetFxMax fi
@@ -215,8 +215,8 @@ struct
       in ()
       end
 
-  val addContToCurrent : State.t * Env.t * M.label -> unit = 
-   fn (state, env, l) => 
+  val addContToCurrent : State.t * Env.t * M.label -> unit =
+   fn (state, env, l) =>
       let
         val fi  = getCurrentFnInfo (state, env)
         val conts = fiGetConts fi
@@ -229,11 +229,11 @@ struct
   (* Instructions have effects.  They also may add to the set of internal
    * labels to which a cut may happen
    *)
-  val analyzeInstruction : State.t * Env.t * Mil.instruction -> Env.t = 
-   fn (state, env, i as M.I {rhs, ...}) => 
+  val analyzeInstruction : State.t * Env.t * Mil.instruction -> Env.t =
+   fn (state, env, i as M.I {rhs, ...}) =>
       let
         val () = addEffectsToCurrent (state, env, MU.Instruction.fx (Env.getConfig env, i))
-        val () = 
+        val () =
             case rhs
              of M.RhsCont l => addContToCurrent (state, env, l)
               | _           => ()
@@ -241,14 +241,14 @@ struct
       end
 
   (* For a direct call (or one with fully known targets):
-   *  1) The effects of the callee are added to the effects of the caller.  
+   *  1) The effects of the callee are added to the effects of the caller.
    *     The effects of the callee are the meet of the annotated and computed
    *     effects.
    *  2) If the callee can exit, and the annotation says that the call can exit,
    *     then the caller can exit.
    *)
-  val analyzeDirectCallEval : State.t * Env.t * M.variable * M.effects * bool -> unit = 
-   fn (state, env, f, callFx, callExits) => 
+  val analyzeDirectCallEval : State.t * Env.t * M.variable * M.effects * bool -> unit =
+   fn (state, env, f, callFx, callExits) =>
       let
         val FI {fx = calleeFx, exits = calleeExits, ...} = getFnInfo (state, env, f)
         val fx = FX.intersection (calleeFx, callFx)
@@ -259,12 +259,12 @@ struct
       end
 
   (* For an indirect call with unkown targets:
-   *  1) The effects of the callee are added to the effects of the caller.  
+   *  1) The effects of the callee are added to the effects of the caller.
    *     The effects of the callee are the annotated effects.
    *  2) If the annotation says that the call can exit,  then the caller can exit.
    *)
-  val analyzeIndirectCallEval : State.t * Env.t * M.codes * M.effects * bool -> unit = 
-   fn (state, env, codes, callFx, callExits) => 
+  val analyzeIndirectCallEval : State.t * Env.t * M.codes * M.effects * bool -> unit =
+   fn (state, env, codes, callFx, callExits) =>
       if MU.Codes.exhaustive codes then
         VS.foreach (MU.Codes.possible codes, fn f => analyzeDirectCallEval (state, env, f, callFx, callExits))
       else
@@ -274,34 +274,34 @@ struct
         in ()
         end
 
-  val analyzeCallEval : State.t * Env.t * M.variable * M.codes * M.effects * bool -> unit = 
-   fn (state, env, f, codes, fx, exits) => 
+  val analyzeCallEval : State.t * Env.t * M.variable * M.codes * M.effects * bool -> unit =
+   fn (state, env, f, codes, fx, exits) =>
       if hasFnInfo (state, env, f) then
         analyzeDirectCallEval (state, env, f, fx, exits)
       else
         analyzeIndirectCallEval (state, env, codes, fx, exits)
 
-  val analyzeInterProc : State.t * Env.t * {callee : M.interProc, ret : M.return, fx : M.effects} -> unit = 
+  val analyzeInterProc : State.t * Env.t * {callee : M.interProc, ret : M.return, fx : M.effects} -> unit =
    fn (state, env, {callee, ret, fx}) =>
       let
         val exits = MU.Cuts.exits (MU.Return.cuts ret)
 
-        val () = 
-            case callee 
-             of M.IpCall {call, ...} => 
+        val () =
+            case callee
+             of M.IpCall {call, ...} =>
                 (case call
                   of M.CCode {ptr, code}          => analyzeCallEval (state, env, ptr, code, fx, exits)
                    | M.CClosure {cls, code}       => analyzeIndirectCallEval (state, env, code, fx, exits)
                    | M.CDirectClosure {cls, code} => analyzeDirectCallEval (state, env, code, fx, exits))
-              | M.IpEval {eval, ...} => 
+              | M.IpEval {eval, ...} =>
                 (case eval
                   of M.EThunk {code, ...}       => analyzeIndirectCallEval (state, env, code, fx, exits)
                    | M.EDirectThunk {code, ...} => analyzeDirectCallEval (state, env, code, fx, exits))
       in ()
       end
 
-  val analyzeCuts : State.t * Env.t * M.cuts -> unit = 
-   fn (state, env, cuts) => 
+  val analyzeCuts : State.t * Env.t * M.cuts -> unit =
+   fn (state, env, cuts) =>
       let
         val exits = MU.Cuts.exits cuts
         val () = addExitsToCurrent (state, env, exits)
@@ -310,9 +310,9 @@ struct
       end
 
   val analyzeTransfer : State.t * Env.t * Mil.label option * Mil.transfer -> Env.t =
-   fn (state, env, lo, t) => 
+   fn (state, env, lo, t) =>
       let
-        val () = 
+        val () =
             case t
              of M.TGoto _       => ()
               | M.TCase _       => ()
@@ -323,13 +323,13 @@ struct
       in env
       end
 
-  val analyzeGlobal : State.t * Env.t * M.variable * M.global -> Env.t = 
+  val analyzeGlobal : State.t * Env.t * M.variable * M.global -> Env.t =
    fn (state, env, v, g) =>
       (case g
         of M.GCode _ => setCurrentFunction (state, env, v)
          | _         => env)
 
-  structure AnalyzeParam = 
+  structure AnalyzeParam =
   struct
     type state = State.t
     type env = Env.t
@@ -350,8 +350,8 @@ struct
 
   structure Analyze = MilAnalyseF(AnalyzeParam)
 
-  val initFunctionInfo : State.t * Env.t * VS.t * M.variable * M.code -> State.t = 
-   fn (state, env, recursive, f, c) => 
+  val initFunctionInfo : State.t * Env.t * VS.t * M.variable * M.code -> State.t =
+   fn (state, env, recursive, f, c) =>
       let
         val M.F {fx, body, ...} = c
         val partial =
@@ -359,8 +359,8 @@ struct
             let
               val cfg = MCFG.build (Env.getConfig env, Env.getSi env, body)
               val scc = MCFG.scc cfg
-              val loops = 
-               fn cc => 
+              val loops =
+               fn cc =>
                   (case cc
                     of [a] => List.contains (MCFG.succ (cfg, a), a, fn (a, b) => MCFG.compareNode (a, b) = EQUAL)
                      | _   => true)
@@ -368,14 +368,14 @@ struct
             in partial
             end
         (* All effects except partiality are witnessed by some instruction.  For partiality,
-         * we mark each function which either is directly contained in a call graph cycle, 
+         * we mark each function which either is directly contained in a call graph cycle,
          * or which contains a cycle in its control-flow-graph as partial.  Dataflow propagation
          * then does the rest.
          *)
-        val fi = FI {fxMax = fx, 
+        val fi = FI {fxMax = fx,
                      fx = if partial then FX.intersection (fx, FX.PartialS) else FX.Total,
-                     canExit = FX.contains (fx, FX.Fails), 
-                     exits = false, 
+                     canExit = FX.contains (fx, FX.Fails),
+                     exits = false,
                      conts = LS.empty}
         val functions = State.getFunctions state
         val functions = VD.insert (functions, f, ref fi)
@@ -384,70 +384,70 @@ struct
       end
 
 
-  val findRecursive = 
-   fn (cg, globals) => 
+  val findRecursive =
+   fn (cg, globals) =>
       let
         val MCG.Graph.G {known, unknown, graph} = cg
         val scc = PLG.scc graph
-        val hasCycle = 
-         fn cc => 
+        val hasCycle =
+         fn cc =>
             case cc
              of [a] => List.contains (PLG.Node.succs a, a, op =)
               | _   => true
-        val addNode = 
+        val addNode =
          fn (n, r) =>
             (case PLG.Node.getLabel n
               of MCG.Graph.NUnknown => r
                | MCG.Graph.NFun f   => VS.insert (r, f))
-        val addCC = 
+        val addCC =
          fn (r, cc) => List.fold (cc, r, addNode)
         val recursive = List.fold (scc, VS.empty, fn (cc, r) => if hasCycle cc then addCC (r, cc) else r)
-      in recursive 
+      in recursive
       end
 
-  val init = 
-   fn (state, env, cg, globals) => 
+  val init =
+   fn (state, env, cg, globals) =>
       let
         val recursive = findRecursive (cg, globals)
-        val init = 
-         fn (v, g, state) => 
-            (case g 
+        val init =
+         fn (v, g, state) =>
+            (case g
               of M.GCode code => initFunctionInfo (state, env, recursive, v, code)
               | _             => state)
         val state = VD.fold (globals, state, init)
       in state
       end
 
-  (* Has the dataflow information in the function info changed? 
+  (* Has the dataflow information in the function info changed?
    *)
-  val fnInfoDataflowChanged = 
+  val fnInfoDataflowChanged =
    fn (FI {fx = fx0, exits = exits0, ...}, FI {fx = fx1, exits = exits1, ...}) =>
       (exits0 <> exits1) orelse (fx0 <> fx1)
 
-  (* Order the call graph in post order (callees before callers), 
+  (* Order the call graph in post order (callees before callers),
    * and then repeatedly walk the list of functions keeping an active
    * workset intitialized to all functions.  When a functions dataflow
    * information changes, all known callers are added to the workset.
    * We iterate until the workset is empty (that is, we have reached
    * a fixed point)
    *)
-  val analyzeGlobals = 
-   fn (state, env, mcg, cg, entry, globals) => 
+  val analyzeGlobals =
+   fn (state, env, mcg, cg, entry, globals) =>
       let
         val MCG.Graph.G {known, unknown, graph} = cg
         val entryNode = valOf (VD.lookup (known, entry))
         val entries = PLG.postOrderDfs (graph, entryNode)
-        val entries = 
+        val entries =
             let
-              val filter = 
+              val filter =
                fn node =>
-                  (case PLG.Node.getLabel node 
+                  (case PLG.Node.getLabel node
                     of MCG.Graph.NUnknown => NONE
                      | MCG.Graph.NFun f   => SOME f)
             in List.keepAllMap (entries, filter)
             end
-        val getCallers = 
-         fn f => 
+        val getCallers =
+         fn f =>
             let
               val MCG.CG {funs, calls, callMap} = mcg
               val MCG.FI {knownCallers, ...} = valOf (VD.lookup (funs, f))
@@ -457,8 +457,8 @@ struct
             in callers
             end
         val lvar = fn v => layoutVariable (state, env, v)
-        val step = 
-         fn (ws, f) => 
+        val step =
+         fn (ws, f) =>
             let
               val ws = VS.remove (ws, f)
               val g = MU.Globals.get (globals, f)
@@ -466,9 +466,9 @@ struct
               val () = Analyze.analyseGlobal (state, env, f, g)
               val fi1 = getFnInfo (state, env, f)
               val changed = fnInfoDataflowChanged (fi0, fi1)
-              val ws = if changed then 
+              val ws = if changed then
                          let
-                           val () = if showDataflow (Env.getPd env) then 
+                           val () = if showDataflow (Env.getPd env) then
                                       LU.printLayout (L.seq [lvar f, L.str " : ", layoutFnInfoDataflow fi0,
                                                              L.str " -> ", layoutFnInfoDataflow fi1])
                                     else
@@ -481,24 +481,24 @@ struct
             end
         val all = entries
         val reachable = List.fold (all, VS.empty, fn (v, vs) => VS.insert (vs, v))
-        val rec iterate = 
-         fn (ws, fns) => 
+        val rec iterate =
+         fn (ws, fns) =>
             if VS.isEmpty ws then ()
             else
-              case fns 
-               of []     => 
+              case fns
+               of []     =>
                   let
                     val () = if debugPass (Env.getPd env) then
                                LU.printLayout (L.seq[L.str " Iterating with workset -> ", VS.layout (ws, lvar)])
                              else ()
-                  (* There may be unreachable functions that are in the workset but not in 
+                  (* There may be unreachable functions that are in the workset but not in
                    * the ordering, so be careful to trim out here *)
                   in iterate (VS.intersection (reachable, ws), all)
                   end
-                | f::fns => 
+                | f::fns =>
                   let
                     val ws = if VS.member (ws, f) then step (ws, f) else ws
-                    val () = 
+                    val () =
                         if showWorkset (Env.getPd env) then
                           LU.printLayout (L.seq[lvar f, L.str " -> ", VS.layout (ws, lvar)])
                         else ()
@@ -507,48 +507,48 @@ struct
       in iterate (reachable, all)
       end
 
-  val getInterProcDataflowInfo = 
-   fn (state, env, callee) => 
+  val getInterProcDataflowInfo =
+   fn (state, env, callee) =>
       let
         val (calleeFx, calleeExits) =
             let
-              val getDirectInfo = 
-               fn f => 
+              val getDirectInfo =
+               fn f =>
                   let
                     val (FI {fx, exits, ...}) = getFnInfo (state, env, f)
                   in (fx, exits)
                   end
 
-              val getIndirectInfo = 
-                  fn codes => 
+              val getIndirectInfo =
+                  fn codes =>
                      let
-                       val add = 
-                        fn (f, (fx0, exits0)) => 
+                       val add =
+                        fn (f, (fx0, exits0)) =>
                            let
                              val (fx1, exits1) = getDirectInfo f
                            in (FX.union (fx0, fx1), exits0 orelse exits1)
                            end
-                     in 
-                       if MU.Codes.exhaustive codes then 
+                     in
+                       if MU.Codes.exhaustive codes then
                          VS.fold (MU.Codes.possible codes, (FX.Total, false), add)
                        else
                          (FX.Any, true)
                      end
 
-              val getInfo = 
-               fn (f, codes) => 
-                  if hasFnInfo (state, env, f) then 
+              val getInfo =
+               fn (f, codes) =>
+                  if hasFnInfo (state, env, f) then
                     getDirectInfo f
-                  else 
+                  else
                     getIndirectInfo codes
-            in 
+            in
               case callee
-               of M.IpCall {call, args} => 
+               of M.IpCall {call, args} =>
                   (case call
                     of M.CCode {ptr, code}          => getInfo (ptr, code)
                      | M.CClosure {cls, code}       => getIndirectInfo code
                      | M.CDirectClosure {cls, code} => getDirectInfo code)
-                | M.IpEval {eval, typ} => 
+                | M.IpEval {eval, typ} =>
                   (case eval
                     of M.EThunk {code, ...}       => getIndirectInfo code
                      | M.EDirectThunk {code, ...} => getDirectInfo code)
@@ -556,8 +556,8 @@ struct
       in (calleeFx, calleeExits)
       end
 
-  val rewriteInterProc = 
-   fn (state, env, {callee, ret, fx}) => 
+  val rewriteInterProc =
+   fn (state, env, {callee, ret, fx}) =>
       let
         val (calleeFx, calleeExits) = getInterProcDataflowInfo (state, env, callee)
         val fx = FX.intersection (calleeFx, fx)
@@ -567,19 +567,19 @@ struct
          *  2) The callee can exit (inferred)
          *  3) The callee can exit (annotated)
          * *)
-        val ret = 
+        val ret =
             case ret
-             of M.RNormal {rets, block, cuts} => 
+             of M.RNormal {rets, block, cuts} =>
                 let
                   val exits = callerExits andalso calleeExits andalso (MU.Cuts.exits cuts)
                   val localConts = getCurrentConts (state, env)
-                  val targets = if calleeExits then 
+                  val targets = if calleeExits then
                                   LS.intersection (MU.Cuts.targets cuts, localConts)
                                 else
                                   LS.empty
                 in M.RNormal {rets = rets, block = block, cuts = M.C {exits = exits, targets = targets}}
                 end
-              | M.RTail {exits} => 
+              | M.RTail {exits} =>
                 let
                   val exits = callerExits andalso calleeExits andalso exits
                 in M.RTail {exits = exits}
@@ -588,7 +588,7 @@ struct
       in ans
       end
 
-  val rewriteCuts = 
+  val rewriteCuts =
    fn (state, env, {cont, args, cuts}) =>
       let
         val exits = getCurrentExits (state, env) andalso MU.Cuts.exits cuts
@@ -598,10 +598,10 @@ struct
       in r
       end
 
-  val rewriteTransfer = 
-   fn (state, env, (lo, t)) => 
+  val rewriteTransfer =
+   fn (state, env, (lo, t)) =>
       let
-        val ans = 
+        val ans =
             case t
              of M.TGoto _       => MRC.Stop
               | M.TCase _       => MRC.Stop
@@ -612,18 +612,18 @@ struct
       in ans
       end
 
-  val rewriteGlobal = 
-   fn (state, env, (v, g)) => 
+  val rewriteGlobal =
+   fn (state, env, (v, g)) =>
       let
-        val ans = 
+        val ans =
             case g
-             of M.GCode code => 
+             of M.GCode code =>
                 let
                   val M.F {fx, escapes, recursive, cc, args, rtyps, body} = code
                   val FI {fx = fxI, exits = exitsI, ...} = getFnInfo (state, env, v)
                   val fx = FX.intersection (fx, fxI)
                   val fx = if exitsI then fx else FX.remove (fx, FX.Fails)
-                  val code = M.F {fx = fx, escapes = escapes, recursive = recursive, 
+                  val code = M.F {fx = fx, escapes = escapes, recursive = recursive,
                                   cc = cc, args = args, rtyps = rtyps, body = body}
                   val g = M.GCode code
                 in MRC.ContinueWith (setCurrentFunction (state, env, v), (v, g))
@@ -648,9 +648,9 @@ struct
                                      val indent      = 2
                                      val cfgEnum     = fn (_, _, t) => MilUtils.CodeBody.dfsTrees t
                                     end)
-               
-  val analyze = 
-   fn (pd, m) => 
+
+  val analyze =
+   fn (pd, m) =>
       let
         val M.P {includes, externs, globals, symbolTable, entry} = m
         val () = Chat.log1 (pd, "Doing analysis")
@@ -666,8 +666,8 @@ struct
       in (state, env)
       end
 
-  val optimize = 
-   fn (state, env, m) => 
+  val optimize =
+   fn (state, env, m) =>
       let
           val () = Chat.log1 (Env.getPd env, "Rewriting program")
           val s = Time.now ()
@@ -677,7 +677,7 @@ struct
       in m
       end
 
-  fun program (m, pd) = 
+  fun program (m, pd) =
       let
         val (state, env) = analyze (pd, m)
         val m = optimize (state, env, m)

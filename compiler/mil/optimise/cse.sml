@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,12 +16,12 @@
  *)
 
 
-signature MIL_CSE = 
+signature MIL_CSE =
 sig
   val pass : (BothMil.t, BothMil.t) Pass.t
 end
 
-structure MilCse :> MIL_CSE = 
+structure MilCse :> MIL_CSE =
 struct
 
   val passname = "MilCse"
@@ -50,7 +50,7 @@ struct
 
   structure ED = DictF(struct
                          type t = M.eval
-                         val compare = 
+                         val compare =
                           fn (e1, e2) => I.variableCompare (MU.Eval.thunk e1, MU.Eval.thunk e2)
                        end)
 
@@ -64,12 +64,12 @@ struct
 
   datatype state = S of {stM : M.symbolTableManager}
 
-  fun envGet sel (E t) = sel t 
+  fun envGet sel (E t) = sel t
 
   val envGetRename  = envGet #rename
   val envGetGDict   = envGet #gDict
   val envGetRhsDict = envGet #rhsDict
-  val envGetEvlDict = envGet #evlDict                        
+  val envGetEvlDict = envGet #evlDict
   val envGetData    = envGet #data
 
   fun envGetConfig env = PD.getConfig (envGetData env)
@@ -80,14 +80,14 @@ struct
          rhsDict = rhsDict t,
          evlDict = evlDict t,
          data   = data t}
-      
-  fun envSetRename (env, rename) = 
+
+  fun envSetRename (env, rename) =
       envSet (fn _ => rename, #gDict, #rhsDict, #evlDict, #data, env)
-  fun envSetGDict (env, gDict) = 
+  fun envSetGDict (env, gDict) =
       envSet (#rename, fn _ => gDict, #rhsDict, #evlDict, #data, env)
-  fun envSetRhsDict (env, rhsDict) = 
+  fun envSetRhsDict (env, rhsDict) =
       envSet (#rename, #gDict ,fn _ => rhsDict, #evlDict, #data, env)
-  fun envSetEvlDict (env, evlDict) = 
+  fun envSetEvlDict (env, evlDict) =
       envSet (#rename, #gDict ,#rhsDict, fn _ => evlDict, #data, env)
 
   fun stateGet sel (S t) = sel t
@@ -98,7 +98,7 @@ struct
 
   fun getConfig env = PD.getConfig (envGetData env)
 
-  structure Chat = ChatF(struct 
+  structure Chat = ChatF(struct
                            type env = env
                            val extract = getConfig
                            val name = passname
@@ -111,24 +111,24 @@ struct
   val (debugPassD, debugPass) =
       Config.Debug.mk (passname, "debug the Mil CSE pass")
 
-  fun debugDo (env, f) = 
+  fun debugDo (env, f) =
       if Config.debug andalso debugPass (getConfig env)
       then f()
       else ()
 
-  fun addToRename (env, vOrig, vNew) = 
+  fun addToRename (env, vOrig, vNew) =
       envSetRename (env, Rename.renameTo (envGetRename env, vOrig, vNew))
 
-  fun addAllToRename (env, vOrig, vNew) = 
+  fun addAllToRename (env, vOrig, vNew) =
       Vector.fold2 (vOrig, vNew, env, fn (a, b, env) => addToRename (env, a, b))
 
-  fun deleteVar (state, v) = 
+  fun deleteVar (state, v) =
       IM.variableDelete (stateGetStM state, v)
 
-  fun addGlobalToGDict (env, v, g) = 
+  fun addGlobalToGDict (env, v, g) =
       (case g
         of M.GCode _ => env  (* Useless to try to CSE code *)
-         | _ => 
+         | _ =>
            if MU.Global.immutable g then
              let
                val gDict = envGetGDict env
@@ -139,7 +139,7 @@ struct
            else
              env)
 
-  fun addEvalToEDict (env, parms, ev) = 
+  fun addEvalToEDict (env, parms, ev) =
        let
          val gDict = envGetEvlDict env
          val gDict = ED.insert (gDict, ev, parms)
@@ -147,14 +147,14 @@ struct
        in env
        end
 
-  fun computeSCC (state, env, gd) = 
+  fun computeSCC (state, env, gd) =
       let
         val config = envGetConfig env
         fun depsOf (v, g) = FV.global (config, v, g)
         val scc = I.variableTopoSort (VD.toList gd, depsOf)
         val () =
-            debugDo (env, 
-                 fn () => 
+            debugDo (env,
+                 fn () =>
                     let
                       val () = print "SCC are\n"
                       fun layoutOne (v, _) = MilLayout.layoutVariable (config, stateGetSi state, v)
@@ -175,42 +175,42 @@ struct
   end
 
   (* extract rename dict from environment
-   * if instructions' rhs not present, add to dictionary creating new env 
+   * if instructions' rhs not present, add to dictionary creating new env
    * if present, remove instruction and add 'variable' to rename list
    *)
   fun rewriteInstruction (i, env) =
       let
         val config = envGetConfig env
-        val rename = envGetRename env 
+        val rename = envGetRename env
         val i as M.I {dests, n, rhs} = RNV.instruction (config, rename, i)
         val keepWith = fn env => (SOME i, env)
         val deleteWith = fn env => (NONE, env)
-        val rhsD = envGetRhsDict env 
-        val res = 
+        val rhsD = envGetRhsDict env
+        val res =
             if canCse (env, i) then
               let
                 val res =
                     case (Vector.length dests, RD.lookup (rhsD, rhs))
-                     of (1, SOME v') => 
+                     of (1, SOME v') =>
                         let
                           val vv = Vector.sub (dests, 0)
                           val () = PD.click (envGetData env, "InstrCse")
                         in deleteWith (addToRename (env, vv, v'))
                         end
                       | (0, SOME v') => deleteWith env
-                      | (1, NONE) => 
+                      | (1, NONE) =>
                         let
                           val vv = Vector.sub (dests, 0)
-                          val rhsD = RD.insert (rhsD, rhs, vv) 
+                          val rhsD = RD.insert (rhsD, rhs, vv)
                           val env = envSetRhsDict (env, rhsD)
-                        in 
+                        in
                           keepWith env
                         end
                       | (_, _) => keepWith env
               in
                 res
               end
-            else 
+            else
               keepWith env
      in res
      end
@@ -222,10 +222,10 @@ struct
       in (env, is)
       end
 
-  fun rewriteTransfer (state, env, transfer) = 
+  fun rewriteTransfer (state, env, transfer) =
       let
-        val rename = envGetRename env 
-        val transfer = RNV.transfer (envGetConfig env, rename, transfer) 
+        val rename = envGetRename env
+        val transfer = RNV.transfer (envGetConfig env, rename, transfer)
         fun keep () = (transfer, env, NONE)
       in
         case transfer
@@ -238,7 +238,7 @@ struct
                | SOME vs =>
                  let
                    val () = PD.click (envGetData env, "EvalCse")
-                   val r = 
+                   val r =
                        (case ret
                          of M.RNormal {rets, block, ...} =>
                             (M.TGoto (M.T {block = block, arguments = Vector.new0 ()}),
@@ -285,7 +285,7 @@ struct
       in
         Tree.T (root, children)
       end
-      
+
   (* CSE body of a global function *)
   fun cseCode (state, env, f) =
       let
@@ -302,9 +302,9 @@ struct
         res
       end
 
-  fun doGlobals (state, env, l) = 
+  fun doGlobals (state, env, l) =
       let
-        val (keep, get) = 
+        val (keep, get) =
             let
               val globals = ref []
               fun keep (v, g) = globals := (v, g):: !globals
@@ -328,29 +328,29 @@ struct
                 in res
                 end
 
-        fun processGlobal (env, v, g) = 
+        fun processGlobal (env, v, g) =
             case GD.lookup (envGetGDict env, g)
-             of SOME v' => 
+             of SOME v' =>
                 let
                   val () = PD.click (envGetData env, "GlobalCse")
                   val env = addToRename (env, v, v')
                   val () = deleteVar (state, v)
                 in env
                 end
-              | NONE => 
+              | NONE =>
                 let
                   val () = keep (v, g)
                   val env = addGlobalToGDict (env, v, g)
                 in env
                 end
 
-        fun doComponent (l, env) = 
+        fun doComponent (l, env) =
             let
               val l = List.map (l, fn (v, g) => canonizeGlobal (env, v, g))
-              val env = 
+              val env =
                   (case l
                     of [(v, g)] => processGlobal(env, v, g)
-                     | _ => 
+                     | _ =>
                        let
                          val () = List.foreach (l, keep)
                        in env
@@ -363,7 +363,7 @@ struct
       in gs
       end
 
-  fun globals (state, env, gs) = 
+  fun globals (state, env, gs) =
       let
         (* Compute a good ordering of the globals *)
         val () = Chat.log3 (env, "Topo sorting globals")
@@ -374,7 +374,7 @@ struct
       in gs
       end
 
-  fun rewrite (d, mil) = 
+  fun rewrite (d, mil) =
       let
         val M.P {includes, externs, globals = gs, symbolTable, entry} = mil
         val stM = IM.fromExistingAll symbolTable
@@ -390,7 +390,7 @@ struct
       in mil
       end
 
-  fun program (mil, d) = 
+  fun program (mil, d) =
       let
         val mil = rewrite (d, mil)
         val () = PD.report (d, passname)

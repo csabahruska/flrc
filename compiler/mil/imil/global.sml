@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature IMIL_GLOBAL = 
+signature IMIL_GLOBAL =
 sig
   include IMIL_PUBLIC_TYPES
   val build         : t * (Mil.variable * Mil.global) -> iGlobal
@@ -41,13 +41,13 @@ sig
 end
 
 structure IMilGlobal : sig
-  include IMIL_GLOBAL 
+  include IMIL_GLOBAL
   val unBuild : iGlobal -> (Mil.variable * Mil.global) option
 end
   =
 struct
   open IMilPublicTypes
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("global.sml", f, s)
 
   structure L = Layout
@@ -67,7 +67,7 @@ struct
   type item = IMilTypes.item
   type use = IMilTypes.use
 
-  val getId = 
+  val getId =
    fn (p, g) => IMT.iGlobalGetId g
 
   val getMil =
@@ -75,29 +75,29 @@ struct
 
   val getVars =
    fn (p, g) => IMT.iGlobalGetVars g
-            
-  val unBuild = 
-   fn g => 
+
+  val unBuild =
+   fn g =>
       (case IMT.iGlobalGetMil g
         of IMT.GDead => NONE
          | IMT.GGlobal a => SOME a)
 
-  val getVar = 
-   fn (p, g) => 
+  val getVar =
+   fn (p, g) =>
       (case unBuild g
         of NONE => fail ("getVar", "Global is dead")
          | SOME (v, _) => v)
 
-  val getObject = 
-   fn (p, g) => 
+  val getObject =
+   fn (p, g) =>
       (case unBuild g
         of NONE => fail ("getObject", "Global is dead")
          | SOME (_, g) => g)
 
   val freeVarsInMilGlobal =
-   fn (p, m) => 
+   fn (p, m) =>
       let
-        val s = 
+        val s =
             case m
              of IMT.GGlobal (v, g)   => FV.global (p, v, g)
               | IMT.GDead => VS.empty
@@ -105,7 +105,7 @@ struct
       end
 
   val buildMilVars =
-   fn (p, g, m) => 
+   fn (p, g, m) =>
       let
         val vs = freeVarsInMilGlobal (p, m)
         val vs = VS.toList vs
@@ -113,9 +113,9 @@ struct
         val vars = IVD.fromList vars
       in vars
       end
-      
+
   val addDefs =
-   fn (p, g, m) => 
+   fn (p, g, m) =>
       let
         val () = case m
                   of IMT.GGlobal (v, _) => Def.add (p, v, IMT.DefGlobal g)
@@ -125,7 +125,7 @@ struct
 
 
   val deleteDefs =
-   fn (p, m) => 
+   fn (p, m) =>
       let
         val defsD = IMT.tGetDefs p
         val removeDef = fn v => IVD.remove (defsD, v)
@@ -136,9 +136,9 @@ struct
       end
 
   val replaceMil =
-   fn (p, g, m) => 
+   fn (p, g, m) =>
       let
-        val () = 
+        val () =
             IVD.foreach (IMT.iGlobalGetVars g, fn (v, u) => Use.deleteUse (p, u))
         val () = deleteDefs (p, IMT.iGlobalGetMil g)
         val () = addDefs (p, g, m)
@@ -148,12 +148,12 @@ struct
       in ()
       end
   val () = BackPatch.fill (Use.replaceMilGH, replaceMil)
-      
-  val replaceGlobal = 
+
+  val replaceGlobal =
    fn (p, g, a) => replaceMil (p, g, IMT.GGlobal a)
 
   val build =
-   fn (p, (v, m)) => 
+   fn (p, (v, m)) =>
       let
         val id = IMT.nextId p
         val g' = IMT.G {id   = id,
@@ -171,9 +171,9 @@ struct
   val () = BackPatch.fill (Use.emitGlobalH, build)
 
   val getUses =
-   fn (p, g) => 
+   fn (p, g) =>
       let
-        val uses = 
+        val uses =
             case getMil (p, g)
              of IMT.GDead => Vector.new0 ()
               | IMT.GGlobal (v, g) => Use.getUses (p, v)
@@ -181,7 +181,7 @@ struct
       end
 
   val freeVars' =
-      fn (p, g) => 
+      fn (p, g) =>
       let
         val vars = getVars (p, g)
         val vars = IVD.domain vars
@@ -190,12 +190,12 @@ struct
 
   val freeVars = VS.fromList o freeVars'
 
-                 
+
   val getUsedBy =
-   fn (p, g) => 
+   fn (p, g) =>
       let
         val dls = freeVars' (p, g)
-        val defs = Vector.fromListMap (dls, 
+        val defs = Vector.fromListMap (dls,
                                     fn v => Def.get (p, v))
         val items = Def.defsToItems (p, defs)
       in items
@@ -203,19 +203,19 @@ struct
 
 
   val delete =
-   fn (p, g) => 
-      (case getMil (p, g) 
+   fn (p, g) =>
+      (case getMil (p, g)
         of IMT.GDead => ()
-         | IMT.GGlobal (v, _) => 
+         | IMT.GGlobal (v, _) =>
            let
              val () = replaceMil (p, g, IMT.GDead)
-             val () = 
+             val () =
                  IVD.remove(IMT.tGetIGlobals p, v)
            in ()
            end)
 
-  val toGlobal = 
-   fn g => 
+  val toGlobal =
+   fn g =>
       (case IMT.iGlobalGetMil g
         of IMT.GDead => NONE
          | IMT.GGlobal a => SOME a)
@@ -223,15 +223,15 @@ struct
   val layoutMil = IML.mGlobal
 
   val layout =
-   fn (p, g) => 
+   fn (p, g) =>
       let
         val IMT.G {id, mil, vars} = IMT.iGlobalGetIGlobal' g
         val l = IML.mGlobal (p, mil)
         val vars = IVD.layout (vars, fn (v, _) => IML.var (p, v))
-        val uses = Vector.layout 
-                     (fn u => IML.use (p, u)) 
+        val uses = Vector.layout
+                     (fn u => IML.use (p, u))
                      (getUses (p, g))
-        val res = 
+        val res =
             L.mayAlign [l,
                         LU.indent (
                         L.mayAlign [L.seq[L.str " <- ", vars],

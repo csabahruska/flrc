@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -31,18 +31,18 @@ sig
   val layout           : Config.t * Mil.t -> Layout.t
 
   (* Layout with specific options *)
-  structure General : 
+  structure General :
   sig
     datatype codeStyle = CoDominator | CoLoops | CoNone
     datatype control = C of {style : codeStyle}
-                            
+
     type 'a layout = Config.t * Mil.symbolInfo * control * 'a -> Layout.t
-                                                                 
+
     val layoutCodeBody   : Mil.codeBody layout
     val layoutCode       : Mil.code layout
     val layoutGlobal     : (Mil.variable * Mil.global) layout
     val layout           : Config.t * control * Mil.t -> Layout.t
-                                               
+
   end (* structure General *)
 end (* signature MIL_EXTENDED_LAYOUT *);
 
@@ -61,24 +61,24 @@ struct
 
   val fail = fn (f, msg) => Fail.fail (modulename, f, msg)
 
-  structure General = 
+  structure General =
   struct
 
     datatype codeStyle = CoDominator | CoLoops | CoNone
     datatype control = C of {style : codeStyle}
-                            
+
     type 'a layout = Config.t * Mil.symbolInfo * control * 'a -> Layout.t
 
-    val layoutByDominator : Mil.symbolInfo -> Config.t * Mil.codeBody -> ML.Helpers.items = 
-     fn si => 
-     fn (config, cb) => 
+    val layoutByDominator : Mil.symbolInfo -> Config.t * Mil.codeBody -> ML.Helpers.items =
+     fn si =>
+     fn (config, cb) =>
         let
-          val rec layoutTree = 
-           fn (Tree.T (lb, children)) => 
-               let 
+          val rec layoutTree =
+           fn (Tree.T (lb, children)) =>
+               let
                  val lcs = layoutForest children
                  val ln = ML.Helpers.IBlock lb
-                 val l = 
+                 val l =
                      if Vector.length children <= 1 then
                        ln :: lcs
                      else
@@ -91,7 +91,7 @@ struct
           val cfg = MilCfg.build (config, si, cb)
           val t   = MilCfg.getLabelBlockDomTree cfg
           val item = layoutTree t
-          val extras = 
+          val extras =
               let
                 val Mil.CB {blocks, ...} = cb
                 val blocks = Tree.foldPre (t, blocks, fn ((l, b), blocks) => LD.remove (blocks, l))
@@ -108,9 +108,9 @@ struct
                                      structure Set  = LS
                                    end)
 
-    val layoutByLoops : Mil.symbolInfo -> Config.t * Mil.codeBody -> ML.Helpers.items = 
+    val layoutByLoops : Mil.symbolInfo -> Config.t * Mil.codeBody -> ML.Helpers.items =
      fn si =>
-     fn (config, cb) => 
+     fn (config, cb) =>
         let
           datatype loopEntry = LeLoop of (Mil.label * loopEntry) list | LeBlock of Mil.block
           val cfg = MilCfg.build (config, si, cb)
@@ -118,54 +118,54 @@ struct
           val li = MilLoop.build (config, si, cfg, t)
           val loops = MilLoop.getLoops li
           val blocks = MilLoop.getBlocksNotInLoops li
-          val entries = 
+          val entries =
               let
-                val doBlocks = 
+                val doBlocks =
                  fn blocks => List.map (LD.toList blocks, fn (l, b) => (l, LeBlock b))
-                val rec doTree = 
-                 fn (Tree.T (MilLoop.L {header, blocks}, children)) => 
+                val rec doTree =
+                 fn (Tree.T (MilLoop.L {header, blocks}, children)) =>
                     (header, LeLoop (doBlocks blocks @ doForest children))
                 and rec doForest =
                  fn ts => Vector.toListMap (ts, doTree)
               in doBlocks blocks @ doForest loops
               end
-          val leq = 
+          val leq =
               let
                 val rpo = MU.CodeBody.listRPO (config, cb)
-                val add = 
+                val add =
                  fn ((l, b), (d, i)) => (LD.insert (d, l, i), i+1)
                 val (map, _) = List.fold (rpo, (LD.empty, 0), add)
-                val leq = fn ((l1, _), (l2, _)) => 
+                val leq = fn ((l1, _), (l2, _)) =>
                             (case (LD.lookup (map, l1), LD.lookup (map, l2))
                               of (SOME i1, SOME i2) => i1 <= i2
                                | _ => fail ("layoutByLoops", "Bad labels"))
               in leq
               end
-          val sort = 
+          val sort =
            fn entries => QuickSort.sortList (entries, leq)
           val rec doEntry =
-           fn (l, entry) => 
-              (case entry 
+           fn (l, entry) =>
+              (case entry
                 of LeBlock b => ML.Helpers.IBlock (l, b)
-                 | LeLoop ls => 
+                 | LeLoop ls =>
                    ML.Helpers.IItems
                    [ ML.Helpers.ILayout (L.seq [L.str "Loop ", Identifier.layoutLabel l]),
                      ML.Helpers.IIndent (doEntries ls)])
-          and rec doEntries = 
+          and rec doEntries =
            fn entries => ML.Helpers.IItems (List.map (sort entries, doEntry))
         in doEntries entries
         end
 
-    val mkHelpers = 
-     fn (control, si, block) => 
+    val mkHelpers =
+     fn (control, si, block) =>
         let
           val C {style} = control
-          val cb = 
+          val cb =
               (case style
                 of CoDominator => SOME (layoutByDominator si)
                  | CoLoops     => SOME (layoutByLoops si)
                  | CoNone      => NONE)
-          val helpers = 
+          val helpers =
               {varBind = NONE,
                block   = block,
                edge    = NONE,
@@ -173,9 +173,9 @@ struct
         in helpers
         end
 
-    val layoutBlockPreds = 
+    val layoutBlockPreds =
      fn cfg =>
-     fn l => 
+     fn l =>
         let
           val n = MilCfg.labelGetNode (cfg, l)
           val preds = MilCfg.pred (cfg, n)
@@ -185,47 +185,47 @@ struct
         in preds
         end
 
-    val mkHelpersFromCodeBody = 
-     fn (config, si, control, cb) => 
+    val mkHelpersFromCodeBody =
+     fn (config, si, control, cb) =>
         let
           val cfg = MilCfg.build (config, si, cb)
           val block = layoutBlockPreds cfg
         in mkHelpers (control, si, SOME block)
         end
 
-    val mkHelpersFromCode = 
+    val mkHelpersFromCode =
      fn (config, si, control, Mil.F {body, ...}) => mkHelpersFromCodeBody (config, si, control, body)
 
     val mkHelpersFromGlobal =
-     fn (config, si, control, (v, g)) => 
+     fn (config, si, control, (v, g)) =>
         (case g
           of Mil.GCode code => mkHelpersFromCode (config, si, control, code)
            | _              => mkHelpers (control, si, NONE))
 
 
-    val layoutCodeBody   : Mil.codeBody layout = 
-     fn (config, si, control, a) => 
+    val layoutCodeBody   : Mil.codeBody layout =
+     fn (config, si, control, a) =>
         let
           val helpers = mkHelpersFromCodeBody (config, si, control, a)
         in ML.General.layoutCodeBody (config, si, helpers, a)
         end
 
-    val layoutCode   : Mil.code layout = 
-     fn (config, si, control, a) => 
+    val layoutCode   : Mil.code layout =
+     fn (config, si, control, a) =>
         let
           val helpers = mkHelpersFromCode (config, si, control, a)
         in ML.General.layoutCode (config, si, helpers, a)
         end
 
-    val layoutGlobal     : (Mil.variable * Mil.global) layout = 
-     fn (config, si, control, a) => 
+    val layoutGlobal     : (Mil.variable * Mil.global) layout =
+     fn (config, si, control, a) =>
         let
           val helpers = mkHelpersFromGlobal (config, si, control, a)
         in ML.General.layoutGlobal (config, si, helpers, a)
         end
 
-    val layout           : Config.t * control * Mil.t -> Layout.t       = 
-     fn (config, control, a) => 
+    val layout           : Config.t * control * Mil.t -> Layout.t       =
+     fn (config, control, a) =>
         let
           val Mil.P {globals, symbolTable, ...} = a
           val si = Identifier.SymbolInfo.SiTable symbolTable
@@ -236,16 +236,16 @@ struct
                 val doBlock = fn (l, _, dict) => LD.insert (dict, l, cfg)
               in LD.fold (blocks, dict, doBlock)
               end
-          val doCode = 
+          val doCode =
            fn (dict, Mil.F {body, ...}) => doCodeBody (dict, body)
-          val doGlobal = 
-           fn (_, global, dict) => 
+          val doGlobal =
+           fn (_, global, dict) =>
               (case global
                 of Mil.GCode code => doCode (dict, code)
                  | _              => dict)
           val dict = VD.fold (globals, LD.empty, doGlobal)
-          val block = 
-           fn l => 
+          val block =
+           fn l =>
               (case LD.lookup (dict, l)
                 of SOME cfg => layoutBlockPreds cfg l
                  | NONE     => L.str "UNKNOWN PREDS")
@@ -268,13 +268,13 @@ struct
       fn str =>
          let
            val style = ref NONE
-           val setStyle = 
+           val setStyle =
             fn st =>
-               (case !style 
+               (case !style
                  of NONE => let val () = style := SOME st in true end
                   | _    => false)
-           val getStyle = 
-            fn () => 
+           val getStyle =
+            fn () =>
                (case !style
                  of NONE    => General.CoNone
                   | SOME st => st)
@@ -297,14 +297,14 @@ struct
   val (control, controlGet) = Config.Control.mk (modulename, describe, parse, dft)
 
   type 'a layout = Config.t * Mil.symbolInfo * 'a -> Layout.t
-    
+
   val wrap : 'a General.layout -> 'a layout =
    fn f => fn (config, si, a) => f (config, si, controlGet config, a)
 
   val layoutCodeBody   : Mil.codeBody layout                = wrap General.layoutCodeBody
   val layoutCode       : Mil.code layout                    = wrap General.layoutCode
   val layoutGlobal     : (Mil.variable * Mil.global) layout = wrap General.layoutGlobal
-  val layout           : Config.t * Mil.t -> Layout.t       = 
+  val layout           : Config.t * Mil.t -> Layout.t       =
    fn (config, p) => General.layout (config, controlGet config, p)
 
    val controls = [control]

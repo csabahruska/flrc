@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -24,7 +24,7 @@ sig
   val doModule : ANormLazy.t -> t
 end
 
-functor ANormLazyToAbsCoreF (structure AbsCore : ABS_CORE) :> ANORM_LAZY_TO_ABS_CORE 
+functor ANormLazyToAbsCoreF (structure AbsCore : ABS_CORE) :> ANORM_LAZY_TO_ABS_CORE
   where type t = AbsCore.t =
 struct
   structure CH = CoreHs
@@ -34,7 +34,7 @@ struct
   structure AL = ANormLazy
   structure AC = AbsCore
   structure Dom = AC.Dom
-  structure ACL = AbsCoreLayoutF (struct structure AbsCore = AC 
+  structure ACL = AbsCoreLayoutF (struct structure AbsCore = AC
                                          type ty = ANormLazy.ty
                                          val layoutTy = ANormLazyLayout.layoutTy
                                   end)
@@ -47,7 +47,7 @@ struct
 
   val fail = fn (f, msg) => Fail.fail (passname, f, msg)
 
-  val resultTy = 
+  val resultTy =
     fn ty =>
       (case TypeRep.repToBase ty
         of AL.Arr (t1, t2, _) => t2
@@ -57,17 +57,17 @@ struct
    fn (im, e, ty) =>
       (case e
         of AL.Var v => AC.Var v
-         | AL.PrimApp (f, vs) => 
+         | AL.PrimApp (f, vs) =>
            let
              val vs = GHCPrimOp.keepStrictArgs (f, vs)
            in
              if List.isEmpty vs then AC.Const Dom.top else AC.GLB vs
            end
-         | AL.ConApp ((c, _), vs) => 
+         | AL.ConApp ((c, _), vs) =>
            (case TypeRep.repToBase ty
              of AL.Sum [(_, _)] => AC.Con (c, vs) (* preserve only sum type with single constructors *)
               | _ => AC.Const Dom.top)
-         | AL.Multi vs => AC.Multi vs  
+         | AL.Multi vs => AC.Multi vs
          | AL.ExtApp (p, cc, f, ty, vs) => if List.isEmpty vs then AC.Const Dom.top else AC.GLB vs
          | AL.App (e, v) => AC.App (doExp (im, e, TypeRep.newRep_ (AL.Arr (IM.variableInfo (im, v), ty, NONE))), v)
          | AL.Lam ((v, vty, strictness), e) => AC.Lam (v, doExp (im, e, resultTy ty)) (* ignore existing strictness for the moment *)
@@ -75,12 +75,12 @@ struct
          | AL.Case (e, (v, vty), ty, alts) =>
           let
             val e = doExp (im, e, vty)
-            fun doAlts () = 
-              case alts 
-                of [AL.Acon (con, vs, e1)] => 
-                  AC.Let (AC.Nonrec (AC.Vdef (AC.VbMulti (List.map (vs, #1), false), e)), 
+            fun doAlts () =
+              case alts
+                of [AL.Acon (con, vs, e1)] =>
+                  AC.Let (AC.Nonrec (AC.Vdef (AC.VbMulti (List.map (vs, #1), false), e)),
                           doExp (im, e1, ty))
-                | _ => 
+                | _ =>
                   let
                     val vs = List.map (alts, fn _ => IM.variableFresh (im, "alt", vty))
                     val getAltE = fn AL.Acon (_, _, e) => e
@@ -90,7 +90,7 @@ struct
                   in
                     case vs
                       of [] => AC.Const Dom.bottom
-                       | _  => List.foldr (es, AC.LUB vs, fn ((e1, v), e) => 
+                       | _  => List.foldr (es, AC.LUB vs, fn ((e1, v), e) =>
                                  AC.Let (AC.Nonrec (AC.Vdef (AC.VbSingle v, doExp (im, e1, ty))), e))
                   end
           in
@@ -100,29 +100,29 @@ struct
          | AL.Cast (e, t1, t2) => doExp (im, e, t1)
       )
 
-  and rec doVDef = 
-   fn (im, vd) => 
+  and rec doVDef =
+   fn (im, vd) =>
       (case vd
         of (AL.Vdef (AL.VbSingle (v, vty, strict), e)) => AC.Vdef (AC.VbSingle v, doExp (im, e, vty))
-         | (AL.Vdef (AL.VbMulti (vtys, effectful), e)) => 
+         | (AL.Vdef (AL.VbMulti (vtys, effectful), e)) =>
           let
             val (vs, ts) = List.unzip vtys
-            val ty = TypeRep.newRep_ (AL.Prim (GHCPrimType.Tuple ts)) 
+            val ty = TypeRep.newRep_ (AL.Prim (GHCPrimType.Tuple ts))
           in
             AC.Vdef (AC.VbMulti (vs, effectful), doExp (im, e, ty))
           end)
 
   and rec doVDefg =
-   fn (im, vdg) => 
+   fn (im, vdg) =>
       (case vdg
         of AL.Rec vdefs => AC.Rec (List.map(vdefs, fn def => doVDef (im, def)))
          | AL.Nonrec vdef => AC.Nonrec (doVDef (im, vdef)))
 
   fun doModule (AL.Module (main, vdefgs), im, tm) =
-      let 
+      let
         val im = IM.fromExistingAll im
         val vdefgs = List.map (vdefgs, fn vdefg => doVDefg (im, vdefg))
-      in 
+      in
         (AC.Module (main, vdefgs), IM.finish im)
       end
 

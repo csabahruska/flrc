@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -21,7 +21,7 @@
 
 signature MIL_BOUND =
 sig
-  type t 
+  type t
   val rhs : Config.t * Mil.rhs -> t
   val instruction : Config.t * Mil.instruction -> t
   val call : Config.t * Mil.call -> t
@@ -60,7 +60,7 @@ struct
       end
 
   structure MA = MilAnalyseF (
-                 struct 
+                 struct
                    type state = state
                    type env = Config.t
                    fun config c = c
@@ -83,7 +83,7 @@ struct
          let
            val state = mkState ()
            val _ = af (state, config, x)
-         in 
+         in
            finish state
          end
 
@@ -92,7 +92,7 @@ struct
          let
            val state = mkState ()
            val _ = af (state, config, x, y)
-         in 
+         in
            finish state
          end
 

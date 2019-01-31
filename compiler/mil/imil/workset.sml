@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature IMIL_WORKSET = 
+signature IMIL_WORKSET =
 sig
   include IMIL_PUBLIC_TYPES
 
@@ -35,11 +35,11 @@ sig
   val clear : ws -> unit
 end
 
-structure IMilWorkSet : 
-sig 
-  include IMIL_WORKSET 
+structure IMilWorkSet :
+sig
+  include IMIL_WORKSET
 end
-  = 
+  =
 struct
   open IMilPublicTypes
 
@@ -55,7 +55,7 @@ struct
    fn () => WS {items  = IID.empty ()}
 
   val addItem =
-   fn (WS {items}, i) => 
+   fn (WS {items}, i) =>
       let
         val id = Item.itemGetId i
         val () = IID.insert (items, id, i)
@@ -78,9 +78,9 @@ struct
         val () = List.foreach (instrs, addInstr)
       in ()
       end
-      
+
   val addAll =
-   fn (ws, p) => 
+   fn (ws, p) =>
       let
         val addGlobal =
          fn (_, g) => addGlobal (ws, g)
@@ -88,7 +88,7 @@ struct
          fn i => addInstr (ws, i)
         val addCode =
          fn (_, c) => addCode (ws, c)
-        val () = 
+        val () =
             IVD.foreach (IMT.tGetIGlobals p,
                          addGlobal)
         val instrs = Enumerate.T.instructions p
@@ -99,7 +99,7 @@ struct
       end
 
   val addUse =
-   fn (ws, use) => 
+   fn (ws, use) =>
       case use
        of IMT.Used => ()
         | IMT.UseInstr i  => addInstr (ws, i)
@@ -116,7 +116,7 @@ struct
    fn (WS {items}) => not (IID.isEmpty items)
 
   val chooseWork =
-   fn (WS {items}) => 
+   fn (WS {items}) =>
       (case IID.choose items
         of SOME (_, w) => SOME w
          | NONE => NONE)

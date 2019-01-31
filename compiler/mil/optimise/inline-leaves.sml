@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -27,7 +27,7 @@
  * } while (callList)
  *)
 
-signature MIL_INLINE_LEAVES = 
+signature MIL_INLINE_LEAVES =
 sig
   val pass : (BothMil.t, BothMil.t) Pass.t
 end
@@ -48,9 +48,9 @@ struct
   structure ACGP = AnnotatedCGPrinter
 
   (* Module controls. *)
-  structure Control = 
-  struct 
-  
+  structure Control =
+  struct
+
     (* Relative Budge Size Control *)
     val defaultSmallLimit = 50
 
@@ -59,24 +59,24 @@ struct
     fun parser (s : string) =
         case Int.fromString (s)
          of NONE => NONE
-          | SOME n => 
+          | SOME n =>
             if (n >= 0) then SOME n else NONE
 
     fun description () =
         L.str (passname ^ " the size limit to consider a function small." ^
-               "Must be a non negative number. Default = " ^ 
+               "Must be a non negative number. Default = " ^
                Int.toString (defaultSmallLimit) ^ ".")
-        
+
     val name = passname ^ ":small-limit"
-               
+
     val (smallLimit, getSmallLimit) =
-        Config.Control.mk (name, description, parser, default) 
-        
+        Config.Control.mk (name, description, parser, default)
+
     val all = [smallLimit]
 
   end
-  
-  structure Debug = 
+
+  structure Debug =
   struct
 
     (* Number of times the module was called. *)
@@ -93,14 +93,14 @@ struct
     val incOptExec    : unit -> unit   = fn () => nOptExec := !nOptExec + 1
     val getOptExec    : unit -> int    = fn () => !nOptExec
     val getOptExecStr : unit -> string = fn () => Int.toString (getOptExec ())
-                        
+
     (* Debug switches *)
     val (prnCallGraphEndD, prnCallGraphEnd) =
-        Config.Debug.mk (passname ^ ":print-call-graph-at-end", 
+        Config.Debug.mk (passname ^ ":print-call-graph-at-end",
                          "print call graph at end of inline leaves")
-        
+
     val (prnCallGraphOptD, prnCallGraphOpt) =
-        Config.Debug.mk (passname ^ ":print-call-graph-after-opt", 
+        Config.Debug.mk (passname ^ ":print-call-graph-after-opt",
                          "print call graph after each iter")
 
     val (debugPassD, debugPass) =
@@ -109,32 +109,32 @@ struct
     val all = [debugPassD, prnCallGraphEndD, prnCallGraphOptD]
 
     (* Print a message if debug mode is on (String version). *)
-    val print : PD.t * string -> unit = 
+    val print : PD.t * string -> unit =
      fn (d, m) =>
         if Config.debug andalso debugPass (PD.getConfig d) then
           print (passname ^ ": " ^ m)
         else ()
-             
+
     (* Print a message if debug mode is on (Layout version). *)
-    val printLayout : PD.t * Layout.t -> unit = 
+    val printLayout : PD.t * Layout.t -> unit =
      fn (d, l) =>
         if Config.debug andalso debugPass (PD.getConfig d) then
           LayoutUtils.printLayout (L.seq [L.str (passname ^ ": "), l])
         else ()
 
-    val printStartMsg : PD.t -> unit = 
+    val printStartMsg : PD.t -> unit =
      fn (d) => print (d, " - Starting the small/leaf functions inlining " ^
                          " (Iteration # " ^ getExecStr () ^ ")...\n")
-                      
-    val printEndMsg : PD.t -> unit = 
+
+    val printEndMsg : PD.t -> unit =
      fn (d) => print (d, " - Finishing the small/leaf functions inlining...\n")
-                         
+
     (* Print the call graph into a file. *)
-    val printCallGraph : IMil.t * PD.t * string * (Config.t -> bool) -> unit = 
+    val printCallGraph : IMil.t * PD.t * string * (Config.t -> bool) -> unit =
      fn (imil, d, label, debugOn) =>
-        if Config.debug andalso debugOn (PD.getConfig d) then 
+        if Config.debug andalso debugOn (PD.getConfig d) then
           ACGP.printCallGraph (d, imil, label)
-        else 
+        else
           ()
 
     (* Print the call graph at the end of the module. *)
@@ -142,8 +142,8 @@ struct
      fn (imil, d) =>
         let
           val label = "Call graph at the end of inline leaves" ^
-                      " - Exec: " ^ getExecStr () ^ 
-                      ". After all optimizing iterations." 
+                      " - Exec: " ^ getExecStr () ^
+                      ". After all optimizing iterations."
         in
           printCallGraph (imil, d, label, prnCallGraphEnd)
         end
@@ -153,29 +153,29 @@ struct
      fn (imil, d) =>
         let
           val label = "Call graph during inline leaves" ^
-                      " - Exec: " ^ getExecStr () ^ 
-                      ". After optimizing iteration " ^ 
+                      " - Exec: " ^ getExecStr () ^
+                      ". After optimizing iteration " ^
                       getOptExecStr ()
         in
           printCallGraph (imil, d, label, prnCallGraphOpt)
         end
 
   end
-           
+
   (* Policy functions and types. *)
   type policyInfo = unit
   fun analyze (imil) = Debug.resetOptExec ()
   type callId = IMil.iInstr
   fun callIdToCall (info : policyInfo, imil : IMil.t, call : callId) = call
-  fun associateCallToCallId (info      : policyInfo, 
-                             imil      : IMil.t, 
+  fun associateCallToCallId (info      : policyInfo,
+                             imil      : IMil.t,
                              cp        : IMil.iInstr,
-                             origBlock : IMil.iBlock, 
+                             origBlock : IMil.iBlock,
                              newBlock  : IMil.iBlock) = ()
   fun rewriteOperation (c: callId) = InlineFunctionCopy
 
   val (noOptimizerF, noOptimizer) =
-      Config.Feature.mk (passname ^ ":no-optimizer", 
+      Config.Feature.mk (passname ^ ":no-optimizer",
                          "do not call the simplifier after inlining")
 
   (* EB: Calling the simplifier at every iteration increases the
@@ -188,7 +188,7 @@ struct
               val w  = WS.new ()
               val () = List.foreach (il, fn i => WS.addInstr (w, i))
             in
-              MilSimplify.simplify (d, imil, w)              
+              MilSimplify.simplify (d, imil, w)
             end
         val () = if ( noOptimizer (PD.getConfig d) ) then ()
                  else simplifyModifiedCode ()
@@ -197,31 +197,31 @@ struct
       end
 
   (* Collect call sites that call function (fname, ifunc). *)
-  fun collectCallSitesForFunc (d     : PD.t, 
-                               fname : Mil.variable, 
+  fun collectCallSitesForFunc (d     : PD.t,
+                               fname : Mil.variable,
                                iFunc : IMil.iFunc,
                                imil  : IMil.t) : callId list =
       let
-        fun getCandidateCall (u : IMil.use) = 
+        fun getCandidateCall (u : IMil.use) =
             Try.try
-              (fn () => 
+              (fn () =>
                   let
                     val i = Try.<- (IMil.Use.toIInstr u)
                     val t = Try.<- (IMil.IInstr.toTransfer i)
-                    fun warn f = 
+                    fun warn f =
                         (* XXX EB: Why is it necessary to check fname? *)
                         if f = fname then
                           ()
-                        else 
-                          let 
+                        else
+                          let
                             val () = Debug.print (d, "Fun code used in call "^
                                                      "but not callee!\n")
-                          in 
+                          in
                             Try.fail ()
                           end
                     val {callee, ...} = Try.<- (MU.Transfer.Dec.tInterProc t)
                     val {call, ...} = Try.<- (MU.InterProc.Dec.ipCall callee)
-                    val () =                     
+                    val () =
                         case call
                          of M.CCode {ptr, ...} => warn ptr
                           | M.CDirectClosure {code, ...} => warn code
@@ -235,13 +235,13 @@ struct
         val () = if not (Vector.isEmpty (calls)) then
                    let
                      (* EB: Debug message. *)
-                     val l = [L.str "Function \"", 
+                     val l = [L.str "Function \"",
                               IMil.Layout.var (imil, fname),
                               L.str "\" selected for inlining in ",
                               Int.layout (Vector.length (calls)),
                               L.str " call sites."]
                      val () = Debug.printLayout (d, L.seq l)
-                   in 
+                   in
                      PD.click (d, "LeafFuncInlined")
                    end
                  else
@@ -255,12 +255,12 @@ struct
 
   (* Check  if the mil transfer  is a call. Do not consider EvalThunk
    * and BulkSpawn calls. *)
-  fun isMilCall (tr: Mil.transfer) : bool = 
+  fun isMilCall (tr: Mil.transfer) : bool =
       case tr
        of Mil.TInterProc {callee = M.IpCall _, ...} => true
         | _               => false
 
-  fun isCallInstr (imil : IMil.t, i : IMil.iInstr) : bool = 
+  fun isCallInstr (imil : IMil.t, i : IMil.iInstr) : bool =
       case IMil.IInstr.toTransfer i
        of NONE    => false
         | SOME tr => isMilCall tr
@@ -275,12 +275,12 @@ struct
   (* Collect only call to small leaf functions. *)
   fun collectCallSites (d : PD.t, (fname : Mil.variable, iFunc : IMil.iFunc),
                         imil : IMil.t) : callId list =
-      if (isSmallFunction (d, imil, iFunc) andalso 
+      if (isSmallFunction (d, imil, iFunc) andalso
           isLeafFunction  (imil, iFunc) andalso
           not (IMil.IFunc.getRecursive (imil, iFunc)))
       then
         collectCallSitesForFunc (d, fname, iFunc, imil)
-      else 
+      else
         nil
 
   (* Select the call sites to inline.
@@ -296,7 +296,7 @@ struct
       in
         calls
       end
-      
+
   structure Inliner = MilInlineRewriterF (
                         type policyInfo           = policyInfo
                         val analyze               = analyze
@@ -306,8 +306,8 @@ struct
                         val rewriteOperation      = rewriteOperation
                         val policy                = policy
                         val optimizer             = SOME optimizer)
-                                  
-  fun program (imil : IMil.t, d : PD.t) : unit = 
+
+  fun program (imil : IMil.t, d : PD.t) : unit =
       let
         val () = Debug.incExec ()
         val () = Debug.printStartMsg (d)

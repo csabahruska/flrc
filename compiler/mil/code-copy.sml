@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -43,19 +43,19 @@ struct
   structure MSTM = MilUtils.SymbolTableManager
   structure MR = MilRename.VarLabel
 
-  fun mkRename (c, stm, vs, ls) = 
+  fun mkRename (c, stm, vs, ls) =
       let
-        val dupVar = 
+        val dupVar =
          fn (v, vd) => VD.insert (vd, v, MSTM.variableClone (stm, v))
         val vd = VS.fold (vs, VD.empty, dupVar)
-        val dupLabel = 
+        val dupLabel =
          fn (l, ld) => LD.insert (ld, l, MSTM.labelFresh (stm))
         val ld = LS.fold (ls, LD.empty, dupLabel)
         val rename = (vd, ld)
       in rename
       end
 
-  fun block (c, stm, (l, b)) = 
+  fun block (c, stm, (l, b)) =
       let
         val (vs, ls) = MBVL.block (c, l, b)
         val r = mkRename (c, stm, vs, ls)
@@ -86,8 +86,8 @@ struct
         val t = MR.transfer (c, r, t)
       in (t, r)
       end
-      
-  fun codeBody (c, stm, cb) = 
+
+  fun codeBody (c, stm, cb) =
       let
         val (vs, ls) = MBVL.codeBody (c, cb)
         val r = mkRename (c, stm, vs, ls)
@@ -95,14 +95,14 @@ struct
       in (cb, r)
       end
 
-  fun code (c, stm, cd) = 
+  fun code (c, stm, cd) =
       let
         val (vs, ls) = MBVL.code (c, cd)
         val r = mkRename (c, stm, vs, ls)
         val cd = MR.code (c, r, cd)
       in (cd, r)
       end
-      
+
   fun program (c, stm, p) =
       let
         val (vs, ls) = MBVL.program (c, p)

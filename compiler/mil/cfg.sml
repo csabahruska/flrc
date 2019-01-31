@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -121,29 +121,29 @@ struct
                           val name = passname
                           val indent = 0)
 
-  fun tSet (C t, config, si, graph, entry, exit, blocks, nodes) = 
+  fun tSet (C t, config, si, graph, entry, exit, blocks, nodes) =
       {config = config t,
        si     = si t,
-       graph  = graph t, 
-       entry  = entry t, 
-       exit   = exit t, 
-       blocks = blocks t, 
+       graph  = graph t,
+       entry  = entry t,
+       exit   = exit t,
+       blocks = blocks t,
        nodes  = nodes t}
 
-  fun tSetGraph (t, graph)   = 
+  fun tSetGraph (t, graph)   =
       tSet (t, #config, #si, fn _ => graph, #entry, #exit, #blocks, #nodes)
-  fun tSetEntry (t, entry)   = 
+  fun tSetEntry (t, entry)   =
       tSet (t, #config, #si, #graph, fn _ => entry, #exit, #blocks, #nodes)
-  fun tSetExit (t, exit)     = 
+  fun tSetExit (t, exit)     =
       tSet (t, #config, #si, #graph, #entry, fn _ => exit, #blocks, #nodes)
-  fun tSetBlocks (t, blocks) = 
+  fun tSetBlocks (t, blocks) =
       tSet (t, #config, #si, #graph, #entry, #exit, fn _ => blocks, #nodes)
-  fun tSetNodes (t, nodes)   = 
+  fun tSetNodes (t, nodes)   =
       tSet (t, #config, #si, #graph, #entry, #exit, #blocks, fn _ => nodes)
 
   val compareNode : node * node -> order = G.Node.compare
 
-  structure NodeDict = DictF (struct 
+  structure NodeDict = DictF (struct
                                 type t = node
                                 val compare = compareNode
                               end)
@@ -154,7 +154,7 @@ struct
         val entry = G.newNode (graph, NONE)
         val exit  = G.newNode (graph, NONE)
         val nodes = LD.map (blocks, fn lb => G.newNode (graph, SOME lb))
-        fun addEdges (l, b) = 
+        fun addEdges (l, b) =
             let
               val node  = valOf (LD.lookup (nodes, l))
               val es = MU.Block.outEdges b
@@ -175,7 +175,7 @@ struct
              of SOME n => n
               | NONE => fail ("build", "Bad entry label")
         val _ = G.addEdge (graph, entry, startNode, ())
-        val cfg = 
+        val cfg =
             C {config = config,
                si     = si,
                graph  = graph,
@@ -216,10 +216,10 @@ struct
               | [n] => n
               | _ =>  fail ("startNode", "Multiple entry Cfg")
       in
-        if G.Node.equal (n, (entry cfg)) orelse 
+        if G.Node.equal (n, (entry cfg)) orelse
            G.Node.equal (n, (exit cfg)) then
           fail ("startNode", "Empty/Weird Cfg")
-        else 
+        else
           n
       end
 
@@ -250,7 +250,7 @@ struct
       let
         val t = buildTree (cfg, startNode cfg)
         fun doOptTree (Tree.T (n, nv)) =
-            case getLabel (cfg, n) 
+            case getLabel (cfg, n)
              of SOME l => SOME (Tree.T (l, Vector.keepAllMap (nv, doOptTree)))
               | NONE => NONE
       in
@@ -270,13 +270,13 @@ struct
         val exitN = exit cfg
         val entryN = exit cfg
         val bbTrees = Vector.map (trees, fn t => treeToBBlockTree (cfg, t))
-        val t = 
+        val t =
             case succ (cfg, n)
-             of [m] => 
-                (case (G.Node.equal (m, entryN), 
-                       G.Node.equal (m, exitN), 
+             of [m] =>
+                (case (G.Node.equal (m, entryN),
+                       G.Node.equal (m, exitN),
                        pred (cfg, m))
-                  of (false, false, [_]) => 
+                  of (false, false, [_]) =>
                      let
                        val Tree.T (ms, children) = Vector.sub (bbTrees, 0)
                        val t = Tree.T (lb::ms, children)
@@ -295,7 +295,7 @@ struct
   structure LabelDominance = DominanceF (type node = label
                                          val compare = I.labelCompare)
 
-  fun layoutNode (cfg, n) = 
+  fun layoutNode (cfg, n) =
       let
         val C {graph, entry, exit, ...} = cfg
       in
@@ -317,8 +317,8 @@ struct
         fun nodeName n = layoutNode (cfg, n)
         val graphTitle =
             case label
-             of SOME l => l 
-              | NONE   => L.str "CFG" 
+             of SOME l => l
+              | NONE   => L.str "CFG"
       in
         G.layoutDot (graph, {graphTitle = graphTitle, nodeName = nodeName})
       end

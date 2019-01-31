@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -21,14 +21,14 @@
 signature ANNOTATED_CG_PRINTER =
 sig
 
-  val printCallGraph  : PassData.t * IMil.t * string -> unit  
+  val printCallGraph  : PassData.t * IMil.t * string -> unit
 
   val printCallGraph' : PassData.t * IMil.t * string *
-                        (Mil.label -> IntInf.t option) option -> unit  
+                        (Mil.label -> IntInf.t option) option -> unit
 
 end
 
-structure AnnotatedCGPrinter :> ANNOTATED_CG_PRINTER = 
+structure AnnotatedCGPrinter :> ANNOTATED_CG_PRINTER =
 struct
 
   (* Aliases *)
@@ -65,10 +65,10 @@ struct
                             else
                               ""
             in
-              hint ^ " (" ^ Int.toString (size) ^ recFlag ^ ")" 
+              hint ^ " (" ^ Int.toString (size) ^ recFlag ^ ")"
             end
 
-        fun getFirstBlk f = 
+        fun getFirstBlk f =
             let
               val iFunc = IMil.IFunc.getIFuncByName (imil, f)
               val blk = IMil.IFunc.getStart (imil, iFunc)
@@ -77,17 +77,17 @@ struct
               lbl
             end
 
-        fun getBBFreq b = case blkFreq 
+        fun getBBFreq b = case blkFreq
                             of NONE => NONE
                              | SOME freq => freq (b)
 
         fun getFunFreq f = getBBFreq (getFirstBlk f)
 
-        fun freqStr f = case getFunFreq f  
+        fun freqStr f = case getFunFreq f
                          of NONE => "[?]"
                           | SOME freq => "[" ^ IntInf.toString (freq) ^ "]"
 
-        fun nodeOptions (f: Mil.variable, escapes: bool) : L.t list = 
+        fun nodeOptions (f: Mil.variable, escapes: bool) : L.t list =
             let
               val iFunc = IMil.IFunc.getIFuncByName (imil, f)
               val funName = nameFunction (f, iFunc)
@@ -107,17 +107,17 @@ struct
             end
 
         fun edgeOptions (call : Mil.label,
-                         srcF : Mil.variable, 
+                         srcF : Mil.variable,
                          tgtF : Mil.variable option,
-                         virtualCall : bool) : L.t list = 
+                         virtualCall : bool) : L.t list =
             let
               val options = [black]
 
               val options = case getBBFreq call
                              of NONE => options
-                              | SOME freq => 
-                                let 
-                                  val label = L.str ("label =\"" ^ 
+                              | SOME freq =>
+                                let
+                                  val label = L.str ("label =\"" ^
                                                      IntInf.toString (freq) ^
                                                      "\"" )
                                 in
@@ -126,7 +126,7 @@ struct
 
               val options = if virtualCall then
                               dotted::options
-                            else 
+                            else
                               options
             in
               options
@@ -137,7 +137,7 @@ struct
         val l = MCG.layoutDot (cg, {edgeOptions = edgeOptions,
                                     nodeOptions = nodeOptions,
                                     graphTitle = graphLabel})
-      in 
+      in
         if !firstPrint then
           (LayoutUtils.writeLayout' (l, filename, false); firstPrint := false)
         else
@@ -145,7 +145,7 @@ struct
       end
 
   val printCallGraph : PassData.t * IMil.t * string -> unit =
-   fn (d, imil, graphLabel) => 
+   fn (d, imil, graphLabel) =>
       printCallGraph' (d, imil, graphLabel, NONE)
 
 end

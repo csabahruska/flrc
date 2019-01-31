@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -57,7 +57,7 @@ sig
     (* Compse two renamins e.g. compose (g, f) = Lookup(g, Lookup(f, x)) *)
     val compose      : t * t -> t
 
-    val layout       : t -> Layout.t    
+    val layout       : t -> Layout.t
 
 end
 
@@ -66,7 +66,7 @@ struct
 
     structure VD = Identifier.VariableDict
 
-    type variable = Identifier.variable   
+    type variable = Identifier.variable
 
     type t = variable VD.t
 
@@ -75,40 +75,40 @@ struct
     fun renamed (map, x) = VD.contains(map, x)
 
     fun renameTo (map, x, y) =
-        if (x = y) then map 
+        if (x = y) then map
         else if renamed(map,x)  then
             Fail.fail ("Rename", "renameTo", "saw repeated variable " ^ Identifier.variableString' x)
         else
             let
                 val map = VD.insert(map,x,y)
-            in 
+            in
                 map
             end
 
     fun use' (map, x) = VD.lookup(map, x)
 
-    fun use (r, x) = 
+    fun use (r, x) =
         case use'(r,x)
          of SOME y => y
           | NONE => x
-   
 
-    fun renameBefore (map, x, y) = 
+
+    fun renameBefore (map, x, y) =
         if (x = y) then map
-        else 
+        else
             let
                 val y = use(map, y)
                 val map = renameTo(map, x, y)
-            in 
+            in
                 map
             end
 
-    fun renameAfter (x, y, map) = 
+    fun renameAfter (x, y, map) =
         if (x = y) then map
-        else 
+        else
           let
             val map = VD.map(map, fn(x', y') => if y' = x then y else y')
-          in 
+          in
             if renamed(map, x) then
               map
             else
@@ -117,7 +117,7 @@ struct
 
     fun toList (renaming) = VD.toList renaming
 
-    fun invert (renaming) = 
+    fun invert (renaming) =
         let
           fun swap (a, b) = (b, a)
          in
@@ -127,7 +127,7 @@ struct
     fun compose (map2, map1) =
         let
           fun go ([], map') = map'
-            | go ((x, y)::rs, map') = 
+            | go ((x, y)::rs, map') =
               case (use' (map2, y))
                of SOME z => go (rs, renameTo(map', x, z))
                 | NONE => go (rs, map')
@@ -136,7 +136,7 @@ struct
 
     fun fromDict d = d
 
-    fun layout map = 
+    fun layout map =
         let
            fun layoutP(v1,v2) = Layout.seq[
                                 Identifier.layoutVariable' v1,

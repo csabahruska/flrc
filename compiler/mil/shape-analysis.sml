@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -36,19 +36,19 @@ sig
 
   val program : env * Mil.t -> t
 end
-                           
+
 functor MilShapeAnalysisF (
   type env
 
   val getConfig : env -> Config.t
   val passname : string
   val indent : int
-) :> MIL_SHAPE_ANALYSIS where type env = env = 
+) :> MIL_SHAPE_ANALYSIS where type env = env =
 
 struct
   val myPassname = passname ^ ":SAnlz"
 
-  val (debugPassD, debugPass) = 
+  val (debugPassD, debugPass) =
     Config.Debug.mk (myPassname, "debug the shape analysis module")
 
   type env = env
@@ -62,7 +62,7 @@ struct
   structure LD = Identifier.LabelDict
   structure VD = Identifier.VariableDict
   structure P = Prims
- 
+
   (*
    * datastructure encoding shape information
    *)
@@ -75,7 +75,7 @@ struct
                  | SScalar (* not a tuple *)
                  | SUnknown (* bottom *)
 
-  type t = shape VD.t 
+  type t = shape VD.t
 
   fun sMin (_, m) = m
   fun sMax (m, _) = m
@@ -83,7 +83,7 @@ struct
   (*
    * debugging functions
    *)
-  fun dbgPrint (env, msg) = 
+  fun dbgPrint (env, msg) =
       if Config.debug andalso (debugPass (getConfig env)) then print msg else ()
 
   (*
@@ -107,14 +107,14 @@ struct
       end
 
   fun layoutShapeInfoP (s) =
-      L.seq [layoutShapeInfo (sMax (s)), 
-             L.str "<", 
+      L.seq [layoutShapeInfo (sMax (s)),
+             L.str "<",
              layoutShapeInfo (sMin (s))]
 
   fun shapeToString (s) = LU.toString (layoutShapeInfoP (s))
 
   fun valueEq (v1, v2) =
-      case (v1, v2) 
+      case (v1, v2)
        of (VSymb var1, VSymb var2) => var1 = var2
         | (VInt i1, VInt i2) => i1 = i2
         | _ => false
@@ -125,17 +125,17 @@ struct
         | (SScalar, SScalar) => true
         | (SUnknown, SUnknown) => true
         | (SDynamic (a), SDynamic (b)) => shpEq (a, b)
-        | (SKnown (l1, a), SKnown (l2, b)) => 
+        | (SKnown (l1, a), SKnown (l2, b)) =>
           (valueEq (l1, l2)) andalso (shpEq (a, b))
         | _ => false
 
   fun lub (s1, s2) =
-      case (s1, s2) 
+      case (s1, s2)
        of (SScalar, SScalar) => SScalar
         | (SDynamic (a), SDynamic (b)) => SDynamic (lub (a, b))
         | (SDynamic (a), SKnown (_, b)) => SDynamic (lub (a, b))
         | (SKnown (_, a), SDynamic (b)) => SDynamic (lub (a, b))
-        | (SKnown (l1, a), SKnown (l2, b)) => 
+        | (SKnown (l1, a), SKnown (l2, b)) =>
           if (valueEq (l1, l2)) then SKnown (l1, lub (a, b))
           else SDynamic (lub (a, b))
         | (other, SUnknown) => other
@@ -145,12 +145,12 @@ struct
   fun lubP ((a1, a2), (b1, b2)) = (lub (a1, b1), lub (a2, b2))
 
   fun glb (s1, s2) =
-      case (s1, s2) 
+      case (s1, s2)
        of (SScalar, SScalar) => SScalar
         | (SDynamic a, SDynamic b) => SDynamic (glb (a, b))
         | (SDynamic a, SKnown (i, b)) => SKnown (i, glb (a, b))
         | (SKnown (i, a), SDynamic b) => SKnown (i, glb (a, b))
-        | (SKnown (i1, a), SKnown (i2, b)) => 
+        | (SKnown (i1, a), SKnown (i2, b)) =>
           if (valueEq (i1, i2)) then SKnown (i1, glb (a, b))
           else SUnknown
         | (other, SAny) => other
@@ -159,8 +159,8 @@ struct
 
   fun glbP ((a1, a2), (b1, b2)) = (glb (a1, b1), glb (a2, b2))
 
-  fun merge ((max1, min1), (max2, min2)) = 
-      let 
+  fun merge ((max1, min1), (max2, min2)) =
+      let
         val max = glb (max1, max2)
         val min = lub (min1, min2)
       in
@@ -196,7 +196,7 @@ struct
 
   (*
    * typ information provides upper bounds for arrays and
-   * for some scalars. 
+   * for some scalars.
    *
    * The pObj and typ option seem somewhat redundant. I
    * guess it's safe to assume the glb of all of them.
@@ -206,13 +206,13 @@ struct
        of M.TIntegral _ => (SScalar, SUnknown)
         | M.TFloat => (SScalar, SUnknown)
         | M.TDouble => (SScalar, SUnknown)
-        | M.TTuple {pok, fixed, array} => 
+        | M.TTuple {pok, fixed, array} =>
           let
             val b = pObjToShape pok
             val arraytyp = SOME (#1 array)
             val tshp = Utils.Option.get (Option.map (arraytyp, typToShape), (SAny, SUnknown))
             val a = (SDynamic (sMax (tshp)), SUnknown)
-          in 
+          in
             merge (a, b)
           end
         | M.TPRef typ => typToShape typ
@@ -220,47 +220,47 @@ struct
         | _ => (SAny, SUnknown)
 
   (*
-   * the type information in the p object descriptor gives 
+   * the type information in the p object descriptor gives
    * an upper approximation of the nested array shape, i.e., we
-   * might be able to compute the nesting depth of an 
+   * might be able to compute the nesting depth of an
    * array up to a certain level. For scalars, the pObj information
    * is definite.
    *)
-  and pObjToShape (pObj) = 
-      case pObj 
+  and pObjToShape (pObj) =
+      case pObj
        of M.PokRat => (SScalar, SUnknown)
         | M.PokFloat => (SScalar, SUnknown)
         | M.PokDouble => (SScalar, SUnknown)
 (*        | M.PokOArray => (SDynamic (sMax (typToShape t)), SUnknown)*)
 (*        | M.PokIArray => (SDynamic (sMax (typToShape t)), SUnknown)*)
 (*        | M.PArrayIdx t => (SDynamic (sMax (typToShape t)), SUnknown)*)
-(*        | M.PtArrayFixed ts => 
+(*        | M.PtArrayFixed ts =>
           (SKnown (VInt (Vector.length ts),
-                   (Vector.fold (ts, 
-                                 SUnknown, 
-                                 fn (a, b) => lub (sMax (typToShape a), b)))), 
+                   (Vector.fold (ts,
+                                 SUnknown,
+                                 fn (a, b) => lub (sMax (typToShape a), b)))),
            SUnknown)
-        | M.PtArrayIdxFixed (_, ts) => 
+        | M.PtArrayIdxFixed (_, ts) =>
           (SKnown (VInt (Vector.length ts),
-                   (Vector.fold (ts, 
+                   (Vector.fold (ts,
                                  SUnknown,
                                  fn (a, b) => lub (sMax (typToShape a), b)))),
            SUnknown)
 *)
         | _ => (SAny, SUnknown)
- 
+
   (*
-   * given the length as an operand and the element shape, returns 
+   * given the length as an operand and the element shape, returns
    * the shape of the resulting array
    *)
   fun nestShape (len : M.simple, nest : shape) =
       case len
-       of M.SConstant (M.CIntegral i) => 
+       of M.SConstant (M.CIntegral i) =>
           SKnown (VInt (Int32.fromIntInf (IntArb.toIntInf i)), nest)
         | M.SVariable v => SKnown (VSymb v, nest)
         | _ => SDynamic nest
 
-  fun nestShapeP (len : M.simple, (s1 : shape, s2 : shape)) = 
+  fun nestShapeP (len : M.simple, (s1 : shape, s2 : shape)) =
       (nestShape (len, s1), nestShape (len, s2))
 
   (*
@@ -271,62 +271,62 @@ struct
        of SDynamic n => n
         | SKnown (_, n) => n
         | _ => def
-       
-  fun denestShapeP ((s1, s2), (d1, d2)) = (denestShape (s1, d1), 
+
+  fun denestShapeP ((s1, s2), (d1, d2)) = (denestShape (s1, d1),
                                            denestShape (s2, d2))
   (*
    * collect information for different MIL components
    *)
   fun deriveGlobal (env, st, g) =
-      case g 
+      case g
        of M.GSimple s => simpleToShape (st, s)
-(*        | M.GTuple (pobj, ops) => 
+(*        | M.GTuple (pobj, ops) =>
           Utils.Option.get (Option.map (pobj, pObjToShape), (SAny, SUnknown))*)
         | M.GRat _ => (SScalar, SScalar)
         (* for all others there is no possible shape value *)
         | _ => (SAny, SAny)
 
-  fun derivePrim (env, st, v, p, ops) = 
+  fun derivePrim (env, st, v, p, ops) =
       case p
        of P.Prim _ => (SScalar, SScalar)
         (* all primitives operate on scalars *)
         | _ => (SAny, SAny)
         (* for the rest I don't know *)
-      
 
-  fun deriveInstr (env, st, dests, rhs) = 
+
+  fun deriveInstr (env, st, dests, rhs) =
       let
         val some = Vector.new1
         val none = Vector.new0 ()
         val dest = fn () => Vector.sub (dests, 0)
-        val res = 
-            case rhs 
+        val res =
+            case rhs
              of M.RhsSimple s => some (dest (), (simpleToShape (st, s)))
-              | M.RhsPrim {prim, createThunks, args} => 
+              | M.RhsPrim {prim, createThunks, args} =>
                 (case Utils.Vector.lookup (dests, 0)
                   of SOME vv => some (vv, derivePrim (env, st, vv, prim, args))
                    | NONE => none)
                   (*        | M.RhsPRat _ => SOME (Option.valOf v, (SScalar, SScalar))*)
               | M.RhsTuple {vtDesc, inits} =>
-                let 
+                let
                   val vtd as M.VTD {pok, fixed, array} = vtDesc
-                                                         
+
                   val () = dbgPrint (env, "TUPLE ->")
                   val pshp = pObjToShape (pok)
                   val () = dbgPrint (env, "PSHP: " ^ shapeToString (pshp))
                   fun simpleToShape' s = simpleToShape (st, s)
-                  val tshp = (Vector.fold (inits, 
+                  val tshp = (Vector.fold (inits,
                                            SUnknown,
                                         fn (a, b) => lub (sMax (simpleToShape' a), b)),
                               SUnknown)
                   val () = dbgPrint (env, "TSHP: " ^ shapeToString (tshp))
-                in 
+                in
                   some (dest (), (merge (pshp, tshp)))
                 end
                   (*        | M.RhsTupleSub tf =>
                               let
                                 val tfs as M.TF {tupDesc, tup, field} = tf
-                                                                        
+
                                 val () = dbgPrint (env, "TUPLESUB ->")
                                 val shp = case dyn
                                            of SOME _ => denestShapeP (st (s), (SAny, SUnknown))
@@ -352,14 +352,14 @@ struct
       end
 
   (* for functions in general I don't know *)
-  fun deriveFunction (env, st, _, p, _, _) = 
+  fun deriveFunction (env, st, _, p, _, _) =
       Vector.fromList (List.duplicate (p, fn () => (SAny, SUnknown)))
 
   fun deriveBlock (_, dict, _, args) =
       Vector.map (args, fn (arg) => simpleToShape (dict, arg))
 
   fun length (si, v) =
-      case VD.lookup (si, v) 
+      case VD.lookup (si, v)
        of SOME (SKnown (l, _)) => SOME l
         | _ => NONE
 
@@ -375,7 +375,7 @@ struct
         | _ => false
 
   fun equalLength (si, v1, v2) =
-      case (length (si, v1), length (si, v2)) 
+      case (length (si, v1), length (si, v2))
        of (SOME (VInt i1), SOME (VInt i2)) => i1 = i2
         | (SOME (VSymb s1), SOME (VSymb s2)) => s1 = s2
         | _ => false
@@ -395,7 +395,7 @@ struct
                               val getConfig = getConfig
                               val passname = myPassname
                               val indent = indent + 2
-                              val deriveConstant = 
+                              val deriveConstant =
                                   fn (_, c) => constantToShape (c)
                               val deriveInstr = deriveInstr
                               val deriveGlobal = deriveGlobal
@@ -404,19 +404,19 @@ struct
                               val emptyInfo = unknownShape
                               val mergeInfo = fn (_, a, b) => merge (a, b)
                               val coerceInfo = fn (_, _, x) => x
-                              val equalInfo = 
+                              val equalInfo =
                                   fn (_, (_, a), (_, b)) => shpEq (a, b)
-                              val layoutInfo = 
+                              val layoutInfo =
                                   fn (_, a) => layoutShapeInfoP (a)
                             )
 
-  fun program (env, m) = 
+  fun program (env, m) =
       let
         val sinfo = ShapeAnalysis.program (env, m)
         val () = dbgPrint (env, L.toString (layout' sinfo))
-      in  
+      in
         VD.map (sinfo, fn (_, (_, min)) => min)
       end
 
   val debugs = [debugPassD] @ ShapeAnalysis.debugs
-end 
+end

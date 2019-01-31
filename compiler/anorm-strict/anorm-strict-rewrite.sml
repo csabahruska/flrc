@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -15,14 +15,14 @@
  * IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *)
 
-structure ANormStrictRewriterClient = 
+structure ANormStrictRewriterClient =
 struct
-  datatype 'a change = Stop | Continue | StopWith of 'a | ContinueWith of 'a 
+  datatype 'a change = Stop | Continue | StopWith of 'a | ContinueWith of 'a
   type ('s, 'e, 'o) rewriter = 's * 'e * 'o -> ('e * 'o) change
   type ('s, 'e, 'o) binder = 's * 'e * 'o  -> ('e * 'o option)
 end;
 
-signature ANORM_STRICT_REWRITER = 
+signature ANORM_STRICT_REWRITER =
 sig
 
   type state
@@ -50,15 +50,15 @@ functor ANormStrictRewriterF (
   val bind     : (state, env, Identifier.variable) ANormStrictRewriterClient.binder
   val variable : (state, env, Identifier.variable) ANormStrictRewriterClient.rewriter
   val exp      : (state, env, ANormStrict.exp) ANormStrictRewriterClient.rewriter
-  val alt      : (state, env, ANormStrict.alt) ANormStrictRewriterClient.rewriter 
-  val vDef     : (state, env, ANormStrict.vDef) ANormStrictRewriterClient.rewriter 
+  val alt      : (state, env, ANormStrict.alt) ANormStrictRewriterClient.rewriter
+  val vDef     : (state, env, ANormStrict.vDef) ANormStrictRewriterClient.rewriter
   val vDefg    : (state, env, ANormStrict.vDefg) ANormStrictRewriterClient.rewriter
-  val module   : (state, env, ANormStrict.module) ANormStrictRewriterClient.rewriter 
-) :> ANORM_STRICT_REWRITER where type state = state and type env = env = 
+  val module   : (state, env, ANormStrict.module) ANormStrictRewriterClient.rewriter
+) :> ANORM_STRICT_REWRITER where type state = state and type env = env =
 struct
 
   structure RC = ANormStrictRewriterClient
-  structure AS = ANormStrict 
+  structure AS = ANormStrict
 
   type state = state
   type env = env
@@ -74,11 +74,11 @@ struct
   val clientModule   = module
   val clientBind     = bind
 
-  val bindVar = 
+  val bindVar =
    fn (state, env, v) =>
       let
-	val (env, vo) = clientBind (state, env, v)
-	val v = Pervasive.Option.getOpt (vo, v)
+        val (env, vo) = clientBind (state, env, v)
+        val v = Pervasive.Option.getOpt (vo, v)
       in (env, v)
       end
 
@@ -93,7 +93,7 @@ struct
   val bindVars2 =
    fn (state, env, vs) =>
       let
-        val doOne = fn ((v, t), env) => 
+        val doOne = fn ((v, t), env) =>
                        let
                          val (env, v) = bindVar (state, env, v)
                        in ((v, t), env)
@@ -106,9 +106,9 @@ struct
    fn (itemhandler, doitem, state, env, item) =>
       case itemhandler (state, env, item)
        of RC.StopWith     (env, i) => i
-	| RC.ContinueWith (env, i) => doitem (state, env, i)
-	| RC.Continue              => doitem (state, env, item)     
-	| RC.Stop                  => item
+        | RC.ContinueWith (env, i) => doitem (state, env, i)
+        | RC.Continue              => doitem (state, env, item)
+        | RC.Stop                  => item
 
   val doVar =
    fn (state, env, v) =>
@@ -118,74 +118,74 @@ struct
         callClientCode (clientVariable, doIt, state, env, v)
       end
 
-  val doVars = 
+  val doVars =
    fn (state, env, vs) => List.map (vs, fn v => doVar (state, env, v))
 
-  val doTy = 
+  val doTy =
    fn (state, env, t) => t
 
   val rec doExp =
-   fn (state, env, e) => 
+   fn (state, env, e) =>
       let
-        val doIt = 
-         fn (state, env, e) => 
+        val doIt =
+         fn (state, env, e) =>
             let
-              val e = 
+              val e =
                   case e
-                   of AS.Return vs => 
+                   of AS.Return vs =>
                       let
                         val vs = doVars (state, env, vs)
                         val e = AS.Return vs
                       in e
                       end
-                    | AS.PrimApp (s, vs) => 
+                    | AS.PrimApp (s, vs) =>
                       let
                         val vs = doVars (state, env, vs)
                         val e = AS.PrimApp (s, vs)
                       in e
                       end
-                    | AS.ExtApp (pname, cc, s, t, vs) => 
+                    | AS.ExtApp (pname, cc, s, t, vs) =>
                       let
                         val vs = doVars (state, env, vs)
                         val e = AS.ExtApp (pname, cc, s, t, vs)
                       in e
                       end
-                    | AS.ConApp (c, vs) => 
+                    | AS.ConApp (c, vs) =>
                       let
                         val vs = doVars (state, env, vs)
                         val e = AS.ConApp (c, vs)
                       in e
                       end
-                    | AS.App (f, vs, effect) => 
+                    | AS.App (f, vs, effect) =>
                       let
                         val f = doVar (state, env, f)
                         val vs = doVars (state, env, vs)
                         val e = AS.App (f, vs, effect)
                       in e
                       end
-                    | AS.Let (defG, e) => 
+                    | AS.Let (defG, e) =>
                       let
                         val (env, defG) = doVDefg (state, env, defG)
                         val e = doExp (state, env, e)
                         val e = AS.Let (defG, e)
                       in e
                       end
-                    | AS.Case (v, alts) => 
+                    | AS.Case (v, alts) =>
                       let
                         val v = doVar (state, env, v)
                         val alts = doAlts (state, env, alts)
                         val e = AS.Case (v, alts)
                       in e
                       end
-                    | AS.Lit (l, t) => 
+                    | AS.Lit (l, t) =>
                       let
                         val e = AS.Lit (l, t)
                       in e
                       end
-                    | AS.Cast cast => 
+                    | AS.Cast cast =>
                       let
                         fun doV v = doVar (state, env, v)
-                        val cast = case cast 
+                        val cast = case cast
                                     of AS.FromAddr v => AS.FromAddr (doV v)
                                      | AS.ToAddr v => AS.ToAddr (doV v)
                                      | AS.Bottom v => AS.Bottom (doV v)
@@ -193,7 +193,7 @@ struct
                         val e = AS.Cast cast
                       in e
                       end
-                    | AS.Eval v => 
+                    | AS.Eval v =>
                       let
                         val v = doVar (state, env, v)
                         val e = AS.Eval v
@@ -210,23 +210,23 @@ struct
     and rec doAlt =
      fn (state, env, alt) =>
         let
-          val doIt = 
-           fn (state, env, alt) => 
+          val doIt =
+           fn (state, env, alt) =>
               let
-                val alt = 
+                val alt =
                     case alt
-                     of AS.Acon (con, binds, e) => 
+                     of AS.Acon (con, binds, e) =>
                         let
                           val (env, binds) = bindVars2 (state, env, binds)
                           val e = doExp (state, env, e)
                         in AS.Acon (con, binds, e)
                         end
-                      | AS.Alit (l, t, e) => 
+                      | AS.Alit (l, t, e) =>
                         let
                           val e = doExp (state, env, e)
                         in AS.Alit (l, t, e)
                         end
-                      | AS.Adefault e => 
+                      | AS.Adefault e =>
                         let
                           val e = doExp (state, env, e)
                         in AS.Adefault e
@@ -237,22 +237,22 @@ struct
         end
 
     (* Variables already bound *)
-    and rec doVDef = 
-     fn (state, env, vd) => 
+    and rec doVDef =
+     fn (state, env, vd) =>
         let
-          val doIt = 
-           fn (state, env, vd) => 
+          val doIt =
+           fn (state, env, vd) =>
               (case vd
-                of AS.Vfun {name, ty, escapes, recursive, fvs, args, body} => 
+                of AS.Vfun {name, ty, escapes, recursive, fvs, args, body} =>
                   let
                     val ty = doTy (state, env, ty)
                     val fvs = doVars (state, env, fvs)
                     val (env, args) = bindVars2 (state, env, args)
                     val body = doExp (state, env, body)
-                  in AS.Vfun {name = name, ty = ty, escapes = escapes, recursive = recursive, 
+                  in AS.Vfun {name = name, ty = ty, escapes = escapes, recursive = recursive,
                               fvs = fvs, args = args, body = body}
                   end
-                | AS.Vthk {name, ty, escapes, recursive, fvs, body} => 
+                | AS.Vthk {name, ty, escapes, recursive, fvs, body} =>
                   let
                     val ty = doTy (state, env, ty)
                     val fvs = doVars (state, env, fvs)
@@ -263,73 +263,73 @@ struct
         in callClientCode (clientVDef, doIt, state, env, vd)
         end
 
-    and rec doVDefg = 
-     fn (state, env, vdg) => 
+    and rec doVDefg =
+     fn (state, env, vdg) =>
         let
-          val bindVDef = 
-           fn (vd, env) => 
+          val bindVDef =
+           fn (vd, env) =>
               (case vd
-                of AS.Vfun {name, ty, fvs, escapes, recursive, args, body} => 
+                of AS.Vfun {name, ty, fvs, escapes, recursive, args, body} =>
                    let
                      val (env, name) = bindVar (state, env, name)
-                   in (AS.Vfun {name = name, ty = ty, escapes = escapes, recursive = recursive, 
+                   in (AS.Vfun {name = name, ty = ty, escapes = escapes, recursive = recursive,
                                 fvs = fvs, args = args, body = body}
                       , env)
                    end
-                 | AS.Vthk {name, ty, escapes, recursive, fvs, body}    => 
+                 | AS.Vthk {name, ty, escapes, recursive, fvs, body}    =>
                    let
                      val (env, name) = bindVar (state, env, name)
-                   in (AS.Vthk {name = name, ty = ty, escapes = escapes, recursive = recursive, 
+                   in (AS.Vthk {name = name, ty = ty, escapes = escapes, recursive = recursive,
                                 fvs = fvs, body = body}
                       , env)
                    end)
 
-          val bindVDefs = 
+          val bindVDefs =
            fn (vds, env) => Utils.List.mapFoldl (vds, env, bindVDef)
-                     
-          val doIt = 
-           fn (state, env, vdg) => 
+
+          val doIt =
+           fn (state, env, vdg) =>
               case vdg
-               of AS.Rec vDefs => 
+               of AS.Rec vDefs =>
                   let
                     val (vDefs, env) = bindVDefs (vDefs, env)
                     val vDefs = List.map (vDefs, fn vDef => doVDef (state, env, vDef))
                   in (env, AS.Rec vDefs)
                   end
-                | AS.Nonrec vDef => 
+                | AS.Nonrec vDef =>
                   let
                     val vDef = doVDef (state, env, vDef)
                     val (vDef, env) = bindVDef (vDef, env)
                   in (env, AS.Nonrec vDef)
                   end
-                |  AS.Vdef (vts, e) => 
+                |  AS.Vdef (vts, e) =>
                    let
                      val (vs, ts) = List.unzip vts
                      val ts = List.map (ts, fn t => doTy (state, env, t))
                      val e = doExp (state, env, e)
-                     val folder = 
-                      fn (v, env) => 
+                     val folder =
+                      fn (v, env) =>
                          let val (env, v) = bindVar (state, env, v) in (v, env) end
                      val (vs, env) = Utils.List.mapFoldl (vs, env, folder)
                      val vts = List.zip (vs, ts)
                    in (env, AS.Vdef (vts, e))
                    end
-        in 
+        in
           case clientVDefg (state, env, vdg)
            of RC.StopWith     (env, i) => (env, i)
-	    | RC.ContinueWith (env, i) => doIt (state, env, i)
-	    | RC.Continue              => doIt (state, env, vdg)
-	    | RC.Stop                  => (env, vdg)
+            | RC.ContinueWith (env, i) => doIt (state, env, i)
+            | RC.Continue              => doIt (state, env, vdg)
+            | RC.Stop                  => (env, vdg)
         end
-        
+
     val doModule =
-     fn (state, env, m) => 
+     fn (state, env, m) =>
         let
-          val doIt = 
-           fn (state, env, AS.Module (v, vdgs))=> 
+          val doIt =
+           fn (state, env, AS.Module (v, vdgs))=>
               let
-                val fold = 
-                 fn (vdg, env) => 
+                val fold =
+                 fn (vdg, env) =>
                     let
                       val (env, vdg) = doVDefg (state, env, vdg)
                     in (vdg, env)
@@ -341,7 +341,7 @@ struct
         in callClientCode (clientModule, doIt, state, env, m)
         end
 
-    val doT = 
+    val doT =
      fn (state, env, (m, im, tm)) => (doModule (state, env, m), im, tm)
 
 

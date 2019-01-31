@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -23,7 +23,7 @@ struct
 
   type fieldSize = fieldSize
 
-  datatype vectorSize = Vs64 | Vs128 | Vs256 | Vs512 | Vs1024 
+  datatype vectorSize = Vs64 | Vs128 | Vs256 | Vs512 | Vs1024
 
   datatype vectorDescriptor = Vd of {vectorSize : vectorSize, elementSize : fieldSize}
 
@@ -35,29 +35,29 @@ struct
 
   datatype divKind = DkT | DkF | DkE
 
-  datatype arithOp = 
+  datatype arithOp =
     (* Unary *)
       AAbs | ANegate | ANegateSat
     (* Binary *)
-    | ADivide | ADiv of divKind | AMax | AMin | AMinus | AMinusSat 
+    | ADivide | ADiv of divKind | AMax | AMin | AMinus | AMinusSat
     | AMod of divKind | APlus | APlusSat | ATimes | ATimesSat
     (* Other *)
     | ADivMod of divKind
 
-  datatype floatOp = 
+  datatype floatOp =
     (* Unary *)
       FaACos | FaASin | FaATan | FaCeil | FaCos | FaExp | FaFloor | FaLn | FaRcp | FaSin | FaSqrt | FaTan | FaTrunc
     | FaTanH | FaCosH | FaSinH
     (* Binary *)
     | FaPow
 
-  datatype bitwiseOp = 
+  datatype bitwiseOp =
     (* Unary *)
       BNot
     (* Binary *)
     | BAnd | BOr | BRotL | BRotR | BShiftL | BShiftR | BXor
 
-  datatype logicOp = 
+  datatype logicOp =
     (* Unary *)
       LNot
     (* Binary *)
@@ -99,22 +99,22 @@ struct
 
   datatype assoc = ALeft | ARight | AAny
 
-  datatype dataOp = 
-      DBroadcast 
+  datatype dataOp =
+      DBroadcast
     | DVector
     | DSub     of int
-    | DPermute of int Vector.t 
-    | DBlend 
+    | DPermute of int Vector.t
+    | DBlend
     | DSplit   (* Split in half *)
     | DConcat  (* Args should have same vectorWidth, result is 2x vectorWidth *)
 
-  datatype vector = 
+  datatype vector =
     (* Pointwise across operands, makes sense for binary or unary ops *)
     (* Boolean indicates takes a mask, when true *)
       ViPointwise   of {descriptor : vectorDescriptor, masked: bool, operator : prim}
-    | ViConvert     of {to :   {descriptor : vectorDescriptor, typ : numericTyp}, 
+    | ViConvert     of {to :   {descriptor : vectorDescriptor, typ : numericTyp},
                         from : {descriptor : vectorDescriptor, typ : numericTyp}}
-    | ViCast        of {to :   {descriptor : vectorDescriptor, typ : numericTyp}, 
+    | ViCast        of {to :   {descriptor : vectorDescriptor, typ : numericTyp},
                         from : {descriptor : vectorDescriptor, typ : numericTyp}}
     | ViCompare     of {descriptor : vectorDescriptor, typ : numericTyp, operator : compareOp}
     (* Reduction across the vector with initial value.  Associativity is specified *)
@@ -149,7 +149,7 @@ struct
     | RtFloatToString
     | RtFloatToStringI
     | RtRatNumerator
-    | RtRatDenominator 
+    | RtRatDenominator
     | RtEqual
     | RtDom
     | RtNub
@@ -162,7 +162,7 @@ struct
     | RtVtuneDetach
     | RtArrayEval
     | RtIntegerHash
-      
+
   datatype t =
       Prim    of prim
     | Runtime of runtime

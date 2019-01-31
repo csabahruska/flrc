@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -40,7 +40,7 @@ sig
   sig
 
     (* A stream has at most one designated entry point to which instructions
-     * may be prepended, and at most one designated exit point to which 
+     * may be prepended, and at most one designated exit point to which
      * instructions may be appended.  If there is no designated entry/exit
      * point, any prepended/appended instructions are dead.  Other side exits
      * and entries are expressible through labels, but are not tracked by the
@@ -66,41 +66,41 @@ sig
 
     (* Label the entry, returning the label of the entry block.  The block
      * entry is closed.
-     * 
-     * label (state, vs, S) == (l1, S') 
+     *
+     * label (state, vs, S) == (l1, S')
      * where S' ==
      * l1 (vs):
      *    S;
      *)
-    val label     : state 
+    val label     : state
                     * env
                     * (Mil.variable Vector.t)
                     * t
                     -> Mil.label * t
-    val labelWith : state 
+    val labelWith : state
                     * env
-                    * Mil.label 
-                    * (Mil.variable Vector.t) 
+                    * Mil.label
+                    * (Mil.variable Vector.t)
                     * t
                     -> t
 
     (* Stream entry is left open
      * enterWith (state, S, parms, F) = (l1, S')
-     * where S' = 
+     * where S' =
      *
      *    F (l1);
      * l1 (parms):
      *    S;
-     * 
+     *
      *)
-    val enterWith  : state 
+    val enterWith  : state
                      * env
-                     * t 
+                     * t
                      * Mil.variable Vector.t  (* Destinations *)
-                     * (state * env * Mil.label -> Mil.transfer) 
+                     * (state * env * Mil.label -> Mil.transfer)
                      -> Mil.label * t
 
-    (* Stream exit is closed.  Any subsequently appended 
+    (* Stream exit is closed.  Any subsequently appended
      * instructions are dead
      *)
     val terminate : state * env * t * Mil.transfer -> t
@@ -108,29 +108,29 @@ sig
     (* Stream exit is closed. *)
     val transfer : state * env * Mil.transfer -> t
 
-    (* Stream exit is left open. 
-     * 
-     * exitWith (state, S, parms, F) = (S', l1) 
-     * where S' = 
+    (* Stream exit is left open.
+     *
+     * exitWith (state, S, parms, F) = (S', l1)
+     * where S' =
      *    S;
      *    F (l1);
      * l1 (parms):
-     * 
+     *
      *)
-    val exitWith  : state 
+    val exitWith  : state
                     * env
-                    * t 
+                    * t
                     * Mil.variable Vector.t  (* Destinations *)
-                    * (state * env * Mil.label -> Mil.transfer) 
+                    * (state * env * Mil.label -> Mil.transfer)
                     -> t * Mil.label
 
     (* Given a loop body and functions enterF and exitF,
-     * generate labels for the entry and exit points, 
+     * generate labels for the entry and exit points,
      * and use enterF and exitF to generate the appropriate
      * transfers.
      * loop (state, enterF, inargs, S, exitF, outargs) = (entry, exit, S')
      * where S' =
-     * 
+     *
      *   enterF (entry, exit)
      * entry (inargs):
      *   S
@@ -148,12 +148,12 @@ sig
                -> Mil.label * Mil.label * t
 
      (*  Given two streams, merge them to a common exit point
-     * (if they exit), and emit the two blocks.  The merge function 
+     * (if they exit), and emit the two blocks.  The merge function
      * is called  with the two labels to produce an entry transfer point.
      *  join (state, vs, (S1, rs1), (S2, rs2), F) ==
      *
      *       F (l1, l2):
-     *    l1: 
+     *    l1:
      *       S1
      *       goto exit (rs1)
      *    l2:
@@ -176,27 +176,27 @@ sig
                * (t * (Mil.operand Vector.t)) list
                * (state * env * Mil.label list -> Mil.transfer)
                -> t * Mil.label list
-           
+
    (* Stream should already be terminated.
     * close (state, S, vs) = (l, f)
-    * where f = 
+    * where f =
     * l (vs):
     *   S;
     *)
     val close : state * env * t * Mil.variable Vector.t
                 -> Mil.label * Fragment.t
 
-   (* Stream will be terminated. 
+   (* Stream will be terminated.
     * closeWith (state, S, vs, t) = (l, f)
-    * where f = 
+    * where f =
     * l (vs):
     *   S;
     *   t;
     *)
-    val closeWith : state 
+    val closeWith : state
                     * env
-                    * t 
-                    * Mil.variable Vector.t 
+                    * t
+                    * Mil.variable Vector.t
                     * Mil.transfer
                     -> Mil.label * Fragment.t
 
@@ -234,7 +234,7 @@ sig
                   -> Stream.t
 
     (* operand should be a signed platform sized machine integer *)
-    val ifZero : state 
+    val ifZero : state
                  * env
                  * Mil.variable Vector.t
                  * Mil.operand
@@ -243,7 +243,7 @@ sig
                  -> Stream.t
 
     (* operand should be a signed platform sized machine integer *)
-    val ifNonZero : state 
+    val ifNonZero : state
                     * env
                     * Mil.variable Vector.t
                     * Mil.operand
@@ -275,7 +275,7 @@ sig
                    -> Stream.t
 
     (* Stream remains open ended *)
-    val evalThunk : state 
+    val evalThunk : state
                     * env
                     * Mil.variable Vector.t (* dest *)
                     * Mil.fieldKind
@@ -290,18 +290,18 @@ sig
     (* Stream is terminated *)
     val cut : state * env * Mil.variable * Mil.operand Vector.t * Mil.cuts
               -> Stream.t
-                     
+
     (* Loop over an unsigned integer.
      * intLoop (state, start, i, limit, incr, S) = S'
-     * where i is an unsigned platformsized machine integer and S' = 
-     * 
-     *    if (limit == start) 
+     * where i is an unsigned platformsized machine integer and S' =
+     *
+     *    if (limit == start)
      *      goto exit ()
-     *    else 
+     *    else
      *      goto loop (start)
      *  loop (i):
      *    S
-     *    ni = i + incr 
+     *    ni = i + incr
      *    if ni < limit
      *       goto loop (ni)
      *    else
@@ -319,17 +319,17 @@ sig
                     -> Stream.t
 
     (* Loop over an unsigned integer with loop carried arguments.
-     * intLoop (state, start, i, limit, incr, inits, inargs, S, ops, outargs) 
+     * intLoop (state, start, i, limit, incr, inits, inargs, S, ops, outargs)
      *   = S'
-     * where is an unsigned platformsized machine integer and S' = 
-     * 
-     *    if (limit == start) 
+     * where is an unsigned platformsized machine integer and S' =
+     *
+     *    if (limit == start)
      *      goto exit (start, inits)
-     *    else 
+     *    else
      *      goto loop (start, inits)
      *  loop (i, vs):
      *    S
-     *    ni = i + incr 
+     *    ni = i + incr
      *    if ni < limit
      *       goto loop (ni, ops)
      *    else
@@ -341,7 +341,7 @@ sig
                      * Mil.operand
                      * Mil.variable
                      * Mil.operand
-                     * Mil.operand 
+                     * Mil.operand
                      * Mil.operand Vector.t
                      * Mil.variable Vector.t
                      * Stream.t
@@ -362,7 +362,7 @@ functor MilStreamF (
 ) :> MIL_STREAM2 where type state = state and type env = env =
 struct
 
-   structure AL = AppendList 
+   structure AL = AppendList
    structure LD = Identifier.LabelDict
    structure M = Mil
    structure MU = MilUtils
@@ -413,7 +413,7 @@ struct
            val f = emitMilBlockI (f, l, b)
          in f
          end
-       
+
      fun emitBlockI (state, env, f, l, is, t) =
          emitPhiBlockI (state, env, f, l, Vector.new0 (), is, t)
 
@@ -434,24 +434,24 @@ struct
 
      structure F = Fragment
 
-     datatype entry = 
+     datatype entry =
               ELabeled of M.label
-            | EBlock of (M.instruction AL.t * M.transfer) 
+            | EBlock of (M.instruction AL.t * M.transfer)
 
-     datatype exit = 
+     datatype exit =
               EClosed
             | EOpen of (M.label * M.variable Vector.t * M.instruction AL.t)
-        
+
      datatype t = BB of M.instruction AL.t
                 | EXT of {head : entry, tail : exit, frag : F.t}
 
-     fun getFrag (state, env, s) = 
-       (case s 
+     fun getFrag (state, env, s) =
+       (case s
          of BB _ => F.empty
           | EXT {frag, ...} => frag)
 
-     fun getTail (state, env, s) = 
-         (case s 
+     fun getTail (state, env, s) =
+         (case s
            of BB l => EOpen (nextBlock state, Vector.new0 (), l)
             | EXT {tail, ...} => tail)
 
@@ -459,10 +459,10 @@ struct
 
      fun seq (state, env, s1, s2) =
          case (s1, s2)
-          of (EXT {head, tail = EClosed, frag = frag1}, 
+          of (EXT {head, tail = EClosed, frag = frag1},
               EXT {head = ELabeled l, tail, frag = frag2}) =>
-             EXT {head = head, 
-                  tail = tail, 
+             EXT {head = head,
+                  tail = tail,
                   frag = F.merge (state, env, frag1, frag2)}
            | (EXT {head, tail = EClosed, frag = frag1}, s2) =>
              let
@@ -470,7 +470,7 @@ struct
                                     "seq: Dropping dead code, tail is closed")
                val f2 = getFrag (state, env, s2)
                val f = F.merge (state, env, frag1, f2)
-               val s = 
+               val s =
                    EXT {head = head, tail = getTail (state, env, s2), frag = f}
              in s
              end
@@ -494,14 +494,14 @@ struct
                val s = EXT {head = head, tail = tail, frag = frag}
              in s
              end
-           | (EXT {head, tail = EOpen (b1, vs, l1), frag}, BB l2) => 
+           | (EXT {head, tail = EOpen (b1, vs, l1), frag}, BB l2) =>
              let
                val tail = EOpen (b1, vs, AL.append (l1, l2))
                val s = EXT {head = head, tail = tail, frag = frag}
              in s
              end
            | (EXT {head = head1, tail = EOpen (b1, vs1, l1), frag = frag1},
-              EXT {head = EBlock (l2, t2), tail = tail2, frag = frag2}) => 
+              EXT {head = EBlock (l2, t2), tail = tail2, frag = frag2}) =>
              let
                val frag = F.merge (state, env, frag1, frag2)
                val l = AL.append (l1, l2)
@@ -513,20 +513,20 @@ struct
      fun seqn (state, env, ss) =
          case ss
           of [] => new (state, env)
-           | (s::ss) => 
+           | (s::ss) =>
              List.fold (ss, s, fn (s, sofar) => seq (state, env, sofar, s))
 
      fun appendl (state, env, s, i) =
          let
            val il = AL.fromList i
-           val res = 
+           val res =
                case s
                 of BB l => BB (AL.append (l, il))
-                 | EXT {head, tail = EOpen (bid, args, l), frag} => 
-                   EXT {head = head, 
+                 | EXT {head, tail = EOpen (bid, args, l), frag} =>
+                   EXT {head = head,
                         tail = EOpen (bid, args, AL.append (l, il)),
                         frag = frag}
-                 | EXT {head, tail = EClosed, frag} => 
+                 | EXT {head, tail = EClosed, frag} =>
                    let
                      val () = Chat.warn2 (env, "append: dropping dead code")
                    in
@@ -537,25 +537,25 @@ struct
 
 
      fun append (state, env, s, i) = appendl (state, env, s, [i])
-       
-     fun prependl (state, env, i, s) = 
+
+     fun prependl (state, env, i, s) =
          let
            val il = AL.fromList i
-           val res = 
+           val res =
                case s
                 of BB l => BB (AL.append (il, l))
-                 | EXT {head = EBlock (l, tfer), tail, frag} => 
-                   EXT {head = EBlock (AL.append (il, l), tfer), 
-                        tail = tail, 
+                 | EXT {head = EBlock (l, tfer), tail, frag} =>
+                   EXT {head = EBlock (AL.append (il, l), tfer),
+                        tail = tail,
                         frag = frag}
-                 | EXT {head = ELabeled l, tail, frag} => 
+                 | EXT {head = ELabeled l, tail, frag} =>
                    let
                      val () = Chat.warn2 (env, "prepend: dropping dead code")
                    in s
                    end
          in res
          end
-             
+
      fun prepend (state, env, i, s) = prependl (state, env, [i], s)
 
      fun instr (state, env, i) = append (state, env, new (state, env), i)
@@ -571,17 +571,17 @@ struct
 
      fun labelWith' (state, env, s, l, vs) =
          case s
-          of BB is => 
+          of BB is =>
              let
                val tail = EOpen (l, vs, is)
                val f = F.empty
              in (tail, f)
              end
-           | EXT {head, tail, frag} => 
+           | EXT {head, tail, frag} =>
              let
-               val (is, t) = 
+               val (is, t) =
                    case head
-                    of ELabeled l => 
+                    of ELabeled l =>
                        (AL.empty, M.TGoto (MU.Target.mkArgs (l, vs)))
                      | EBlock b => b
                val frag = F.emitPhiBlockI (state, env, frag, l, vs, is, t)
@@ -590,7 +590,7 @@ struct
 
      fun label' (state, env, s, vs) =
          case s
-          of BB is => 
+          of BB is =>
              let
                val l = nextBlock state
                val tail = EOpen (l, vs, is)
@@ -598,7 +598,7 @@ struct
              in (l, tail, f)
              end
            | EXT {head = ELabeled l, tail, frag} => (l, tail, frag)
-           | EXT {head = EBlock (is, t), tail, frag} => 
+           | EXT {head = EBlock (is, t), tail, frag} =>
              let
                val l = nextBlock state
                val frag = F.emitPhiBlockI (state, env, frag, l, vs, is, t)
@@ -634,7 +634,7 @@ struct
          case s
           of BB is => (EBlock (is, t), F.empty)
            | EXT {head, tail = EClosed, frag} => (head, frag)
-           | EXT {head, tail = EOpen (bid, args, instrs), frag} => 
+           | EXT {head, tail = EOpen (bid, args, instrs), frag} =>
              let
                val f = F.emitPhiBlockI (state, env, frag, bid, args, instrs, t)
                val ef = (head, f)
@@ -695,7 +695,7 @@ struct
            val mergeId = nextBlock state
            val (ps, rs) = List.unzip prs
            val gotos = List.map (rs, fn arg => M.TGoto (M.T {block = mergeId, arguments = arg}))
-           val (is, fs) = List.unzip (List.map (List.zip (ps, gotos), 
+           val (is, fs) = List.unzip (List.map (List.zip (ps, gotos),
                           fn (p, goto) => closeWith (state, env, p, Vector.new0 (), goto)))
            val frag = F.mergen (state, env, fs)
            val t = mergefn (state, env, is)
@@ -740,7 +740,7 @@ struct
                  val t = M.TCase s
                in t
                end
-         in 
+         in
            join (state, env, dests, p1, p2, doIt)
          end
 
@@ -773,7 +773,7 @@ struct
                  val t = M.TCase s
                in t
                end
-         in 
+         in
            #1 (join (state, env, dests, p1, p2, doIt))
          end
 
@@ -848,7 +848,7 @@ struct
          val c = toConfig env
          val ni = relatedVar (state, i, "next", MU.Uintp.t c, M.VkLocal)
          val nd = namedVar (state, "mild", MU.Bool.t c, M.VkLocal)
-         val body = 
+         val body =
              let
                val inc = MU.Uintp.add (c, M.SVariable i, incr)
                val inc = M.I {dests = Vector.new1 ni, n = 0, rhs = inc}
@@ -862,14 +862,14 @@ struct
          val resv'  = Utils.Vector.cons (M.SVariable ni, resv)
          val nd' = namedVar (state, "mild", MU.Bool.t c, M.VkLocal)
          val preLoop = bindRhs (state, env, nd', MU.Uintp.lt (c, start, limit))
-         fun enterF (state, env, entry, exit) = 
+         fun enterF (state, env, entry, exit) =
              let
                val tt = M.T {block = entry, arguments = inits'}
                val ft = M.T {block = exit,  arguments = inits}
              in
                MU.Bool.ifT (toConfig env, M.SVariable nd', {trueT = tt, falseT = ft})
              end
-         fun exitF (state, env, entry, exit) = 
+         fun exitF (state, env, entry, exit) =
              let
                val tt = M.T {block = entry, arguments = resv'}
                val ft = M.T {block = exit,  arguments = resv}

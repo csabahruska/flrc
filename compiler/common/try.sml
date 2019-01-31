@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -18,15 +18,15 @@
 
 (* This provides a syntactically lightweight analog to the failure (option) monad.
  * We implement failure using a canonical exception, and provide combinators
- * for mediating between failure via exception ('a t) and failure via the option 
- * type ('a option).  
- * The type 'a t is purely for documentation purposes.  It marks combinators 
+ * for mediating between failure via exception ('a t) and failure via the option
+ * type ('a option).
+ * The type 'a t is purely for documentation purposes.  It marks combinators
  * which may raise the failure exception instad of returning a value.
- * 
+ *
  * CODING CONVENTIONS
  * This module provides syntactic convenience, at the expense of not preventing
  * abusive uses.  For clarity of code, it is generally best to avoid propogating
- * failure inter-procedurally.  The intended use is that failure via exception 
+ * failure inter-procedurally.  The intended use is that failure via exception
  * ('a t) is used to escape from a function body, but that failure via the option
  * type is used to communicate between functions.
  * Another way of saying this is that the only user code with type 'a -> 'b t
@@ -34,7 +34,7 @@
  * combinators that wrap up failure via exception as failure via the option type.
  *)
 
-signature TRY = 
+signature TRY =
 sig
   (* 'a t marks combinators or functions which may fail (may throw the failure exception).
    *)
@@ -43,7 +43,7 @@ sig
   (* This combinator takes a function which fails (via exceptions) and reifies the
    * result into the option type by representing failure as NONE, and sucess with
    * result A as SOME A.  All failing user code should be a syntactic argument
-   * to this combinator (or one of it's variants) 
+   * to this combinator (or one of it's variants)
    *)
   val lift : ('a -> 'b t) -> ('a -> 'b option)
   (* try f == lift f () *)
@@ -66,11 +66,11 @@ sig
   val <-   : 'a option -> 'a t
   (* <@ f x == <- (f x) *)
   val <@ : ('a -> 'b option) -> ('a -> 'b t)
-  (* f << g == (<@ f) o (<@ g) 
-   * (f << g) x == <- (f (<- (g x))) 
+  (* f << g == (<@ f) o (<@ g)
+   * (f << g) x == <- (f (<- (g x)))
    *)
   val << : ('b -> 'c option) * ('a -> 'b option) -> ('a -> 'c t)  (* use infix 3 *)
-  (* f <! g == f o (<@ g) 
+  (* f <! g == f o (<@ g)
    * (f <! g) x == (f (<- (g x)))
    *)
   val <! : ('b -> 'c t) * ('a -> 'b option) -> ('a -> 'c t)  (* use infix 3 *)
@@ -88,14 +88,14 @@ sig
 
 end
 
-structure Try :> TRY = 
+structure Try :> TRY =
 struct
 
   type 'a t = 'a
 
   exception Fail
 
-  val lift = 
+  val lift =
    fn f => fn a => (SOME (f a)) handle Fail => NONE
 
   val try =
@@ -105,30 +105,30 @@ struct
       fn f => ignore (try f)
 
   fun || (f, g) =
-   fn arg => 
+   fn arg =>
       (case try (fn () => f arg)
         of NONE => try (fn () => g arg)
          | ans => ans)
 
-  val or = 
-   fn (f1, f2) => 
-   fn args => 
+  val or =
+   fn (f1, f2) =>
+   fn args =>
       (case f1 args
         of NONE => f2 args
          | r => r)
 
   fun orL fs = List.fold (fs, fn _ => NONE, or)
 
-  val oo = 
-   fn (f, g) => 
-   fn x => 
+  val oo =
+   fn (f, g) =>
+   fn x =>
       (case g x
         of SOME y => f y
          | NONE => NONE)
 
-  val om = 
-   fn (f, g) => 
-   fn x => 
+  val om =
+   fn (f, g) =>
+   fn x =>
       (case g x
         of SOME y => SOME (f y)
          | NONE => NONE)
@@ -140,40 +140,40 @@ struct
       List.foldr (fs, g, fn (f, g) => fn () => case try f of NONE => g () | SOME res => res) ()
 
   fun fail () = raise Fail
-  fun <- t = 
+  fun <- t =
       (case t
         of SOME a => a
          | NONE => raise Fail)
-      
-  val <@ = 
-   fn f => 
+
+  val <@ =
+   fn f =>
    fn x => <- (f x)
 
-  val << = 
+  val << =
    fn (f, g) => (<@ f) o (<@ g)
 
   val <! = fn (f, g) => f o <@ g
 
-  val require = 
+  val require =
    fn b => if b then () else fail ()
 
-  structure V = 
+  structure V =
   struct
-    fun sub (v, i) = 
+    fun sub (v, i) =
         let
           val () = require ((i >= 0) andalso (i < Vector.length v))
           val r = Vector.sub (v, i)
         in r
         end
 
-    fun singleton v = 
+    fun singleton v =
         let
           val () = require (Vector.length v = 1)
           val r = Vector.sub (v, 0)
         in r
         end
 
-    fun doubleton v = 
+    fun doubleton v =
         let
           val () = require (Vector.length v = 2)
           val r1 = Vector.sub (v, 0)
@@ -181,7 +181,7 @@ struct
         in (r1, r2)
         end
 
-    fun tripleton v = 
+    fun tripleton v =
         let
           val () = require (Vector.length v = 3)
           val r1 = Vector.sub (v, 0)
@@ -192,7 +192,7 @@ struct
 
     fun lenEq (v, i) = require (Vector.length v = i)
 
-    val isEmpty 
+    val isEmpty
       = fn v => lenEq (v, 0)
   end
 

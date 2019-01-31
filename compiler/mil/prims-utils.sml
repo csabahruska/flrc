@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature PRIMS_LAYOUT = 
+signature PRIMS_LAYOUT =
 sig
   type 'a t = Config.t * 'a -> Layout.t
  val vectorSize       : Mil.Prims.vectorSize t
@@ -39,7 +39,7 @@ sig
   val t                : Mil.Prims.t t
 end (* structure Layout *)
 
-signature PRIMS_PARSE = 
+signature PRIMS_PARSE =
 sig
   structure Parser : PARSER
   type 'a t = 'a Parser.t
@@ -63,7 +63,7 @@ sig
   val t                : Config.t -> Mil.Prims.t t
 end (* signature Parse *)
 
-signature PRIMS_TO_STRING = 
+signature PRIMS_TO_STRING =
 sig
   type 'a t = Config.t * 'a -> string
   val vectorSize       : Mil.Prims.vectorSize t
@@ -87,9 +87,9 @@ sig
   val t                : Mil.Prims.t t
 end (* structure ToString *)
 
-signature PRIMS_DEC = 
-  sig   
-    structure VectorSize : 
+signature PRIMS_DEC =
+  sig
+    structure VectorSize :
     sig
       type t = Mil.Prims.vectorSize
       val vs64   : t -> unit option
@@ -99,27 +99,27 @@ signature PRIMS_DEC =
       val vs1024 : t -> unit option
     end (* structure VectorSize *)
 
-    structure VectorDescriptor : 
+    structure VectorDescriptor :
     sig
       type t = Mil.Prims.vectorDescriptor
       val vd : t -> {vectorSize : Mil.Prims.vectorSize, elementSize : Mil.fieldSize} option
     end (* structure VectorDescriptor *)
-  
-    structure FloatPrecision : 
+
+    structure FloatPrecision :
     sig
       type t = Mil.Prims.floatPrecision
       val fpSingle : t -> unit option
       val fpDouble : t -> unit option
     end (* structure FloatPrecision *)
 
-    structure IntPrecision : 
+    structure IntPrecision :
     sig
       type t = Mil.Prims.intPrecision
       val ipArbitrary : t -> unit option
       val ipFixed     : t -> IntArb.typ option
     end (* structure IntPrecision *)
-  
-    structure NumericTyp : 
+
+    structure NumericTyp :
     sig
       type t = Mil.Prims.numericTyp
       val ntRat     : t -> unit option
@@ -127,7 +127,7 @@ signature PRIMS_DEC =
       val ntFloat   : t -> Mil.Prims.floatPrecision option
     end (* structure NumericTyp *)
 
-    structure DivKind : 
+    structure DivKind :
     sig
       type t = Mil.Prims.divKind
       val dkT : t -> unit option
@@ -135,7 +135,7 @@ signature PRIMS_DEC =
       val dkE : t -> unit option
     end (* structure DivKind *)
 
-    structure ArithOp : 
+    structure ArithOp :
     sig
       type t = Mil.Prims.arithOp
       val aAbs       : t -> unit option
@@ -155,7 +155,7 @@ signature PRIMS_DEC =
       val aDivMod    : t -> Mil.Prims.divKind option
     end (* structure ArithOp *)
 
-    structure FloatOp : 
+    structure FloatOp :
     sig
       type t = Mil.Prims.floatOp
       val faACos  : t -> unit option
@@ -177,7 +177,7 @@ signature PRIMS_DEC =
       val faPow   : t -> unit option
     end (* structure FloatOp *)
 
-    structure BitwiseOp : 
+    structure BitwiseOp :
     sig
       type t = Mil.Prims.bitwiseOp
       val bNot    : t -> unit option
@@ -190,7 +190,7 @@ signature PRIMS_DEC =
       val bXor    : t -> unit option
     end (* structure BitwiseOp *)
 
-    structure LogicOp : 
+    structure LogicOp :
     sig
       type t = Mil.Prims.logicOp
       val lNot : t -> unit option
@@ -200,7 +200,7 @@ signature PRIMS_DEC =
       val lEq  : t -> unit option
     end (* structure LogicOp *)
 
-    structure CompareOp : 
+    structure CompareOp :
     sig
       type t = Mil.Prims.compareOp
       val cEq : t -> unit option
@@ -216,7 +216,7 @@ signature PRIMS_DEC =
       val nGetHash   : t -> unit option
     end (* structure NameOp *)
 
-    structure StringOp : 
+    structure StringOp :
     sig
       type t = Mil.Prims.stringOp
       val sAllocate   : t -> unit option
@@ -227,7 +227,7 @@ signature PRIMS_DEC =
       val sEqual      : t -> unit option
     end (* structure StringOp *)
 
-    structure Prim : 
+    structure Prim :
     sig
       type t = Mil.Prims.prim
       val pNumArith   : t -> {typ : Mil.Prims.numericTyp, operator : Mil.Prims.arithOp} option
@@ -243,7 +243,7 @@ signature PRIMS_DEC =
       val pCondMov    : t -> unit option
     end (* structure Prim *)
 
-    structure Assoc : 
+    structure Assoc :
     sig
       type t = Mil.Prims.assoc
       val aLeft  : t -> unit option
@@ -251,7 +251,7 @@ signature PRIMS_DEC =
       val aAny   : t -> unit option
     end (* structure Assoc *)
 
-    structure DataOp : 
+    structure DataOp :
     sig
       type t = Mil.Prims.dataOp
       val dBroadcast : t -> unit option
@@ -263,23 +263,23 @@ signature PRIMS_DEC =
       val dConcat    : t -> unit option
     end (* structure DataOp *)
 
-    structure Vector : 
+    structure Vector :
     sig
       type t = Mil.Prims.vector
       val viPointwise   : t -> {descriptor : Mil.Prims.vectorDescriptor, masked: bool, operator : Mil.Prims.prim} option
       val viConvert     : t
                           ->
-                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}, 
+                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp},
                            from : {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}} option
       val viCast        : t
                           ->
-                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}, 
+                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp},
                            from : {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}} option
-      val viCompare     : t -> {descriptor : Mil.Prims.vectorDescriptor, 
-                                typ : Mil.Prims.numericTyp, 
+      val viCompare     : t -> {descriptor : Mil.Prims.vectorDescriptor,
+                                typ : Mil.Prims.numericTyp,
                                 operator : Mil.Prims.compareOp} option
-      val viReduction   : t -> {descriptor : Mil.Prims.vectorDescriptor, 
-                                associativity : Mil.Prims.assoc, 
+      val viReduction   : t -> {descriptor : Mil.Prims.vectorDescriptor,
+                                associativity : Mil.Prims.assoc,
                                 operator : Mil.Prims.prim} option
       val viData        : t -> {descriptor : Mil.Prims.vectorDescriptor, operator : Mil.Prims.dataOp} option
       val viMaskData    : t -> {descriptor : Mil.Prims.vectorDescriptor, operator : Mil.Prims.dataOp} option
@@ -287,7 +287,7 @@ signature PRIMS_DEC =
       val viMaskConvert : t -> {to : Mil.Prims.vectorDescriptor, from : Mil.Prims.vectorDescriptor} option
     end (* structure Vector *)
 
-    structure Runtime : 
+    structure Runtime :
     sig
       type t = Mil.Prims.runtime
       val rtFloatMk           : t -> unit option
@@ -328,7 +328,7 @@ signature PRIMS_DEC =
       val rtIntegerHash       : t -> unit option
     end (* structure Runtime *)
 
-    structure T : 
+    structure T :
     sig
       type t = Mil.Prims.t
       val prim    : t -> Mil.Prims.prim option
@@ -339,7 +339,7 @@ signature PRIMS_DEC =
 
 signature PRIMS_UTILS =
 sig
-  structure Compare : 
+  structure Compare :
   sig
     type 'a t = 'a Compare.t
     val vectorSize       : Mil.Prims.vectorSize t
@@ -363,7 +363,7 @@ sig
     val t                : Mil.Prims.t t
   end (* structure Compare *)
 
-  structure Eq : 
+  structure Eq :
   sig
     type 'a t = 'a * 'a -> bool
     val vectorSize       : Mil.Prims.vectorSize t
@@ -387,7 +387,7 @@ sig
     val t                : Mil.Prims.t t
   end (* structure Compare *)
 
-  structure Hash : 
+  structure Hash :
   sig
     type 'a t = 'a -> Word32.word
     val vectorSize       : Mil.Prims.vectorSize t
@@ -431,7 +431,7 @@ sig
 
   structure Dec : PRIMS_DEC
 
-  structure Effects : 
+  structure Effects :
   sig
     type 'a t = 'a -> Effect.set
     val prim             : Mil.Prims.prim t
@@ -475,7 +475,7 @@ sig
     end (* structure Commutatitivity *)
   end (* structure Properties *)
 
-  structure Arity : 
+  structure Arity :
   sig
     datatype arity = ArAtoA | ArAAtoA | ArAAtoB | ArOther of Int.t * Int.t
     type 'a t = 'a -> arity
@@ -498,14 +498,14 @@ sig
 
   structure Layout : PRIMS_LAYOUT
 
-  structure Parse : PRIMS_PARSE 
+  structure Parse : PRIMS_PARSE
                     where type 'a Parser.t = 'a FileParser.t
                       and type Parser.elt = FileParser.elt
                       and type Parser.stream = FileParser.stream
                       and type Parser.pos = FileParser.pos
                       and type Parser.error = FileParser.error
 
-  structure StringParse : PRIMS_PARSE 
+  structure StringParse : PRIMS_PARSE
                     where type 'a Parser.t = 'a StringParser.t
                       and type Parser.elt = StringParser.elt
                       and type Parser.stream = StringParser.stream
@@ -522,10 +522,10 @@ sig
      * check c => SOME s if ill-formed options (s is error message)
      *)
     val check : Config.t -> string option
-    val build : Config.t -> t 
+    val build : Config.t -> t
 
-    (* disabled => unsupported, illegal to use 
-     * emulated => unsupported, will be emulated by smaller vectors or scalars 
+    (* disabled => unsupported, illegal to use
+     * emulated => unsupported, will be emulated by smaller vectors or scalars
      * enabled  => supported, will be emitted directly
      *)
     val disabledSize : t * Mil.Prims.vectorSize -> bool
@@ -540,7 +540,7 @@ sig
     val enabledInstruction  : t * Mil.Prims.vector -> bool
   end (* structure VectorConfig *)
 
-  structure VectorSize : 
+  structure VectorSize :
   sig
     type t = Mil.Prims.vectorSize
     val enumerate : unit -> t List.t
@@ -553,7 +553,7 @@ sig
     val toValueSize : t -> Mil.valueSize
     val halfSize : t -> t option
     val doubleSize : t -> t option
-    structure Dec : 
+    structure Dec :
     sig
       val vs64   : t -> unit option
       val vs128  : t -> unit option
@@ -563,7 +563,7 @@ sig
     end (* structure Dec *)
   end (* structure VectorSize *)
 
-  structure VectorDescriptor : 
+  structure VectorDescriptor :
   sig
     type t = Mil.Prims.vectorDescriptor
     val compare : t Compare.t
@@ -574,39 +574,39 @@ sig
     val elementCount : t -> int
     val vectorSize : t -> VectorSize.t
     val elementSize : t -> Mil.fieldSize
-    structure Dec : 
+    structure Dec :
     sig
       val vd : t -> {vectorSize : Mil.Prims.vectorSize, elementSize : Mil.fieldSize} option
     end (* structure Dec *)
   end (* structure VectorDescriptor *)
 
-  structure FloatPrecision : 
+  structure FloatPrecision :
   sig
     type t = Mil.Prims.floatPrecision
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val fpSingle : t -> unit option
       val fpDouble : t -> unit option
     end (* structure Dec *)
   end (* structure FloatPrecision *)
 
-  structure IntPrecision : 
+  structure IntPrecision :
   sig
     type t = Mil.Prims.intPrecision
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val ipArbitrary : t -> unit option
       val ipFixed     : t -> IntArb.typ option
     end (* structure Dec *)
   end (* structure IntPrecision *)
 
-  structure NumericTyp : 
+  structure NumericTyp :
   sig
     type t = Mil.Prims.numericTyp
     val compare : t Compare.t
@@ -614,7 +614,7 @@ sig
     val hash    : t Hash.t
     val fieldSize : Config.t * t -> Mil.fieldSize
     val signed : t -> bool
-    structure Dec : 
+    structure Dec :
     sig
       val ntRat     : t -> unit option
       val ntInteger : t -> Mil.Prims.intPrecision option
@@ -622,13 +622,13 @@ sig
     end (* structure Dec *)
   end (* structure NumericTyp *)
 
-  structure DivKind : 
+  structure DivKind :
   sig
     type t = Mil.Prims.divKind
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val dkT : t -> unit option
       val dkF : t -> unit option
@@ -636,13 +636,13 @@ sig
     end (* structure Dec *)
   end (* structure DivKind *)
 
-  structure ArithOp : 
+  structure ArithOp :
   sig
     type t = Mil.Prims.arithOp
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val aAbs       : t -> unit option
       val aNegate    : t -> unit option
@@ -662,13 +662,13 @@ sig
     end (* structure Dec *)
   end (* structure ArithOp *)
 
-  structure FloatOp : 
+  structure FloatOp :
   sig
     type t = Mil.Prims.floatOp
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val faACos  : t -> unit option
       val faASin  : t -> unit option
@@ -690,13 +690,13 @@ sig
     end (* structure Dec *)
   end (* structure FloatOp *)
 
-  structure BitwiseOp : 
+  structure BitwiseOp :
   sig
     type t = Mil.Prims.bitwiseOp
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val bNot    : t -> unit option
       val bAnd    : t -> unit option
@@ -709,13 +709,13 @@ sig
     end (* structure Dec *)
   end (* structure BitwiseOp *)
 
-  structure LogicOp : 
+  structure LogicOp :
   sig
     type t = Mil.Prims.logicOp
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val lNot : t -> unit option
       val lAnd : t -> unit option
@@ -725,14 +725,14 @@ sig
     end (* structure Dec *)
   end (* structure LogicOp *)
 
-  structure CompareOp : 
+  structure CompareOp :
   sig
     type t = Mil.Prims.compareOp
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
     val invert  : t -> t (* note that the arguments must flip as well *)
-    structure Dec : 
+    structure Dec :
     sig
       val cEq : t -> unit option
       val cNe : t -> unit option
@@ -754,13 +754,13 @@ sig
     end (* structure Dec *)
   end (* structure NameOp *)
 
-  structure StringOp : 
+  structure StringOp :
   sig
     type t = Mil.Prims.stringOp
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val sAllocate   : t -> unit option
       val sDeallocate : t -> unit option
@@ -771,13 +771,13 @@ sig
     end (* structure Dec *)
   end (* structure StringOp *)
 
-  structure Prim : 
+  structure Prim :
   sig
     type t = Mil.Prims.prim
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val pNumArith   : t -> {typ : Mil.Prims.numericTyp, operator : Mil.Prims.arithOp} option
       val pFloatOp    : t -> {typ : Mil.Prims.floatPrecision, operator : Mil.Prims.floatOp} option
@@ -793,13 +793,13 @@ sig
     end (* structure Dec *)
   end (* structure Prim *)
 
-  structure Assoc : 
+  structure Assoc :
   sig
     type t = Mil.Prims.assoc
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val aLeft  : t -> unit option
       val aRight : t -> unit option
@@ -807,13 +807,13 @@ sig
     end (* structure Dec *)
   end (* structure Assoc *)
 
-  structure DataOp : 
+  structure DataOp :
   sig
     type t = Mil.Prims.dataOp
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val dBroadcast : t -> unit option
       val dVector    : t -> unit option
@@ -825,28 +825,28 @@ sig
     end (* structure Dec *)
   end (* structure DataOp *)
 
-  structure Vector : 
+  structure Vector :
   sig
     type t = Mil.Prims.vector
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val viPointwise   : t -> {descriptor : Mil.Prims.vectorDescriptor, masked: bool, operator : Mil.Prims.prim} option
       val viConvert     : t
                           ->
-                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}, 
+                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp},
                            from : {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}} option
       val viCast        : t
                           ->
-                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}, 
+                          {to :   {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp},
                            from : {descriptor : Mil.Prims.vectorDescriptor, typ : Mil.Prims.numericTyp}} option
-      val viCompare     : t -> {descriptor : Mil.Prims.vectorDescriptor, 
-                                typ : Mil.Prims.numericTyp, 
+      val viCompare     : t -> {descriptor : Mil.Prims.vectorDescriptor,
+                                typ : Mil.Prims.numericTyp,
                                 operator : Mil.Prims.compareOp} option
-      val viReduction   : t -> {descriptor : Mil.Prims.vectorDescriptor, 
-                                associativity : Mil.Prims.assoc, 
+      val viReduction   : t -> {descriptor : Mil.Prims.vectorDescriptor,
+                                associativity : Mil.Prims.assoc,
                                 operator : Mil.Prims.prim} option
       val viData        : t -> {descriptor : Mil.Prims.vectorDescriptor, operator : Mil.Prims.dataOp} option
       val viMaskData    : t -> {descriptor : Mil.Prims.vectorDescriptor, operator : Mil.Prims.dataOp} option
@@ -855,13 +855,13 @@ sig
     end (* structure Dec *)
   end (* structure Vector *)
 
-  structure Runtime : 
+  structure Runtime :
   sig
     type t = Mil.Prims.runtime
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val rtFloatMk           : t -> unit option
       val rtWriteln           : t -> unit option
@@ -902,13 +902,13 @@ sig
     end (* structure Dec *)
   end (* structure Runtime *)
 
-  structure T : 
+  structure T :
   sig
     type t = Mil.Prims.t
     val compare : t Compare.t
     val eq      : t Eq.t
     val hash    : t Hash.t
-    structure Dec : 
+    structure Dec :
     sig
       val prim    : t -> Mil.Prims.prim option
       val runtime : t -> Mil.Prims.runtime option
@@ -919,8 +919,8 @@ sig
 end (* signature PRIMS_UTILS *)
 
 
-signature PRIMS_FIELD_SIZE = 
-sig 
+signature PRIMS_FIELD_SIZE =
+sig
   type t = Mil.Prims.fieldSize
   val ord : t -> int
   val compare : t Compare.t
@@ -940,7 +940,7 @@ end (* signature PRIMS_FIELD_SIZE *)
 
 functor PrimsParserUnParserF(structure ParserUnParser : PARSER_UN_PARSER where type Parser.elt = char
                              structure Dec : PRIMS_DEC
-                             structure FieldSize : PRIMS_FIELD_SIZE) 
+                             structure FieldSize : PRIMS_FIELD_SIZE)
    : sig
        structure Layout : PRIMS_LAYOUT
        structure Parse : PRIMS_PARSE
@@ -964,11 +964,11 @@ struct
 
   val exactly : char -> (Config.t, char, char) PUP.t = fn a => PUP.satisfy (fn a' => a = a')
 
-  val rec exactlyL : char list-> (Config.t, char list, char list) PUP.t = 
+  val rec exactlyL : char list-> (Config.t, char list, char list) PUP.t =
    fn l => (case l
              of [] => PUP.return ([], [])
-              | (a::aa) => 
-                let 
+              | (a::aa) =>
+                let
                   val p1 = exactly a
                   val p2 = exactlyL aa
                   val p = p1 && p2
@@ -976,7 +976,7 @@ struct
                 in p
                 end)
 
-  val charsToString : (Config.t, char List.t, char List.t) PUP.t -> (Config.t, string, string) PUP.t = 
+  val charsToString : (Config.t, char List.t, char List.t) PUP.t -> (Config.t, string, string) PUP.t =
       PUP.iso (String.implode, String.explode)
   val alpha : (Config.t, char, char) PUP.t = PUP.satisfy Char.isAlpha
   val alphaNum : (Config.t, char, char) PUP.t = PUP.satisfy Char.isAlphaNum
@@ -993,7 +993,7 @@ struct
   val atLeastOneAlpha : (Config.t, char List.t, char List.t) PUP.t = PUP.oneOrMore alphaNum
   val atLeastOneAlphaS : (Config.t, string, string) PUP.t = charsToString atLeastOneAlpha
 
-  val whiteDigit : (Config.t, char, char) PUP.t = 
+  val whiteDigit : (Config.t, char, char) PUP.t =
       PUP.satisfy (fn c => c = Char.space orelse c = Char.newline orelse c = #"\t" orelse c = #"\r")
   val whiteSpace : (Config.t, char List.t, char List.t) PUP.t = PUP.zeroOrMore whiteDigit
 
@@ -1005,7 +1005,7 @@ struct
         val p : (Config.t, 'a * unit, 'b * unit) PUP.t = p && eatWhiteSpace
         val p : (Config.t, 'a * unit, 'b) PUP.t = PUP.layout (fn (a, ()) => a) p
         val p : (Config.t, 'a, 'b) PUP.t = PUP.leftIso (fn (a, ()) => a, fn a => (a, ())) p
-      in p 
+      in p
       end
   val eatWhiteSpaceBefore : (Config.t, 'a, 'b) PUP.t -> (Config.t, 'a, 'b) PUP.t =
    fn p =>
@@ -1013,16 +1013,16 @@ struct
         val p : (Config.t, unit * 'a, unit * 'b) PUP.t = eatWhiteSpace && p
         val p : (Config.t, unit * 'a, 'b) PUP.t = PUP.layout (fn ((), a) => a) p
         val p : (Config.t, 'a, 'b) PUP.t = PUP.leftIso (fn ((), a) => a, fn a => ((), a)) p
-      in p 
+      in p
       end
 
-  val eatWhiteSpaceAround : (Config.t, 'a, 'b) PUP.t -> (Config.t, 'a, 'b) PUP.t = 
+  val eatWhiteSpaceAround : (Config.t, 'a, 'b) PUP.t -> (Config.t, 'a, 'b) PUP.t =
    fn p => eatWhiteSpaceAfter (eatWhiteSpaceBefore  p)
 
   type 'a u = (Config.t, 'a, Layout.t) PUP.t
 
-  val -&& : unit u * 'a u -> 'a u = 
-   fn (a, b) => 
+  val -&& : unit u * 'a u -> 'a u =
+   fn (a, b) =>
       let
         val p : (Config.t, unit * 'a, Layout.t * Layout.t) PUP.t = a && b
         val p : (Config.t, 'a, Layout.t * Layout.t) PUP.t = PUP.leftIso (fn ((), a) => a, fn a => ((), a)) p
@@ -1030,8 +1030,8 @@ struct
       in p
       end
 
-  val &&- : 'a u * unit u -> 'a u = 
-   fn (a, b) => 
+  val &&- : 'a u * unit u -> 'a u =
+   fn (a, b) =>
       let
         val p : (Config.t, 'a * unit, Layout.t * Layout.t) PUP.t = a && b
         val p : (Config.t, 'a, Layout.t * Layout.t) PUP.t = PUP.leftIso (fn (a, ()) => a, fn a => (a, ())) p
@@ -1039,8 +1039,8 @@ struct
       in p
       end
 
-  val &&& : 'a u * 'b u -> ('a * 'b) u = 
-   fn (a, b) => 
+  val &&& : 'a u * 'b u -> ('a * 'b) u =
+   fn (a, b) =>
       let
         val p : (Config.t, 'a * 'b, Layout.t * Layout.t) PUP.t = a && b
         val p : ('a * 'b) u = PUP.layout (fn (a, b) => L.seq [a, b]) p
@@ -1052,8 +1052,8 @@ struct
 
   val !! : (Config.t, unit, L.t list) PUP.t = PUP.return ((), [])
 
-  val *:: : unit u * (Config.t, 'a, L.t list) PUP.t -> (Config.t, 'a, L.t list) PUP.t = 
-   fn (a, b) => 
+  val *:: : unit u * (Config.t, 'a, L.t list) PUP.t -> (Config.t, 'a, L.t list) PUP.t =
+   fn (a, b) =>
       let
         val p : (Config.t, unit * 'a, Layout.t * (Layout.t list)) PUP.t = a && b
         val p : (Config.t, 'a, Layout.t * (Layout.t list)) PUP.t = PUP.leftIso (fn ((), a) => a, fn a => ((), a)) p
@@ -1061,8 +1061,8 @@ struct
       in p
       end
 
-  val ::: : 'a u * (Config.t, 'b, L.t list) PUP.t -> (Config.t, 'a * 'b, L.t list) PUP.t = 
-   fn (a, b) => 
+  val ::: : 'a u * (Config.t, 'b, L.t list) PUP.t -> (Config.t, 'a * 'b, L.t list) PUP.t =
+   fn (a, b) =>
       let
         val p : (Config.t, 'a * 'b, Layout.t * Layout.t list) PUP.t = a && b
         val p : (Config.t, 'a * 'b, Layout.t list) PUP.t = PUP.layout (op ::) p
@@ -1073,17 +1073,17 @@ struct
 
   infixr 5 *:: :::
 
-  val identifier : (Config.t, string, string) PUP.t = 
+  val identifier : (Config.t, string, string) PUP.t =
       PUP.isoPartialOut (String.implode o (op::), Utils.List.dec o String.explode) (alpha && alphaNums)
 
-  val fromStrToStr : (string -> 'a option) * ('a -> string) -> (Config.t, string, string) PUP.t -> 'a u = 
+  val fromStrToStr : (string -> 'a option) * ('a -> string) -> (Config.t, string, string) PUP.t -> 'a u =
    fn (from, to) => fn p => PUP.leftIsoPartialIn (from, to) (PUP.layout L.str p)
 
-  (* literal s is a unit parse/unparse pair that parses exactly s to produce (), 
+  (* literal s is a unit parse/unparse pair that parses exactly s to produce (),
    * and lays out () as L.str s.
    * Note: matches prefixes of words
    *)
-  val literal : string -> unit u = 
+  val literal : string -> unit u =
    fn s => PUP.leftIso (fn s => (), fn () => s) (PUP.layout L.str (exactlyS s) )
 
 
@@ -1091,21 +1091,21 @@ struct
    * s to produce (), and layouts out () as s.  A maximal alphabetic string
    * is parsed.
    *)
-  val keyword : string -> unit u = 
-   fn s => 
+  val keyword : string -> unit u =
+   fn s =>
       let
         val p : string u = PUP.layout L.str atLeastOneAlphaS
-        val p : unit u = 
-            PUP.leftIsoPartial (fn s' => if s = s' then SOME () else NONE, 
+        val p : unit u =
+            PUP.leftIsoPartial (fn s' => if s = s' then SOME () else NONE,
                                 fn () => SOME s)  p
       in p
       end
 
-  val base : ('a * ('a -> unit option) * string) -> 'a u = 
-   fn (con, dec, s) => 
+  val base : ('a * ('a -> unit option) * string) -> 'a u =
+   fn (con, dec, s) =>
       let
         val p = PUP.leftIsoPartialOut (fn () => con, dec) (literal s)
-(*        val p = debugParser (p, 
+(*        val p = debugParser (p,
                              (fn {line, col} => print ("Trying to parse "^s^" at line "^Int.toString line^" and col "^Int.toString col^"\n")),
                              (fn _ => print ("Succeed in parsing "^s^"\n")),
                              (fn _ => print ("Failed to parse "^s^"\n")),
@@ -1113,7 +1113,7 @@ struct
       in p
       end
 
-  val unary : ('a -> 'b) * ('b -> 'a option) * 'a u -> 'b u = 
+  val unary : ('a -> 'b) * ('b -> 'a option) * 'a u -> 'b u =
    fn (f1, f2, p) => PUP.leftIsoPartialOut (f1, f2) p
 
   val rec2 : ('a * 'b -> 'rec) * ('rec -> 'a * 'b) -> ('a * 'b) u -> 'rec u = PUP.leftIso
@@ -1124,8 +1124,8 @@ struct
 
   val nonNegativeInt : int u = PUP.layout Int.layout (PUP.isoPartialIn (Int.fromString, Int.toString) atLeastOneDigitS)
 
-  val booleanOptionalLiteral : string -> bool u = 
-   fn s => 
+  val booleanOptionalLiteral : string -> bool u =
+   fn s =>
       let
         val t = PUP.leftIsoPartialOut (fn () => true, fn b => if b then SOME () else NONE) (literal s)
         val f = PUP.leftIsoPartialOut (fn () => false, fn b => if b then NONE else SOME ()) (literal "")
@@ -1133,7 +1133,7 @@ struct
       end
 
   val commaWSSeparatedList : 'a u -> ('a List.t) u =
-   fn p => 
+   fn p =>
       let
         val p = eatWhiteSpaceAround p
         val p' = literal "," -&& p
@@ -1145,19 +1145,19 @@ struct
       in nonEmptyList || emptyList
       end
 
-  val commaWSSeparatedVector : 'a u -> ('a vector) u = 
+  val commaWSSeparatedVector : 'a u -> ('a vector) u =
    fn p => PUP.leftIso (Vector.fromList, Vector.toList) (commaWSSeparatedList p)
 
   val platform : (IntArb.size -> 'a) * string -> 'a u =
-   fn (con, s) => 
+   fn (con, s) =>
       let
-        val f = 
-         fn config => 
+        val f =
+         fn config =>
             PUP.leftIsoPartialOut (fn () => con (Config.targetWordSize' config), fn _ => NONE) (literal s)
       in PUP.withEnv f
       end
 
-  val fieldSize        : Mil.fieldSize u = 
+  val fieldSize        : Mil.fieldSize u =
       let
         val fs8  = base (Mil.Fs8,  FieldSize.Dec.fs8, "8")
         val fs16 = base (Mil.Fs16, FieldSize.Dec.fs16, "16")
@@ -1167,15 +1167,15 @@ struct
       in fs8 || fs16 || fs32 || fs64 || fsp
       end
 
-  val intArbTyp : IntArb.typ u = 
+  val intArbTyp : IntArb.typ u =
       let
-        val signed = 
+        val signed =
             let
               val s = base (IntArb.Signed, IntArb.Signed.Dec.signed, "S")
               val u = base (IntArb.Unsigned, IntArb.Signed.Dec.unsigned, "U")
             in s || u
             end
-        val size = 
+        val size =
             let
               val s8  = base (IntArb.S8, IntArb.Size.Dec.s8, "8")
               val s16 = base (IntArb.S16, IntArb.Size.Dec.s16, "16")
@@ -1189,7 +1189,7 @@ struct
       in p
       end
 
-  val vectorSize       : Mil.Prims.vectorSize u = 
+  val vectorSize       : Mil.Prims.vectorSize u =
       let
         val vs64   = base (Mil.Prims.Vs64,   Dec.VectorSize.vs64,   "64")
         val vs128  = base (Mil.Prims.Vs128,  Dec.VectorSize.vs128,  "128")
@@ -1207,7 +1207,7 @@ struct
       end
 
 
-  val floatPrecision   : Mil.Prims.floatPrecision u = 
+  val floatPrecision   : Mil.Prims.floatPrecision u =
       let
         val fpSingle = base (Mil.Prims.FpSingle, Dec.FloatPrecision.fpSingle, "Float32")
         val fpDouble = base (Mil.Prims.FpDouble, Dec.FloatPrecision.fpDouble, "Float64")
@@ -1215,14 +1215,14 @@ struct
       end
 
 
-  val intPrecision     : Mil.Prims.intPrecision u = 
+  val intPrecision     : Mil.Prims.intPrecision u =
       let
-        val ipArbitrary = base  (Mil.Prims.IpArbitrary, Dec.IntPrecision.ipArbitrary, "Int") 
+        val ipArbitrary = base  (Mil.Prims.IpArbitrary, Dec.IntPrecision.ipArbitrary, "Int")
         val ipFixed     = unary (Mil.Prims.IpFixed, Dec.IntPrecision.ipFixed, intArbTyp)
       in ipArbitrary || ipFixed
       end
 
-  val numericTyp       : Mil.Prims.numericTyp u = 
+  val numericTyp       : Mil.Prims.numericTyp u =
       let
         val ntRat     = base (Mil.Prims.NtRat, Dec.NumericTyp.ntRat, "Rat")
         val ntInteger = unary (Mil.Prims.NtInteger, Dec.NumericTyp.ntInteger, intPrecision)
@@ -1255,9 +1255,9 @@ struct
         val aTimes     = base  (Mil.Prims.ATimes, Dec.ArithOp.aTimes, "Times")
         val aTimesSat  = base  (Mil.Prims.ATimesSat, Dec.ArithOp.aTimesSat, "TimesSat")
         val aDivMod    = unary (Mil.Prims.ADivMod, Dec.ArithOp.aDivMod, literal "DivMod" -&& divKind)
-      in aAbs || aNegate || aNegateSat || aDivide || aDiv 
-              || aMax || aMinusSat || aMinus || aMin || aMod || aPlusSat || aPlus 
-              || aTimesSat || aTimes || aDivMod 
+      in aAbs || aNegate || aNegateSat || aDivide || aDiv
+              || aMax || aMinusSat || aMinus || aMin || aMod || aPlusSat || aPlus
+              || aTimesSat || aTimes || aDivMod
       end
 
   val floatOp          : Mil.Prims.floatOp u =
@@ -1279,19 +1279,19 @@ struct
         val faCosH  = base  (Mil.Prims.FaCosH,  Dec.FloatOp.faCosh,  "CosH")
         val faSinH  = base  (Mil.Prims.FaSinH,  Dec.FloatOp.faSinh,  "SinH")
         val faPow   = base  (Mil.Prims.FaPow,   Dec.FloatOp.faPow,   "Pow")
-        val res = faACos 
-                    || faASin 
+        val res = faACos
+                    || faASin
                     || faATan
-                    || faCeil 
-                    || faCos 
-                    || faExp 
-                    || faFloor 
-                    || faLn 
-                    || faRcp 
-                    || faSin 
-                    || faSqrt 
-                    || faTan 
-                    || faTrunc 
+                    || faCeil
+                    || faCos
+                    || faExp
+                    || faFloor
+                    || faLn
+                    || faRcp
+                    || faSin
+                    || faSqrt
+                    || faTan
+                    || faTrunc
                     || faTanH
                     || faCosH
                     || faSinH
@@ -1368,22 +1368,22 @@ struct
         val pNumArith   = unary (Mil.Prims.PNumArith,  Dec.Prim.pNumArith,  doR (numericTyp &&& arithOp))
         val pFloatOp    = unary (Mil.Prims.PFloatOp,  Dec.Prim.pFloatOp,  doR (floatPrecision &&& floatOp))
         val pNumCompare = unary (Mil.Prims.PNumCompare, Dec.Prim.pNumCompare, doR (numericTyp &&& compareOp))
-        val pNumConvert = 
+        val pNumConvert =
             let
               val r2t = fn {from, to} => (from, to)
               val t2r = fn (from ,to) => {to = to, from = from}
               val doR = fn p => rec2 (t2r, r2t) p
               val r = doR (numericTyp &&- literal "To" &&& numericTyp)
             in unary (Mil.Prims.PNumConvert,  Dec.Prim.pNumConvert, r)
-            end  
-        val pNumCast = 
+            end
+        val pNumCast =
             let
               val r2t = fn {from, to} => (from, to)
               val t2r = fn (from ,to) => {to = to, from = from}
               val doR = fn p => rec2 (t2r, r2t) p
               val r = doR (numericTyp &&- literal "Cast" &&& numericTyp)
             in unary (Mil.Prims.PNumCast,  Dec.Prim.pNumCast, r)
-            end  
+            end
         val pBitwise    = unary (Mil.Prims.PBitwise,  Dec.Prim.pBitwise,  doR (intPrecision &&& bitwiseOp))
         val pBoolean    = unary (Mil.Prims.PBoolean,  Dec.Prim.pBoolean,  logicOp)
         val pName       = unary (Mil.Prims.PName,     Dec.Prim.pName,     literal "Name" -&& nameOp)
@@ -1398,7 +1398,7 @@ struct
       end
 
 
-  val assoc            : Mil.Prims.assoc u = 
+  val assoc            : Mil.Prims.assoc u =
       let
         val aLeft  = base  (Mil.Prims.ALeft,  Dec.Assoc.aLeft,  "L")
         val aRight = base  (Mil.Prims.ARight,  Dec.Assoc.aRight,  "R")
@@ -1413,7 +1413,7 @@ struct
         val dBroadcast = base  (Mil.Prims.DBroadcast,  Dec.DataOp.dBroadcast,  "Broadcast")
         val dVector    = base  (Mil.Prims.DVector,  Dec.DataOp.dVector,  "Vector")
         val dSub       = unary (Mil.Prims.DSub,  Dec.DataOp.dSub,  nonNegativeInt)
-        val dPermute   = 
+        val dPermute   =
             let
               val doVector = literal "<" -&& commaWSSeparatedVector nonNegativeInt &&- literal ">"
             in unary (Mil.Prims.DPermute,  Dec.DataOp.dPermute,  doVector)
@@ -1430,43 +1430,43 @@ struct
       let
         val angle : 'a u -> 'a u = fn p => literal "<" -&& p &&- literal ">"
         val square : 'a u -> 'a u = fn p => literal "[" -&& p &&- literal "]"
-        val viPointwise   = 
+        val viPointwise   =
             let
               val r2t = fn {descriptor, masked, operator} => ((masked, descriptor), operator)
-              val t2r = fn ((masked, descriptor), operator) => 
+              val t2r = fn ((masked, descriptor), operator) =>
                            {descriptor = descriptor, masked = masked, operator = operator}
               val masked = booleanOptionalLiteral "?"
               val p = literal "PointWise" -&& masked &&& square vectorDescriptor &&& angle prim
             in unary (Mil.Prims.ViPointwise, Dec.Vector.viPointwise, rec2 (t2r, r2t) p)
             end
-        val viConvert     = 
-            let 
-              val r2t = 
+        val viConvert     =
+            let
+              val r2t =
                fn {from = {descriptor = d1, typ = t1}, to = {descriptor = d2, typ = t2}} => ((d1, d2), (t1, t2))
-              val t2r = 
+              val t2r =
                fn ((d1, d2), (t1, t2)) => {from = {descriptor = d1, typ = t1}, to = {descriptor = d2, typ = t2}}
-              val p = literal "Convert" -&& square vectorDescriptor &&& square vectorDescriptor &&& 
+              val p = literal "Convert" -&& square vectorDescriptor &&& square vectorDescriptor &&&
                               angle (numericTyp &&- literal "To" &&& numericTyp)
             in unary (Mil.Prims.ViConvert, Dec.Vector.viConvert, rec3 (t2r, r2t) p)
             end
-        val viCast        = 
-            let 
-              val r2t = 
+        val viCast        =
+            let
+              val r2t =
                fn {from = {descriptor = d1, typ = t1}, to = {descriptor = d2, typ = t2}} => ((d1, d2), (t1, t2))
-              val t2r = 
+              val t2r =
                fn ((d1, d2), (t1, t2)) => {from = {descriptor = d1, typ = t1}, to = {descriptor = d2, typ = t2}}
-              val p = literal "Cast" -&& square vectorDescriptor &&& square vectorDescriptor &&& 
+              val p = literal "Cast" -&& square vectorDescriptor &&& square vectorDescriptor &&&
                               angle (numericTyp &&- literal "To" &&& numericTyp)
             in unary (Mil.Prims.ViCast, Dec.Vector.viCast, rec3 (t2r, r2t) p)
             end
-        val viCompare     = 
+        val viCompare     =
             let
               val r2t = fn {descriptor = d1, typ = t1, operator = op1} => (d1, (t1, op1))
-              val t2r = fn (d1, (t1, op1)) => {descriptor = d1, typ = t1, operator = op1} 
+              val t2r = fn (d1, (t1, op1)) => {descriptor = d1, typ = t1, operator = op1}
               val p = literal "Compare" -&& square vectorDescriptor &&& angle (numericTyp &&& compareOp)
             in unary (Mil.Prims.ViCompare, Dec.Vector.viCompare, rec2 (t2r, r2t) p)
             end
-        val viReduction   = 
+        val viReduction   =
             let
               val r2t = fn {descriptor = d1, associativity = a1, operator = p1} => ((a1, d1), p1)
               val t2r = fn ((a1, d1), p1) => {descriptor = d1, associativity = a1, operator = p1}
@@ -1474,33 +1474,33 @@ struct
             in unary (Mil.Prims.ViReduction, Dec.Vector.viReduction, rec2 (t2r, r2t) p)
             end
 
-        val mk = 
-         fn (name, operator) => 
+        val mk =
+         fn (name, operator) =>
             let
               val r2t = fn {descriptor = d1, operator = op1} => (d1, op1)
-              val t2r = fn (d1, op1) => {descriptor = d1, operator = op1} 
+              val t2r = fn (d1, op1) => {descriptor = d1, operator = op1}
               val p = literal name -&& square vectorDescriptor &&& angle operator
             in rec2 (t2r, r2t) p
             end
         val viData        = unary (Mil.Prims.ViData, Dec.Vector.viData, mk ("Data", dataOp))
         val viMaskData    = unary (Mil.Prims.ViMaskData, Dec.Vector.viMaskData, mk ("MaskData", dataOp))
         val viMaskBoolean = unary (Mil.Prims.ViMaskBoolean, Dec.Vector.viMaskBoolean, mk ("MaskBoolean", logicOp))
-        val viMaskConvert = 
-            let 
+        val viMaskConvert =
+            let
               val r2t = fn {from = f1, to = t1} => (f1, t1)
-              val t2r = fn (f1, t1) => {from = f1, to = t1} 
+              val t2r = fn (f1, t1) => {from = f1, to = t1}
               val p = literal "MaskConvert" -&& square vectorDescriptor &&& square vectorDescriptor &&- literal "<>"
             in unary (Mil.Prims.ViMaskConvert, Dec.Vector.viMaskConvert, rec2 (t2r, r2t) p)
             end
 
-        val res = viPointwise 
-                    || viConvert 
+        val res = viPointwise
+                    || viConvert
                     || viCast
-                    || viCompare 
-                    || viReduction 
-                    || viData 
-                    || viMaskData 
-                    || viMaskBoolean 
+                    || viCompare
+                    || viReduction
+                    || viData
+                    || viMaskData
+                    || viMaskBoolean
                     || viMaskConvert
       in
         res
@@ -1544,47 +1544,47 @@ struct
         val rtVtuneDetach       = base  (Mil.Prims.RtVtuneDetach,  Dec.Runtime.rtVtuneDetach,  "VTuneDetach")
         val rtArrayEval         = base  (Mil.Prims.RtArrayEval,  Dec.Runtime.rtArrayEval,  "ArrayEval")
         val rtIntegerHash       = base  (Mil.Prims.RtIntegerHash, Dec.Runtime.rtIntegerHash, "IntHash")
-        val res = rtFloatMk 
-                    || rtWriteln 
-                    || rtReadln 
-                    || rtAssert 
-                    || rtError 
-                    || rtDebug 
-                    || rtOpenOut 
-                    || rtGetStdout 
-                    || rtOutputByte 
-                    || rtCloseOut 
-                    || rtOpenIn 
-                    || rtGetStdin 
-                    || rtInputByte 
-                    || rtInputString 
-                    || rtInputAll 
-                    || rtIsEOF 
-                    || rtCloseIn 
-                    || rtCommandLine 
-                    || rtStringToNat 
-                    || rtStringToFloat 
-                    || rtFloatToString 
-                    || rtFloatToStringI 
-                    || rtRatNumerator 
-                    || rtRatDenominator 
-                    || rtEqual 
-                    || rtDom 
-                    || rtNub 
-                    || rtRatToUIntpChecked 
-                    || rtRatToString 
-                    || rtStringToRat 
-                    || rtResetTimer 
-                    || rtGetTimer 
-                    || rtVtuneAttach 
-                    || rtVtuneDetach 
+        val res = rtFloatMk
+                    || rtWriteln
+                    || rtReadln
+                    || rtAssert
+                    || rtError
+                    || rtDebug
+                    || rtOpenOut
+                    || rtGetStdout
+                    || rtOutputByte
+                    || rtCloseOut
+                    || rtOpenIn
+                    || rtGetStdin
+                    || rtInputByte
+                    || rtInputString
+                    || rtInputAll
+                    || rtIsEOF
+                    || rtCloseIn
+                    || rtCommandLine
+                    || rtStringToNat
+                    || rtStringToFloat
+                    || rtFloatToString
+                    || rtFloatToStringI
+                    || rtRatNumerator
+                    || rtRatDenominator
+                    || rtEqual
+                    || rtDom
+                    || rtNub
+                    || rtRatToUIntpChecked
+                    || rtRatToString
+                    || rtStringToRat
+                    || rtResetTimer
+                    || rtGetTimer
+                    || rtVtuneAttach
+                    || rtVtuneDetach
                     || rtArrayEval
                     || rtIntegerHash
       in
         res
       end
 
-  val t                : Mil.Prims.t u = 
+  val t                : Mil.Prims.t u =
       let
         val prim    = unary (Mil.Prims.Prim,  Dec.T.prim,  prim)
         val runtime = unary (Mil.Prims.Runtime,  Dec.T.runtime,  literal "Rt" -&& runtime)
@@ -1594,12 +1594,12 @@ struct
         res
       end
 
-  structure Layout = 
+  structure Layout =
   struct
     type 'a t = Config.t * 'a -> Layout.t
-    val lift = 
-     fn f => 
-     fn (config, a) => 
+    val lift =
+     fn f =>
+     fn (config, a) =>
         let
           val {parse, layout} = ParserUnParser.get f config
           val g = UnParser.run layout
@@ -1628,10 +1628,10 @@ struct
     val t                : Mil.Prims.t t                = lift t
   end (* structure Layout *)
 
-  structure ToString = 
+  structure ToString =
   struct
     type 'a t = Config.t * 'a -> string
-    val lift = 
+    val lift =
      fn f => fn (config, a) => L.toString (f (config, a))
     val vectorSize       : Mil.Prims.vectorSize t       = lift Layout.vectorSize
     val vectorDescriptor : Mil.Prims.vectorDescriptor t = lift Layout.vectorDescriptor
@@ -1654,7 +1654,7 @@ struct
     val t                : Mil.Prims.t t                = lift Layout.t
   end (* structure ToString *)
 
-  structure Parse = 
+  structure Parse =
   struct
     type 'a t = 'a Parser.t
     structure PUP = ParserUnParser
@@ -1690,9 +1690,9 @@ struct
 
   structure IFO = IntFiniteOrdinal
 
-  structure Dec = 
+  structure Dec =
   struct
-    structure VectorSize = 
+    structure VectorSize =
     struct
       type t = Prims.vectorSize
       val vs64   = fn ve => (case ve of Prims.Vs64 => SOME () | _ => NONE)
@@ -1702,27 +1702,27 @@ struct
       val vs1024 = fn ve => (case ve of Prims.Vs1024 => SOME () | _ => NONE)
     end (* structure VectorSize *)
 
-    structure VectorDescriptor = 
+    structure VectorDescriptor =
     struct
       type t = Prims.vectorDescriptor
       val vd = fn ve => (case ve of Prims.Vd r => SOME r)
     end (* structure VectorDescriptor *)
 
-    structure FloatPrecision = 
+    structure FloatPrecision =
     struct
       type t = Prims.floatPrecision
       val fpSingle = fn fl => (case fl of Prims.FpSingle => SOME () | _ => NONE)
       val fpDouble = fn fl => (case fl of Prims.FpDouble => SOME () | _ => NONE)
     end (* structure FloatPrecision *)
 
-    structure IntPrecision = 
+    structure IntPrecision =
     struct
       type t = Prims.intPrecision
       val ipArbitrary = fn ip => (case ip of Prims.IpArbitrary => SOME () | _ => NONE)
       val ipFixed     = fn ip => (case ip of Prims.IpFixed r => SOME r | _ => NONE)
     end (* structure IntPrecision *)
 
-    structure NumericTyp = 
+    structure NumericTyp =
     struct
       type t = Prims.numericTyp
       val ntRat     = fn nu => (case nu of Prims.NtRat => SOME () | _ => NONE)
@@ -1730,7 +1730,7 @@ struct
       val ntFloat   = fn nu => (case nu of Prims.NtFloat r => SOME r | _ => NONE)
     end (* structure NumericTyp *)
 
-    structure DivKind = 
+    structure DivKind =
     struct
       type t = Prims.divKind
       val dkT = fn di => (case di of Prims.DkT => SOME () | _ => NONE)
@@ -1738,7 +1738,7 @@ struct
       val dkE = fn di => (case di of Prims.DkE => SOME () | _ => NONE)
     end (* structure DivKind *)
 
-    structure ArithOp = 
+    structure ArithOp =
     struct
       type t = Prims.arithOp
       val aAbs       = fn ar => (case ar of Prims.AAbs => SOME () | _ => NONE)
@@ -1758,7 +1758,7 @@ struct
       val aDivMod    = fn ar => (case ar of Prims.ADivMod r => SOME r | _ => NONE)
     end (* structure ArithOp *)
 
-    structure FloatOp = 
+    structure FloatOp =
     struct
       type t = Prims.floatOp
       val faASin  = fn fl => (case fl of Prims.FaASin => SOME () | _ => NONE)
@@ -1780,7 +1780,7 @@ struct
       val faPow   = fn fl => (case fl of Prims.FaPow => SOME () | _ => NONE)
     end (* structure FloatOp *)
 
-    structure BitwiseOp = 
+    structure BitwiseOp =
     struct
       type t = Prims.bitwiseOp
       val bNot    = fn bi => (case bi of Prims.BNot => SOME () | _ => NONE)
@@ -1793,7 +1793,7 @@ struct
       val bXor    = fn bi => (case bi of Prims.BXor => SOME () | _ => NONE)
     end (* structure BitwiseOp *)
 
-    structure LogicOp = 
+    structure LogicOp =
     struct
       type t = Prims.logicOp
       val lNot = fn lo => (case lo of Prims.LNot => SOME () | _ => NONE)
@@ -1803,7 +1803,7 @@ struct
       val lEq  = fn lo => (case lo of Prims.LEq => SOME () | _ => NONE)
     end (* structure LogicOp *)
 
-    structure CompareOp = 
+    structure CompareOp =
     struct
       type t = Prims.compareOp
       val cEq = fn co => (case co of Prims.CEq => SOME () | _ => NONE)
@@ -1819,7 +1819,7 @@ struct
       val nGetHash   = fn st => (case st of Prims.NGetHash   => SOME () | _ => NONE)
     end (* structure NameOp *)
 
-    structure StringOp = 
+    structure StringOp =
     struct
       type t = Prims.stringOp
       val sAllocate   = fn st => (case st of Prims.SAllocate => SOME () | _ => NONE)
@@ -1830,7 +1830,7 @@ struct
       val sEqual      = fn st => (case st of Prims.SEqual => SOME () | _ => NONE)
     end (* structure StringOp *)
 
-    structure Prim = 
+    structure Prim =
     struct
       type t = Prims.prim
       val pNumArith   = fn pr => (case pr of Prims.PNumArith r => SOME r | _ => NONE)
@@ -1846,7 +1846,7 @@ struct
       val pCondMov    = fn pr => (case pr of Prims.PCondMov => SOME () | _ => NONE)
     end (* structure Prim *)
 
-    structure Assoc = 
+    structure Assoc =
     struct
       type t = Prims.assoc
       val aLeft  = fn a => (case a of Prims.ALeft => SOME () | _ => NONE)
@@ -1854,7 +1854,7 @@ struct
       val aAny   = fn a => (case a of Prims.AAny => SOME () | _ => NONE)
     end (* structure Assoc *)
 
-    structure DataOp = 
+    structure DataOp =
     struct
       type t = Prims.dataOp
       val dBroadcast = fn da => (case da of Prims.DBroadcast => SOME () | _ => NONE)
@@ -1866,7 +1866,7 @@ struct
       val dConcat    = fn da => (case da of Prims.DConcat => SOME () | _ => NONE)
     end (* structure DataOp *)
 
-    structure Vector = 
+    structure Vector =
     struct
       type t = Prims.vector
       val viPointwise   = fn ve => (case ve of Prims.ViPointwise r => SOME r | _ => NONE)
@@ -1880,7 +1880,7 @@ struct
       val viMaskConvert = fn ve => (case ve of Prims.ViMaskConvert r => SOME r | _ => NONE)
     end (* structure Vector *)
 
-    structure Runtime = 
+    structure Runtime =
     struct
       type t = Prims.runtime
       val rtFloatMk           = fn ru => (case ru of Prims.RtFloatMk => SOME () | _ => NONE)
@@ -1921,14 +1921,14 @@ struct
       val rtIntegerHash       = fn ru => (case ru of Prims.RtIntegerHash => SOME () | _ => NONE)
     end (* structure Runtime *)
 
-    structure T = 
+    structure T =
     struct
       type t = Prims.t
       val prim    = fn t => (case t of Prims.Prim r => SOME r | _ => NONE)
       val runtime = fn t => (case t of Prims.Runtime r => SOME r | _ => NONE)
       val vector  = fn t => (case t of Prims.Vector r => SOME r | _ => NONE)
     end (* structure T *)
-  end (* structure Dec *) 
+  end (* structure Dec *)
 
 
   structure FileParserUnParser = PrimsParserUnParserF(struct
@@ -1957,10 +1957,10 @@ struct
 
     val fieldSize        : Mil.fieldSize t        = IFO.base o FieldSize.ord
 
-    val vectorSize       : Prims.vectorSize t = 
+    val vectorSize       : Prims.vectorSize t =
         let
-          val inject = 
-           fn vs => 
+          val inject =
+           fn vs =>
               (case vs
                 of Prims.Vs64   => 0
                  | Prims.Vs128  => 1
@@ -1969,89 +1969,89 @@ struct
                  | Prims.Vs1024 => 4)
         in IFO.base o inject
         end
-        
-    val mkPair = 
-     fn (f1, f2) => 
+
+    val mkPair =
+     fn (f1, f2) =>
      fn (a1, a2) => IFO.pair (f1 a1, f2 a2)
 
-    val mkTriple = 
-     fn (f1, f2, f3) => 
+    val mkTriple =
+     fn (f1, f2, f3) =>
      fn (a1, a2, a3) => IFO.pair (f1 a1, IFO.pair (f2 a2, f3 a3))
 
-    val vectorDescriptor : Prims.vectorDescriptor t = 
+    val vectorDescriptor : Prims.vectorDescriptor t =
         let
-          val inject = 
-           fn (Prims.Vd {vectorSize=vs, elementSize=es}) => 
+          val inject =
+           fn (Prims.Vd {vectorSize=vs, elementSize=es}) =>
               mkPair (vectorSize, fieldSize) (vs, es)
         in inject
         end
 
-    val floatPrecision   : Prims.floatPrecision t = 
+    val floatPrecision   : Prims.floatPrecision t =
         let
-          val inject = 
+          val inject =
            fn fp =>
-              (case fp 
+              (case fp
                 of Prims.FpSingle => 0
                  | Prims.FpDouble => 1)
         in IFO.base o inject
         end
 
-    val intPrecision     : Prims.intPrecision t = 
+    val intPrecision     : Prims.intPrecision t =
         let
 
-          val injectSize = 
-           fn sz => 
+          val injectSize =
+           fn sz =>
               (case sz
-                of IntArb.S8  => 0 
+                of IntArb.S8  => 0
                  | IntArb.S16 => 1
                  | IntArb.S32 => 2
                  | IntArb.S64 => 3)
 
-          val injectSigned = 
+          val injectSigned =
            fn sg =>
-              (case sg 
+              (case sg
                 of IntArb.Signed   => 0
                  | IntArb.Unsigned => 1)
 
-          val injectIntArb = 
-           fn t => 
+          val injectIntArb =
+           fn t =>
               (case t
                 of IntArb.T p => mkPair (IFO.base o injectSize, IFO.base o injectSigned) p)
 
-          val inject = 
-           fn ip => 
+          val inject =
+           fn ip =>
               (case ip
                 of Prims.IpArbitrary => IFO.base 0
                  | Prims.IpFixed ia  => IFO.shift (1, injectIntArb ia))
         in inject
         end
 
-    val numericTyp       : Prims.numericTyp t = 
+    val numericTyp       : Prims.numericTyp t =
         let
-          val inject = 
-           fn nt => 
+          val inject =
+           fn nt =>
               (case nt
                 of Prims.NtRat        => IFO.base 0
                  | Prims.NtInteger ip => IFO.shift (1, intPrecision ip)
                  | Prims.NtFloat fp   => IFO.shift (2, floatPrecision fp))
         in inject
         end
-           
-    val divKind          : Prims.divKind t = 
-        let 
-          val number = 
-           fn dk => 
-              (case dk 
-                of Prims.DkT => 0 
-                 | Prims.DkF => 1 
+
+    val divKind          : Prims.divKind t =
+        let
+          val number =
+           fn dk =>
+              (case dk
+                of Prims.DkT => 0
+                 | Prims.DkF => 1
                  | Prims.DkE => 2)
         in IFO.base o number
         end
 
-    val arithOp          : Prims.arithOp t = 
+    val arithOp          : Prims.arithOp t =
         let
-          val inject = 
-           fn ao => 
+          val inject =
+           fn ao =>
               (case ao
                 of Prims.AAbs       => IFO.base 0
                  | Prims.ANegate    => IFO.base 1
@@ -2072,10 +2072,10 @@ struct
         in inject
         end
 
-    val floatOp          : Prims.floatOp t = 
+    val floatOp          : Prims.floatOp t =
         let
-          val number = 
-           fn fo => 
+          val number =
+           fn fo =>
               (case fo
                 of Prims.FaACos  => 0
                  | Prims.FaASin  => 1
@@ -2097,10 +2097,10 @@ struct
         in IFO.base o number
         end
 
-    val bitwiseOp        : Prims.bitwiseOp t = 
+    val bitwiseOp        : Prims.bitwiseOp t =
         let
-          val number = 
-           fn bo => 
+          val number =
+           fn bo =>
               (case bo
                 of Prims.BNot    => 0
                  | Prims.BAnd    => 1
@@ -2113,10 +2113,10 @@ struct
         in IFO.base o number
         end
 
-    val logicOp          : Prims.logicOp t = 
+    val logicOp          : Prims.logicOp t =
         let
-          val number = 
-           fn lo => 
+          val number =
+           fn lo =>
               (case lo
                 of Prims.LNot => 0
                  | Prims.LAnd => 1
@@ -2126,10 +2126,10 @@ struct
         in IFO.base o number
         end
 
-    val compareOp        : Prims.compareOp t = 
+    val compareOp        : Prims.compareOp t =
         let
-          val number = 
-           fn co => 
+          val number =
+           fn co =>
               (case co
                 of Prims.CEq => 0
                  | Prims.CNe => 1
@@ -2144,10 +2144,10 @@ struct
                    of Prims.NGetString => 0
                     | Prims.NGetHash   => 1)
 
-    val stringOp         : Prims.stringOp t = 
+    val stringOp         : Prims.stringOp t =
         let
-          val number = 
-           fn so => 
+          val number =
+           fn so =>
               (case so
                 of Prims.SAllocate   => 0
                  | Prims.SDeallocate => 1
@@ -2158,10 +2158,10 @@ struct
         in IFO.base o number
         end
 
-    val prim             : Prims.prim t = 
+    val prim             : Prims.prim t =
         let
-          val inject = 
-           fn p => 
+          val inject =
+           fn p =>
               (case p
                 of Prims.PNumArith  {typ, operator}  => IFO.shift (0, mkPair (numericTyp, arithOp) (typ, operator))
                  | Prims.PFloatOp {typ, operator}    => IFO.shift (1, mkPair (floatPrecision, floatOp) (typ, operator))
@@ -2177,10 +2177,10 @@ struct
         in inject
         end
 
-    val assoc            : Prims.assoc t = 
+    val assoc            : Prims.assoc t =
         let
           val number =
-           fn a => 
+           fn a =>
               (case a
                 of Prims.ALeft  => 0
                  | Prims.ARight => 1
@@ -2188,10 +2188,10 @@ struct
         in IFO.base o number
         end
 
-    val dataOp           : Prims.dataOp t = 
+    val dataOp           : Prims.dataOp t =
         let
-          val inject = 
-           fn d => 
+          val inject =
+           fn d =>
               (case d
                 of Prims.DBroadcast => IFO.base 0
                  | Prims.DVector    => IFO.base 1
@@ -2203,42 +2203,42 @@ struct
         in inject
         end
 
-    val vector           : Prims.vector t = 
-        let 
-          val boolean = 
+    val vector           : Prims.vector t =
+        let
+          val boolean =
            fn b => IFO.base (if b then 0 else 1)
 
-          val dtPair = 
+          val dtPair =
               fn {descriptor, typ} => mkPair (vectorDescriptor, numericTyp) (descriptor, typ)
 
-          val inject = 
-           fn v => 
+          val inject =
+           fn v =>
               (case v
-                of Prims.ViPointwise {descriptor, masked, operator} => 
+                of Prims.ViPointwise {descriptor, masked, operator} =>
                    IFO.shift (0, mkTriple (vectorDescriptor, boolean, prim) (descriptor, masked, operator))
-                 | Prims.ViConvert {to, from} => 
+                 | Prims.ViConvert {to, from} =>
                    IFO.shift (1, mkPair (dtPair, dtPair) (to, from))
-                 | Prims.ViCast {to, from} => 
+                 | Prims.ViCast {to, from} =>
                    IFO.shift (1, mkPair (dtPair, dtPair) (to, from))
-                 | Prims.ViCompare {descriptor, typ, operator} => 
+                 | Prims.ViCompare {descriptor, typ, operator} =>
                    IFO.shift (2, mkTriple (vectorDescriptor, numericTyp, compareOp) (descriptor, typ, operator))
                  | Prims.ViReduction {descriptor, associativity, operator} =>
                    IFO.shift (3, mkTriple (vectorDescriptor, assoc, prim) (descriptor, associativity, operator))
-                 | Prims.ViData {descriptor, operator} => 
+                 | Prims.ViData {descriptor, operator} =>
                    IFO.shift (4, mkPair (vectorDescriptor, dataOp) (descriptor, operator))
-                 | Prims.ViMaskData {descriptor, operator} => 
+                 | Prims.ViMaskData {descriptor, operator} =>
                    IFO.shift (5, mkPair (vectorDescriptor, dataOp) (descriptor, operator))
-                 | Prims.ViMaskBoolean {descriptor, operator} => 
+                 | Prims.ViMaskBoolean {descriptor, operator} =>
                    IFO.shift (6, mkPair (vectorDescriptor, logicOp) (descriptor, operator))
-                 | Prims.ViMaskConvert {to, from} => 
+                 | Prims.ViMaskConvert {to, from} =>
                    IFO.shift (7, mkPair (vectorDescriptor, vectorDescriptor) (to, from)))
         in inject
         end
 
-    val runtime          : Prims.runtime t = 
+    val runtime          : Prims.runtime t =
         let
-          val number = 
-           fn rt => 
+          val number =
+           fn rt =>
               (case rt
                 of Prims.RtFloatMk           => 0
                  | Prims.RtWriteln           => 1
@@ -2279,10 +2279,10 @@ struct
         in IFO.base o number
         end
 
-    val t                : Prims.t t = 
+    val t                : Prims.t t =
         let
-          val inject = 
-           fn t => 
+          val inject =
+           fn t =>
               (case t
                 of Prims.Prim p    => IFO.shift (0, prim p)
                  | Prims.Runtime r => IFO.shift (1, runtime r)
@@ -2363,7 +2363,7 @@ struct
     val t                : Prims.t t                 = IFO.hash o Ord.t
   end (* structure Hash *)
 
-  structure Enumerate = 
+  structure Enumerate =
   struct
     val vectorSize : unit -> Prims.vectorSize List.t =
      fn () => [Prims.Vs64, Prims.Vs128, Prims.Vs256, Prims.Vs512, Prims.Vs1024]
@@ -2393,7 +2393,7 @@ struct
                                type t = Prims.prim
                                val compare = Compare.prim
                              end)
-                       
+
   structure VectorDict = DictF(struct
                                  type t = Prims.vector
                                  val compare = Compare.vector
@@ -2418,9 +2418,9 @@ struct
   struct
     type 'a t = 'a -> Effect.set
     val stringOp         : Prims.stringOp t =
-        (fn so => 
+        (fn so =>
             let
-              val fx = 
+              val fx =
                   (case so
                     of Prims.SAllocate   => Effect.single Effect.HeapGen
                      | Prims.SDeallocate => Effect.single Effect.HeapWrite
@@ -2431,11 +2431,11 @@ struct
             in fx
             end)
 
-    val prim             : Prims.prim t = 
-        (fn p => 
+    val prim             : Prims.prim t =
+        (fn p =>
             let
               val total = Effect.Total
-              val fx = 
+              val fx =
                   (case p
                     of Prims.PNumArith  {typ, operator}  => total
                      | Prims.PFloatOp {typ, operator}    => total
@@ -2455,7 +2455,7 @@ struct
         (fn v =>
             let
               val total = Effect.Total
-              val fx = 
+              val fx =
                   (case v
                     of Prims.ViPointwise {descriptor, masked, operator}        => prim operator
                      | Prims.ViConvert {to, from}                              => total
@@ -2469,14 +2469,14 @@ struct
             in fx
             end)
 
-    val runtime          : Prims.runtime t = 
-        (fn r => 
+    val runtime          : Prims.runtime t =
+        (fn r =>
             let
               val total = Effect.Total
               val io = Effect.single Effect.Io
               val partial = Effect.single Effect.Partial
               val any = Effect.PAny
-              val fx = 
+              val fx =
                   (case r
                     of Prims.RtFloatMk           => total
                      | Prims.RtWriteln           => io
@@ -2518,21 +2518,21 @@ struct
             end)
 
     val t                : Prims.t t =
-        (fn t => 
+        (fn t =>
             (case t
               of Prims.Prim p => prim p
                | Prims.Vector v => vector v
                | Prims.Runtime r => runtime r))
   end (* structure Effects *)
 
-  structure VectorSize = 
+  structure VectorSize =
   struct
     type t = Prims.vectorSize
     val compare = Compare.vectorSize
     val eq      = Eq.vectorSize
     val hash    = Hash.vectorSize
-    val fromBits = 
-     fn bits => 
+    val fromBits =
+     fn bits =>
         (case bits
           of 64   => SOME Prims.Vs64
            | 128  => SOME Prims.Vs128
@@ -2540,8 +2540,8 @@ struct
            | 512  => SOME Prims.Vs512
            | 1024 => SOME Prims.Vs1024
            | _    => NONE)
-    val numBits : t -> int = 
-     fn vs => 
+    val numBits : t -> int =
+     fn vs =>
         (case vs
           of Prims.Vs64   => 64
            | Prims.Vs128  => 128
@@ -2549,8 +2549,8 @@ struct
            | Prims.Vs512  => 512
            | Prims.Vs1024 => 1024)
     val toString = ToString.vectorSize
-    val toValueSize : t -> Mil.valueSize = 
-     fn vs => 
+    val toValueSize : t -> Mil.valueSize =
+     fn vs =>
         (case vs
           of Prims.Vs64   => Mil.Vs64
            | Prims.Vs128  => Mil.Vs128
@@ -2563,25 +2563,25 @@ struct
     structure Dec = Dec.VectorSize
   end (* structure VectorSize *)
 
-  structure VectorDescriptor = 
+  structure VectorDescriptor =
   struct
     type t = Prims.vectorDescriptor
     val compare = Compare.vectorDescriptor
     val eq      = Eq.vectorDescriptor
     val hash    = Hash.vectorDescriptor
     val toString = ToString.vectorDescriptor
-    val numBits : t -> int = 
+    val numBits : t -> int =
      fn (Prims.Vd {vectorSize, elementSize}) => VectorSize.numBits vectorSize
-    val elementCount : t -> int = 
+    val elementCount : t -> int =
      fn (Prims.Vd {vectorSize, elementSize}) => (VectorSize.numBits vectorSize) div (FieldSize.numBits elementSize)
-    val vectorSize : t -> VectorSize.t = 
+    val vectorSize : t -> VectorSize.t =
      fn (Prims.Vd {vectorSize, elementSize}) => vectorSize
-    val elementSize : t -> Mil.fieldSize = 
+    val elementSize : t -> Mil.fieldSize =
      fn (Prims.Vd {vectorSize, elementSize}) => elementSize
     structure Dec = Dec.VectorDescriptor
   end (* structure VectorDescriptor *)
 
-  structure FloatPrecision = 
+  structure FloatPrecision =
   struct
     type t = Prims.floatPrecision
     val compare = Compare.floatPrecision
@@ -2590,7 +2590,7 @@ struct
     structure Dec = Dec.FloatPrecision
   end (* structure FloatPrecision *)
 
-  structure IntPrecision = 
+  structure IntPrecision =
   struct
     type t = Prims.intPrecision
     val compare = Compare.intPrecision
@@ -2599,29 +2599,29 @@ struct
     structure Dec = Dec.IntPrecision
   end (* structure IntPrecision *)
 
-  structure NumericTyp = 
+  structure NumericTyp =
   struct
     type t = Prims.numericTyp
     val compare = Compare.numericTyp
     val eq      = Eq.numericTyp
     val hash    = Hash.numericTyp
-    val fieldSize : Config.t * t -> Mil.fieldSize = 
+    val fieldSize : Config.t * t -> Mil.fieldSize =
      fn (config, t) =>
         case t
          of Prims.NtRat => FieldSize.ptrSize config
-          | Prims.NtInteger ip => 
+          | Prims.NtInteger ip =>
             (case ip
               of Prims.IpArbitrary => FieldSize.ptrSize config
                | Prims.IpFixed ia  => FieldSize.intArb ia)
-          | Prims.NtFloat fp => 
+          | Prims.NtFloat fp =>
             (case fp
               of Prims.FpSingle => Mil.Fs32
                | Prims.FpDouble => Mil.Fs64)
-    val signed = 
-     fn t => 
+    val signed =
+     fn t =>
         case t
          of Prims.NtRat => true
-          | Prims.NtInteger ip => 
+          | Prims.NtInteger ip =>
             (case ip
               of Prims.IpArbitrary => true
                | Prims.IpFixed iat => IntArb.typIsSigned iat)
@@ -2630,7 +2630,7 @@ struct
     structure Dec = Dec.NumericTyp
   end (* structure NumericTyp *)
 
-  structure DivKind = 
+  structure DivKind =
   struct
     type t = Prims.divKind
     val compare = Compare.divKind
@@ -2639,7 +2639,7 @@ struct
     structure Dec = Dec.DivKind
   end (* structure DivKind *)
 
-  structure ArithOp = 
+  structure ArithOp =
   struct
     type t = Prims.arithOp
     val compare = Compare.arithOp
@@ -2648,7 +2648,7 @@ struct
     structure Dec = Dec.ArithOp
   end (* structure ArithOp *)
 
-  structure FloatOp = 
+  structure FloatOp =
   struct
     type t = Prims.floatOp
     val compare = Compare.floatOp
@@ -2657,7 +2657,7 @@ struct
     structure Dec = Dec.FloatOp
   end (* structure FloatOp *)
 
-  structure BitwiseOp = 
+  structure BitwiseOp =
   struct
     type t = Prims.bitwiseOp
     val compare = Compare.bitwiseOp
@@ -2666,7 +2666,7 @@ struct
     structure Dec = Dec.BitwiseOp
   end (* structure BitwiseOp *)
 
-  structure LogicOp = 
+  structure LogicOp =
   struct
     type t = Prims.logicOp
     val compare = Compare.logicOp
@@ -2675,7 +2675,7 @@ struct
     structure Dec = Dec.LogicOp
   end (* structure LogicOp *)
 
-  structure CompareOp = 
+  structure CompareOp =
   struct
     type t = Prims.compareOp
     val compare = Compare.compareOp
@@ -2699,7 +2699,7 @@ struct
     structure Dec = Dec.NameOp
   end (* structure NameOp *)
 
-  structure StringOp = 
+  structure StringOp =
   struct
     type t = Prims.stringOp
     val compare = Compare.stringOp
@@ -2708,7 +2708,7 @@ struct
     structure Dec = Dec.StringOp
   end (* structure StringOp *)
 
-  structure Prim = 
+  structure Prim =
   struct
     type t = Prims.prim
     val compare = Compare.prim
@@ -2717,7 +2717,7 @@ struct
     structure Dec = Dec.Prim
   end (* structure Prim *)
 
-  structure Assoc = 
+  structure Assoc =
   struct
     type t = Prims.assoc
     val compare = Compare.assoc
@@ -2726,7 +2726,7 @@ struct
     structure Dec = Dec.Assoc
   end (* structure Assoc *)
 
-  structure DataOp = 
+  structure DataOp =
   struct
     type t = Prims.dataOp
     val compare = Compare.dataOp
@@ -2735,7 +2735,7 @@ struct
     structure Dec = Dec.DataOp
   end (* structure DataOp *)
 
-  structure Vector = 
+  structure Vector =
   struct
     type t = Prims.vector
     val compare = Compare.vector
@@ -2744,7 +2744,7 @@ struct
     structure Dec = Dec.Vector
   end (* structure Vector *)
 
-  structure Runtime = 
+  structure Runtime =
   struct
     type t = Prims.runtime
     val compare = Compare.runtime
@@ -2753,7 +2753,7 @@ struct
     structure Dec = Dec.Runtime
   end (* structure Runtime *)
 
-  structure T = 
+  structure T =
   struct
     type t = Prims.t
     val compare = Compare.t
@@ -2768,8 +2768,8 @@ struct
 
     type 'a t = 'a -> arity
 
-    val count : arity -> Int.t * Int.t = 
-     fn ar => 
+    val count : arity -> Int.t * Int.t =
+     fn ar =>
         (case ar
           of ArAtoA      => (1, 1)
            | ArAAtoA     => (2, 1)
@@ -2777,7 +2777,7 @@ struct
            | ArOther p => p)
 
     val arithOp          : Prims.arithOp t =
-        (fn ao => 
+        (fn ao =>
             (case ao
               of Prims.AAbs       => ArAtoA
                | Prims.ANegate    => ArAtoA
@@ -2796,8 +2796,8 @@ struct
                | Prims.ADivMod dk => ArOther (2, 2)))
 
     val floatOp          : Prims.floatOp t =
-        (fn fo => 
-            (case fo 
+        (fn fo =>
+            (case fo
               of Prims.FaACos  => ArAtoA
                | Prims.FaASin  => ArAtoA
                | Prims.FaATan  => ArAtoA
@@ -2817,7 +2817,7 @@ struct
                | Prims.FaPow   => ArAAtoA))
 
     val bitwiseOp        : Prims.bitwiseOp t =
-        (fn bo => 
+        (fn bo =>
             (case bo
               of Prims.BNot    => ArAtoA
                | Prims.BAnd    => ArAAtoA
@@ -2829,7 +2829,7 @@ struct
                | Prims.BXor    => ArAAtoA))
 
     val logicOp          : Prims.logicOp t =
-        (fn lo => 
+        (fn lo =>
             (case lo
               of Prims.LNot => ArAtoA
                | Prims.LAnd => ArAAtoA
@@ -2837,8 +2837,8 @@ struct
                | Prims.LXor => ArAAtoA
                | Prims.LEq  => ArAAtoA))
 
-    val compareOp        : Prims.compareOp t = 
-        (fn co => 
+    val compareOp        : Prims.compareOp t =
+        (fn co =>
             (case co
               of Prims.CEq => ArAAtoB
                | Prims.CNe => ArAAtoB
@@ -2852,7 +2852,7 @@ struct
           | Prims.NGetHash => ArOther (1, 1)
 
     val stringOp         : Prims.stringOp t =
-        (fn so => 
+        (fn so =>
             (case so
               of Prims.SAllocate   => ArOther (1, 1)
                | Prims.SDeallocate => ArOther (1, 0)
@@ -2861,21 +2861,21 @@ struct
                | Prims.SSetChar    => ArOther (3, 1)
                | Prims.SEqual      => ArAAtoB))
 
-    val dataOp           : Prims.vectorDescriptor -> Prims.dataOp t = 
-        (fn vd => 
+    val dataOp           : Prims.vectorDescriptor -> Prims.dataOp t =
+        (fn vd =>
          fn d =>
-            (case d 
+            (case d
               of Prims.DBroadcast => ArOther (1, 1)
                | Prims.DVector    => ArOther (VectorDescriptor.elementCount vd, 1)
                | Prims.DSub i     => ArOther (1, 1)
-               | Prims.DPermute v => ArAtoA 
+               | Prims.DPermute v => ArAtoA
                | Prims.DBlend     => ArAAtoA
                | Prims.DSplit     => ArOther (1, 2)
                | Prims.DConcat    => ArAAtoB))
 
 
-    val prim             : Prims.prim t = 
-        (fn p => 
+    val prim             : Prims.prim t =
+        (fn p =>
             (case p
               of Prims.PNumArith  {typ, operator}  => arithOp operator
                | Prims.PFloatOp {typ, operator}    => floatOp operator
@@ -2902,55 +2902,55 @@ struct
                | Prims.ViMaskBoolean {descriptor, operator}              => logicOp operator
                | Prims.ViMaskConvert {to, from}                          => ArOther (1, 1)))
 
-    val runtime          : Prims.runtime t = 
-        (fn r => 
+    val runtime          : Prims.runtime t =
+        (fn r =>
             (case r
-	        of Prims.RtFloatMk              => ArAAtoB
-	         | Prims.RtWriteln              => ArOther (1, 0)
-	         | Prims.RtReadln               => ArOther (0, 1)
-	         | Prims.RtAssert               => ArOther (1, 1)
-	         | Prims.RtError                => ArAtoA
-	         | Prims.RtDebug                => ArOther (1, 0)
-	         | Prims.RtOpenOut              => ArOther (1, 1)
-	         | Prims.RtGetStdout            => ArOther (0, 1)
-	         | Prims.RtOutputByte           => ArOther (2, 0)
-	         | Prims.RtCloseOut             => ArOther (1, 0)
-	         | Prims.RtOpenIn               => ArOther (1, 1)
-	         | Prims.RtGetStdin             => ArOther (0, 1)
-	         | Prims.RtInputByte            => ArAtoA
-	         | Prims.RtInputString          => ArOther (2, 1)
-	         | Prims.RtInputAll             => ArOther (1, 1)
-	         | Prims.RtIsEOF                => ArOther (1, 1)
-	         | Prims.RtCloseIn              => ArOther (1, 0)
-	         | Prims.RtCommandLine          => ArOther (0, 1)
-	         | Prims.RtStringToNat          => ArOther (1, 1)
-	         | Prims.RtStringToFloat        => ArOther (1, 1)
-	         | Prims.RtFloatToString        => ArOther (2, 1)
-	         | Prims.RtFloatToStringI       => ArOther (2, 1)
-	         | Prims.RtRatNumerator         => ArAtoA
-	         | Prims.RtRatDenominator       => ArAtoA
-	         | Prims.RtEqual                => ArAAtoB
-	         | Prims.RtDom                  => ArOther (1, 1)
-	         | Prims.RtNub                  => ArOther (1, 1)
-	         | Prims.RtRatToUIntpChecked    => ArOther (1, 1)
-	         | Prims.RtRatToString          => ArOther (1, 1)
-	         | Prims.RtStringToRat          => ArOther (1, 1)
-	         | Prims.RtResetTimer           => ArOther (1, 0)
-	         | Prims.RtGetTimer             => ArOther (1, 1)
-	         | Prims.RtVtuneAttach          => ArOther (0, 0)
-	         | Prims.RtVtuneDetach          => ArOther (0, 0)
-	         | Prims.RtArrayEval            => ArOther (1, 0)
+                of Prims.RtFloatMk              => ArAAtoB
+                 | Prims.RtWriteln              => ArOther (1, 0)
+                 | Prims.RtReadln               => ArOther (0, 1)
+                 | Prims.RtAssert               => ArOther (1, 1)
+                 | Prims.RtError                => ArAtoA
+                 | Prims.RtDebug                => ArOther (1, 0)
+                 | Prims.RtOpenOut              => ArOther (1, 1)
+                 | Prims.RtGetStdout            => ArOther (0, 1)
+                 | Prims.RtOutputByte           => ArOther (2, 0)
+                 | Prims.RtCloseOut             => ArOther (1, 0)
+                 | Prims.RtOpenIn               => ArOther (1, 1)
+                 | Prims.RtGetStdin             => ArOther (0, 1)
+                 | Prims.RtInputByte            => ArAtoA
+                 | Prims.RtInputString          => ArOther (2, 1)
+                 | Prims.RtInputAll             => ArOther (1, 1)
+                 | Prims.RtIsEOF                => ArOther (1, 1)
+                 | Prims.RtCloseIn              => ArOther (1, 0)
+                 | Prims.RtCommandLine          => ArOther (0, 1)
+                 | Prims.RtStringToNat          => ArOther (1, 1)
+                 | Prims.RtStringToFloat        => ArOther (1, 1)
+                 | Prims.RtFloatToString        => ArOther (2, 1)
+                 | Prims.RtFloatToStringI       => ArOther (2, 1)
+                 | Prims.RtRatNumerator         => ArAtoA
+                 | Prims.RtRatDenominator       => ArAtoA
+                 | Prims.RtEqual                => ArAAtoB
+                 | Prims.RtDom                  => ArOther (1, 1)
+                 | Prims.RtNub                  => ArOther (1, 1)
+                 | Prims.RtRatToUIntpChecked    => ArOther (1, 1)
+                 | Prims.RtRatToString          => ArOther (1, 1)
+                 | Prims.RtStringToRat          => ArOther (1, 1)
+                 | Prims.RtResetTimer           => ArOther (1, 0)
+                 | Prims.RtGetTimer             => ArOther (1, 1)
+                 | Prims.RtVtuneAttach          => ArOther (0, 0)
+                 | Prims.RtVtuneDetach          => ArOther (0, 0)
+                 | Prims.RtArrayEval            => ArOther (1, 0)
                  | Prims.RtIntegerHash          => ArOther (1, 1)))
 
     val t                : Prims.t t =
-        (fn t => 
+        (fn t =>
             (case t
               of Prims.Prim p => prim p
                | Prims.Vector v => vector v
                | Prims.Runtime r => runtime r))
   end (* structure Arity *)
 
-  structure Properties = 
+  structure Properties =
   struct
     datatype t = P of {associative : bool,
                        commutative : bool}
@@ -2970,11 +2970,11 @@ struct
     val okFloat =
      fn (config, typ) =>
         (case typ
-          of Prims.NtFloat _ => Config.sloppyFp config 
+          of Prims.NtFloat _ => Config.sloppyFp config
            | _               => true)
 
-    val arithOp : Config.t * Prims.numericTyp * Prims.arithOp -> t = 
-     fn (config, typ, operator) => 
+    val arithOp : Config.t * Prims.numericTyp * Prims.arithOp -> t =
+     fn (config, typ, operator) =>
         (case operator
           of Prims.AAbs       => none
            | Prims.ANegate    => none
@@ -2992,8 +2992,8 @@ struct
            | Prims.ATimesSat  => if unsigned typ andalso okFloat (config, typ) then both else commutative
            | Prims.ADivMod _  => none)
 
-    val bitwiseOp : Prims.bitwiseOp -> t = 
-     fn operator => 
+    val bitwiseOp : Prims.bitwiseOp -> t =
+     fn operator =>
         (case operator
           of Prims.BNot    => none
            | Prims.BAnd    => both
@@ -3004,8 +3004,8 @@ struct
            | Prims.BShiftR => none
            | Prims.BXor    => both)
 
-    val logicOp : Prims.logicOp -> t = 
-     fn operator => 
+    val logicOp : Prims.logicOp -> t =
+     fn operator =>
         (case operator
           of Prims.LNot => none
            | Prims.LAnd => both
@@ -3013,8 +3013,8 @@ struct
            | Prims.LXor => both
            | Prims.LEq  => both)
 
-    val prim : Config.t * Prims.prim -> t = 
-     fn (config, p) => 
+    val prim : Config.t * Prims.prim -> t =
+     fn (config, p) =>
         (case p
           of Prims.PNumArith {typ, operator} => arithOp (config, typ, operator)
            | Prims.PFloatOp {typ, operator}  => none
@@ -3028,7 +3028,7 @@ struct
            | Prims.PPtrEq                    => commutative
            | Prims.PCondMov                  => none)
 
-    val vector : Config.t * Prims.vector -> t = 
+    val vector : Config.t * Prims.vector -> t =
      fn (config, v) =>
         (case v
           of Prims.ViPointwise {descriptor, masked, operator}        => prim (config, operator)
@@ -3041,14 +3041,14 @@ struct
            | Prims.ViMaskBoolean _                                   => none
            | Prims.ViMaskConvert _                                   => none)
 
-    val t : Config.t * Prims.t -> t = 
-     fn (config, p) => 
+    val t : Config.t * Prims.t -> t =
+     fn (config, p) =>
         (case p
           of Prims.Prim p          => prim (config, p)
            | Prims.Runtime runtime => none
            | Prims.Vector v        => vector (config, v))
 
-    structure Associativity = 
+    structure Associativity =
     struct
       val arithOp : Config.t * Prims.numericTyp * Prims.arithOp -> bool = #associative o deconstruct o arithOp
       val bitwiseOp : Prims.bitwiseOp -> bool = #associative o deconstruct o bitwiseOp
@@ -3057,7 +3057,7 @@ struct
       val vector : Config.t * Prims.vector -> bool = #associative o deconstruct o vector
       val t : Config.t * Prims.t -> bool = #associative o deconstruct o t
     end (* structure Associativity *)
-    structure Commutativity = 
+    structure Commutativity =
     struct
       val arithOp : Config.t * Prims.numericTyp * Prims.arithOp -> bool = #commutative o deconstruct o arithOp
       val bitwiseOp : Prims.bitwiseOp -> bool = #commutative o deconstruct o bitwiseOp
@@ -3074,22 +3074,22 @@ struct
     structure VSD = VectorSizeDict
 
     datatype status = Disabled | Emulated | Enabled
-    
+
     datatype t = VC of {isa          : Config.vectorISA,
                         instructions : status VD.t,
                         sizes        : status VSD.t
                        }
     val ((_, getISA),
          (_, getInstructions),
-         (_, getSizes)) = 
+         (_, getSizes)) =
         let
           val r2t = fn VC {isa, instructions, sizes} => (isa, instructions, sizes)
           val t2r = fn (isa, instructions, sizes) => VC {isa = isa, instructions = instructions, sizes = sizes}
         in FunctionalUpdate.mk3 (r2t, t2r)
         end
 
-    val statusJoin = 
-     fn (s1, s2) => 
+    val statusJoin =
+     fn (s1, s2) =>
         (case (s1, s2)
           of (Disabled, _)      => Disabled
            | (_, Disabled)      => Disabled
@@ -3097,8 +3097,8 @@ struct
            | (_, Emulated)      => Emulated
            | (Enabled, Enabled) => Enabled)
 
-    val ISASizes = 
-     fn (config, isa) => 
+    val ISASizes =
+     fn (config, isa) =>
         let
           val allSizes = [Prims.Vs64, Prims.Vs128, Prims.Vs256, Prims.Vs512, Prims.Vs1024]
         in case isa
@@ -3109,22 +3109,22 @@ struct
              | Config.ViSSE _ => VSD.fromList [(Prims.Vs128, Enabled)]
         end
 
-    val avxInstructions = 
-     fn config => 
+    val avxInstructions =
+     fn config =>
         let
           val float32 = Prims.NtFloat (Prims.FpSingle)
           val float64 = Prims.NtFloat (Prims.FpDouble)
           val uint32 = Prims.NtInteger (Prims.IpFixed (IntArb.T (IntArb.S32, IntArb.Unsigned)))
           val arith = fn (nt, arith) => Prims.PNumArith {typ = nt, operator = arith}
           val pointwise =
-           fn (pmk, vs, fs, t) => 
-           fn opers => 
+           fn (pmk, vs, fs, t) =>
+           fn opers =>
               List.map (opers, fn oper => Prims.ViPointwise {descriptor = Prims.Vd {vectorSize = vs, elementSize = fs},
                                                              masked = false,
                                                              operator = pmk (t, oper)})
           val instrs = List.concat
-              [ 
-               pointwise (arith, Prims.Vs256, NumericTyp.fieldSize (config, float32), float32) 
+              [
+               pointwise (arith, Prims.Vs256, NumericTyp.fieldSize (config, float32), float32)
                          [Prims.APlus, Prims.AMinus, Prims.ATimes, Prims.ADivide, Prims.ANegate, Prims.AMax, Prims.AMin],
                pointwise (arith, Prims.Vs256, NumericTyp.fieldSize (config, uint32), uint32)
                          [Prims.APlus, Prims.AMinus, Prims.ATimes]
@@ -3133,8 +3133,8 @@ struct
         in instructions
         end
 
-    val micInstructions = 
-     fn config => 
+    val micInstructions =
+     fn config =>
         let
           val float32 = Prims.NtFloat (Prims.FpSingle)
           val float64 = Prims.NtFloat (Prims.FpDouble)
@@ -3142,16 +3142,16 @@ struct
           val sint64  = Prims.NtInteger (Prims.IpFixed (IntArb.T (IntArb.S64, IntArb.Signed)))
           val arith   = fn (nt, arith) => Prims.PNumArith {typ = nt, operator = arith}
           val pointwise =
-           fn (pmk, vs, fs, t) => 
-           fn opers => 
+           fn (pmk, vs, fs, t) =>
+           fn opers =>
               List.map (opers, fn oper => Prims.ViPointwise {descriptor = Prims.Vd {vectorSize = vs, elementSize = fs},
                                                              masked = false,
                                                              operator = pmk (t, oper)})
           val instrs = List.concat
-              [ 
-               pointwise (arith, Prims.Vs512, NumericTyp.fieldSize (config, float32), float32) 
+              [
+               pointwise (arith, Prims.Vs512, NumericTyp.fieldSize (config, float32), float32)
                          [Prims.APlus, Prims.AMinus, Prims.ATimes, Prims.ADivide, Prims.ANegate, Prims.AMax, Prims.AMin],
-               pointwise (arith, Prims.Vs512, NumericTyp.fieldSize (config, float64), float64) 
+               pointwise (arith, Prims.Vs512, NumericTyp.fieldSize (config, float64), float64)
                          [Prims.APlus, Prims.AMinus, Prims.ATimes, Prims.ADivide, Prims.ANegate, Prims.AMax, Prims.AMin],
                pointwise (arith, Prims.Vs512, NumericTyp.fieldSize (config, uint32), uint32)
                          [Prims.APlus, Prims.AMinus],
@@ -3170,23 +3170,23 @@ struct
         in instructions
         end
 
-    val ISAInstructions = 
-     fn (config, isa) => 
+    val ISAInstructions =
+     fn (config, isa) =>
         (case isa
           of Config.ViAVX => avxInstructions config
            | Config.ViMIC => micInstructions config
            | _            => VD.empty)
 
-    val build' = 
-     fn (config, fail) => 
+    val build' =
+     fn (config, fail) =>
         let
           val Config.VC {isa, instructions, sizes} = Config.vectorConfig config
 
           val sizes =
               let
-                val add = 
-                 fn status => 
-                 fn (s, dict) => 
+                val add =
+                 fn status =>
+                 fn (s, dict) =>
                     case StringParse.Parser.parse (StringParse.vectorSize config, (s, 0))
                      of StringParse.Parser.Success (_, r) => VSD.insert (dict, r, status)
                       | _                                 => let val () = fail ("bad size: "^s) in dict end
@@ -3197,11 +3197,11 @@ struct
               in dict
               end
 
-          val instructions = 
+          val instructions =
               let
-                val add = 
-                 fn status => 
-                 fn (s, dict) => 
+                val add =
+                 fn status =>
+                 fn (s, dict) =>
                     case StringParse.Parser.parse (StringParse.vector config, (s, 0))
                      of StringParse.Parser.Success (_, r) => VD.insert (dict, r, status)
                       | _                                 => let val () = fail ("bad instruction: "^s) in dict end
@@ -3215,7 +3215,7 @@ struct
         in VC {isa = isa, instructions = instructions, sizes = sizes}
         end
 
-    val check : Config.t -> string option = 
+    val check : Config.t -> string option =
      fn config =>
         let
           exception Bad of string
@@ -3224,7 +3224,7 @@ struct
         in (help ()) handle Bad s => SOME s
         end
 
-    val build : Config.t -> t = 
+    val build : Config.t -> t =
      fn config =>
         let
           exception Bad of string
@@ -3232,18 +3232,18 @@ struct
         in (build' (config, fail)) handle Bad s => Fail.fail ("VectorConfig", "build", "Unexpected failure: "^s)
         end
 
-    (* disabled => unsupported, illegal to use 
-     * emulated => unsupported, will be emulated by smaller vectors or scalars 
+    (* disabled => unsupported, illegal to use
+     * emulated => unsupported, will be emulated by smaller vectors or scalars
      * enabled  => supported, will be emitted directly
      *)
 
-    val sizeStatus : t * Prims.vectorSize -> status = 
-     fn (t, sz) => 
+    val sizeStatus : t * Prims.vectorSize -> status =
+     fn (t, sz) =>
         case VSD.lookup (getSizes t, sz)
          of SOME s => s
           | NONE   => Disabled
 
-    val disabledSize : t * Prims.vectorSize -> bool = 
+    val disabledSize : t * Prims.vectorSize -> bool =
      fn (t, sz) => sizeStatus (t, sz) = Disabled
 
     val emulatedSize : t * Prims.vectorSize -> bool =
@@ -3252,22 +3252,22 @@ struct
     val enabledSize  : t * Prims.vectorSize -> bool =
      fn (t, sz) => sizeStatus (t, sz) = Enabled
 
-    val allDisabledSizes : t -> Prims.vectorSize List.t = 
+    val allDisabledSizes : t -> Prims.vectorSize List.t =
      fn t => List.keepAll (Enumerate.vectorSize (), fn sz => disabledSize (t, sz))
 
-    val allEmulatedSizes : t -> Prims.vectorSize List.t = 
+    val allEmulatedSizes : t -> Prims.vectorSize List.t =
      fn t => List.keepAll (Enumerate.vectorSize (), fn sz => emulatedSize (t, sz))
 
-    val allEnabledSizes  : t -> Prims.vectorSize List.t = 
+    val allEnabledSizes  : t -> Prims.vectorSize List.t =
      fn t => List.keepAll (Enumerate.vectorSize (), fn sz => enabledSize (t, sz))
 
-    val instructionStatus : t * Prims.vector -> status = 
-     fn (t, v) => 
+    val instructionStatus : t * Prims.vector -> status =
+     fn (t, v) =>
         case VD.lookup (getInstructions t, v)
          of SOME s => s
           | NONE   => Disabled
 
-    val disabledInstruction : t * Prims.vector -> bool = 
+    val disabledInstruction : t * Prims.vector -> bool =
      fn (t, v) => instructionStatus (t, v) = Disabled
 
     val emulatedInstruction : t * Prims.vector -> bool =

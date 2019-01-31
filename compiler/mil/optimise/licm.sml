@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature MIL_LICM = 
+signature MIL_LICM =
 sig
   val pass : (BothMil.t, BothMil.t) Pass.t
 end
@@ -74,7 +74,7 @@ struct
       FunctionalUpdate.mk1 (fn (E {config}) => (config),
                             fn (config) => E {config = config})
 
-  structure Chat = ChatF(struct 
+  structure Chat = ChatF(struct
                          type env = env
                          val extract = getConfig
                          val name = passname
@@ -115,11 +115,11 @@ struct
 
   val (debugPassD, debugPass) = Config.Debug.mk (passname, "debug the Mil loop-invariant code motion pass")
 
-  fun debugDo (env, f) = 
+  fun debugDo (env, f) =
       if Config.debug andalso debugPass (getConfig env)
       then f ()
       else ()
-              
+
   (* debug *)
   fun printVS (banner, s) =
       let
@@ -128,8 +128,8 @@ struct
       in  ()
       end
 
-  (* return s plus all variables defined in the block *)      
-  fun varsDefInBlock (state, env, M.B {parameters, instructions, transfer}, s) : VS.t = 
+  (* return s plus all variables defined in the block *)
+  fun varsDefInBlock (state, env, M.B {parameters, instructions, transfer}, s) : VS.t =
       let
         val s =
             case transfer
@@ -144,7 +144,7 @@ struct
 
   (* returns set of vars defined in ANY block in the loop     *)
   (* including inner loops                                    *)
-  fun varsDefInLoopTree (state, env, lt) : VS.t = 
+  fun varsDefInLoopTree (state, env, lt) : VS.t =
       let
         fun help1 (_, b, s) = varsDefInBlock (state, env, b, s)
         fun help2 (l, s) =
@@ -179,7 +179,7 @@ struct
    * preheader
    *)
   fun licmTree (state, env, lsi, oph, lt) =
-      let   
+      let
         val Tree.T (root, children) = lt
         val Loop.L {header, blocks, ...} = root
         val () = debugDo (env, fn () => print ("Doing loop tree: " ^ I.labelString header ^ "\n"))
@@ -214,8 +214,8 @@ struct
         val varsDefInLoop = varsDefInLoopTree (state, env, Tree.T (l, children))
         val () = debugDo (env, fn () => printVS ("VarsDefInLoop", varsDefInLoop))
         (* This code uses variables to identify instructions.  Probably this
-         * should be changed (along with other things here), but for the time 
-         * being we restrict ourselves to instructions with exactly one 
+         * should be changed (along with other things here), but for the time
+         * being we restrict ourselves to instructions with exactly one
          * destination. *)
         fun instructionInvariants (i, inv) =
             case Utils.Option.fromVector (MUI.dests i)
@@ -236,7 +236,7 @@ struct
             end
         val loopInvariants = calcLoopInvariants VS.empty
         val () = debugDo (env, fn () => printVS ("Loop invariants:", loopInvariants))
-        fun isInvInstr i = 
+        fun isInvInstr i =
             (case Utils.Option.fromVector (MUI.dests i)
               of SOME (SOME v) => VS.member (loopInvariants, v)
                | _ => false)
@@ -322,7 +322,7 @@ struct
         val config = getConfig env
         val sti = getSi state
         val l = L.align [L.seq [L.str "Function ", MilLayout.layoutVariable (config, sti, fname)],
-                         L.str "Code is:", 
+                         L.str "Code is:",
                          LU.indent (MilLayout.layoutCode (config, sti, code))]
         val () = LU.printLayout l
         val () = LU.printLayout (Loop.layout (config, sti, ls))
@@ -387,7 +387,7 @@ struct
         res
       end
 
-  fun doGlobals (state, env, gs) = 
+  fun doGlobals (state, env, gs) =
       let
         fun licmGlobal (v, g) =
             case g
@@ -397,7 +397,7 @@ struct
       in gs
       end
 
-  fun program (mil, pd) = 
+  fun program (mil, pd) =
       let
         val M.P {includes, externs, globals, symbolTable, entry} = mil
         val stm = IM.fromExistingAll symbolTable

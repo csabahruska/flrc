@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -56,7 +56,7 @@ sig
   val convert : t * typ -> t
   val equalsSyntactic : t * t -> bool
   val compareSyntactic : t * t -> order
-  (* All of the following binary functions are defined only on integers of 
+  (* All of the following binary functions are defined only on integers of
    * the same size and sign.  Calling them on integers of different precision
    * will result in an exception.  The caller is responsible for verifying
    * that the operands are appropriate.
@@ -114,13 +114,13 @@ struct
   fun stringOfSize sz =
       case sz of S8 => "8" | S16 => "16" | S32 => "32" | S64 => "64"
 
-  val sizeFromString = 
+  val sizeFromString =
       fn s => case s of "8" => SOME S8 | "16" => SOME S16 | "32" => SOME S32 | "64" => SOME S64 | _ => NONE
 
   fun stringOfSigned signed =
       case signed of Signed => "S" | Unsigned => "U"
 
-  val signedFromString = 
+  val signedFromString =
    fn s => case s of "S" => SOME Signed | "U" => SOME Unsigned | _ => NONE
 
   fun stringOfTyp (T (sz, signed)) =
@@ -201,7 +201,7 @@ struct
       else
         Fail.fail ("IntArb", "<=", "mismatched types")
 
-  fun bytes sz = 
+  fun bytes sz =
       case sz of S8 => 1 | S16 => 2 | S32 => 4 | S64 => 8
 
   fun bits sz =
@@ -253,13 +253,13 @@ struct
 
   fun fromInt (t, i) = fromIntInf (t, IntInf.fromInt i)
 
-  val toInt = 
-   fn t => 
+  val toInt =
+   fn t =>
       let
         val ti = toIntInf t
-        val r = 
+        val r =
             (case (Int.maxInt, Int.minInt)
-              of (SOME max, SOME min) => 
+              of (SOME max, SOME min) =>
                  if IntInf.>= (ti, IntInf.fromInt min) andalso IntInf.<= (ti, IntInf.fromInt max) then
                    SOME (IntInf.toInt ti)
                  else
@@ -341,7 +341,7 @@ struct
   struct
     structure Dec =
     struct
-      val signed   : signed -> unit option = 
+      val signed   : signed -> unit option =
        fn a => case a of Signed => SOME () | _ => NONE
       val unsigned : signed -> unit option =
        fn a => case a of Unsigned => SOME () | _ => NONE
@@ -351,13 +351,13 @@ struct
   struct
     structure Dec =
     struct
-      val s8  : size -> unit option = 
+      val s8  : size -> unit option =
        fn a => case a of S8 => SOME () | _ => NONE
-      val s16 : size -> unit option = 
+      val s16 : size -> unit option =
        fn a => case a of S16 => SOME () | _ => NONE
-      val s32 : size -> unit option = 
+      val s32 : size -> unit option =
        fn a => case a of S32 => SOME () | _ => NONE
-      val s64 : size -> unit option = 
+      val s64 : size -> unit option =
        fn a => case a of S64 => SOME () | _ => NONE
     end (* structure Dec *)
   end (* structure Size *)

@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -17,7 +17,7 @@
 (*
  * Abstract Domain with bottom, top, function, and tuples.
  *)
-signature ABS_DOMAIN = 
+signature ABS_DOMAIN =
 sig
     type t
     val layout : t -> Layout.t
@@ -33,7 +33,7 @@ sig
     val lub : t list -> t
 end
 
-structure Pointed : ABS_DOMAIN = 
+structure Pointed : ABS_DOMAIN =
 struct
   datatype t = Bottom | Top | Func of t -> t | Tuple of t list
 
@@ -64,7 +64,7 @@ struct
     | lower (Func f, Func g) = Func (fn x => lower (f x, g x))
     | lower _ = Bottom
 
-  fun upper (Top, x) = Top 
+  fun upper (Top, x) = Top
     | upper (x, Top) = Top
     | upper (Bottom, x) = x
     | upper (x, Bottom) = x

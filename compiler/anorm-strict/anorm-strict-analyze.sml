@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -43,8 +43,8 @@ functor ANormStrictAnalyzeF (
   val analyzeVDef        : (state * env * ANormStrict.vDef -> unit) option
   val analyzeVDefg       : (state * env * ANormStrict.vDefg -> env) option
 ) :> ANORM_STRICT_ANALYZE where type state = state
-                            and type env = env 
-= 
+                            and type env = env
+=
 struct
   structure I = Identifier
   structure AS = ANormStrict
@@ -75,7 +75,7 @@ struct
    fn (s, e, (v, ty)) =>
       let
         val () = analyzeTy (s, e, ty)
-      in 
+      in
         case clientBind
          of NONE => e
           | SOME vb => vb (s, e, v)
@@ -85,8 +85,8 @@ struct
    fn (s, e, vs) =>
       List.fold (vs, e, fn (v, e) => analyzeBinder (s, e, v))
 
-  and rec analyzePrimTy = 
-      fn (s, e, pt) => 
+  and rec analyzePrimTy =
+      fn (s, e, pt) =>
          let
            val _ = GPT.mapPrimTy (pt, fn t => analyzeTy (s, e, t))
          in ()
@@ -96,18 +96,18 @@ struct
       fn (s, e, pts) => List.foreach (pts, fn pt => analyzePrimTy (s, e, pt))
 
   and rec analyzeTy =
-      fn (s, e, t) => 
+      fn (s, e, t) =>
          let
-           val () = 
-               case clientTy 
+           val () =
+               case clientTy
                 of NONE => ()
                  | SOME dt => dt (s, e, t)
          in case TypeRep.repToBase t
              of AS.Boxed              => ()
               | AS.Prim pt            => analyzePrimTy (s, e, pt)
-              | AS.Arr (ts0, ts1, fx) => 
+              | AS.Arr (ts0, ts1, fx) =>
                 let
-                  val () = analyzeTys (s, e, ts0) 
+                  val () = analyzeTys (s, e, ts0)
                   val () = analyzeTys (s, e, ts1)
                 in ()
                 end
@@ -119,9 +119,9 @@ struct
       fn (s, e, ts) => List.foreach (ts, fn t => analyzeTy (s, e, t))
 
   and rec analyzeExp : state * env * AS.exp -> unit =
-   fn (state, env, e) => 
+   fn (state, env, e) =>
       let
-        val () = 
+        val () =
             case clientExp
              of SOME f => f (state, env, e)
               | NONE   => ()
@@ -129,26 +129,26 @@ struct
             case e
              of AS.Return vs                    => analyzeVariables (state, env, vs)
               | AS.PrimApp (s, vs)              => analyzeVariables (state, env, vs)
-              | AS.ExtApp (pname, cc, s, t, vs) => 
+              | AS.ExtApp (pname, cc, s, t, vs) =>
                 let
                   val () = analyzeTy (state, env, t)
                   val () = analyzeVariables (state, env, vs)
                 in ()
                 end
               | AS.ConApp (c, vs)               => analyzeVariables (state, env, vs)
-              | AS.App (f, vs, _)               => 
+              | AS.App (f, vs, _)               =>
                 let
                   val () = analyzeVariable (state, env, f)
                   val () = analyzeVariables (state, env, vs)
                 in ()
                 end
-              | AS.Let (defG, e) => 
+              | AS.Let (defG, e) =>
                 let
                   val env = analyzeVDefg (state, env, defG)
                   val () = analyzeExp (state, env, e)
                 in ()
                 end
-              | AS.Case (v, alts) => 
+              | AS.Case (v, alts) =>
                 let
                   val () = analyzeVariable (state, env, v)
                   val () = analyzeAlts (state, env, alts)
@@ -168,15 +168,15 @@ struct
   and rec analyzeAlt : state * env * AS.alt -> unit =
    fn (state, env, alt) =>
       let
-        val () = 
+        val () =
             case alt
-             of AS.Acon (con, binds, e) => 
+             of AS.Acon (con, binds, e) =>
                 let
                   val env = analyzeBinders (state, env, binds)
                   val e = analyzeExp (state, env, e)
                 in ()
                 end
-              | AS.Alit (l, t, e)       => 
+              | AS.Alit (l, t, e)       =>
                 let
                   val () = analyzeTy (state, env, t)
                   val () = analyzeExp (state, env, e)
@@ -185,25 +185,25 @@ struct
               | AS.Adefault e           => analyzeExp (state, env, e)
       in ()
       end
-      
-    and rec analyzeVDef : state * env * AS.vDef -> unit = 
-     fn (state, env, vd) => 
+
+    and rec analyzeVDef : state * env * AS.vDef -> unit =
+     fn (state, env, vd) =>
         let
-          val () = 
-              case clientVDef 
+          val () =
+              case clientVDef
                of SOME f => f (state, env, vd)
                 | NONE   => ()
 
-          val () = 
+          val () =
               case vd
-               of AS.Vfun {name, ty, escapes, recursive, fvs, args, body} => 
+               of AS.Vfun {name, ty, escapes, recursive, fvs, args, body} =>
                   let
                     val () = analyzeVariables (state, env, fvs)
                     val env = analyzeBinders (state, env, args)
                     val () = analyzeExp (state, env, body)
                   in ()
                   end
-                | AS.Vthk {name, ty, escapes, recursive, fvs, body} => 
+                | AS.Vthk {name, ty, escapes, recursive, fvs, body} =>
                   let
                     val () = analyzeVariables (state, env, fvs)
                     val () = analyzeExp (state, env, body)
@@ -212,25 +212,25 @@ struct
         in ()
         end
 
-    and rec analyzeVDefg : state * env * AS.vDefg -> env = 
-     fn (state, env, vdg) => 
+    and rec analyzeVDefg : state * env * AS.vDefg -> env =
+     fn (state, env, vdg) =>
         let
-          val env = 
+          val env =
               case vdg
-               of AS.Rec vDefs => 
+               of AS.Rec vDefs =>
                   let
                     val binders = List.map (vDefs, ANSU.VDef.binder)
                     val env = analyzeBinders (state, env, binders)
                     val () = List.foreach (vDefs, fn vd => analyzeVDef (state, env, vd))
                   in env
                   end
-                | AS.Nonrec vDef => 
+                | AS.Nonrec vDef =>
                   let
                     val () = analyzeVDef (state, env, vDef)
                     val env = analyzeBinder (state, env, ANSU.VDef.binder vDef)
                   in env
                   end
-                | AS.Vdef (vts, e) => 
+                | AS.Vdef (vts, e) =>
                   let
                     val () = analyzeExp (state, env, e)
                     val env = List.fold (vts, env, fn (vt, env) => analyzeBinder (state, env, vt))
@@ -238,9 +238,9 @@ struct
                   end
         in env
         end
-        
+
     val analyzeModule : state * env * AS.module -> unit =
-     fn (state, env, m) => 
+     fn (state, env, m) =>
         let
           val AS.Module (v, vdgs) = m
           val env = List.fold (vdgs, env, fn (vdg, env) => analyzeVDefg (state, env, vdg))
@@ -249,15 +249,15 @@ struct
         end
 
     val analyzeIM =
-     fn (state, env, im) => 
+     fn (state, env, im) =>
         let
           val vs = I.listVariables im
           val () = List.foreach (vs, fn v => analyzeTy (state, env, #1 (I.variableInfo (im, v))))
         in ()
         end
 
-    val analyzeProgram : state * env * AS.t -> unit = 
-     fn (state, env, (m, im, tm)) => 
+    val analyzeProgram : state * env * AS.t -> unit =
+     fn (state, env, (m, im, tm)) =>
         let
           val () = analyzeIM (state, env, im)
           val () = analyzeModule (state, env, m)

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature RENAMER = 
+signature RENAMER =
 sig
   type t
   val program     : Config.t * t * Mil.t -> Mil.t
@@ -30,7 +30,7 @@ end
 
 signature MIL_RENAME =
 sig
-  structure Var      : RENAMER where type t = Rename.t 
+  structure Var      : RENAMER where type t = Rename.t
   structure Label    : RENAMER where type t = Mil.label Identifier.LabelDict.t
   structure VarLabel : RENAMER where type t = Rename.t * Mil.label Identifier.LabelDict.t
 end;
@@ -42,7 +42,7 @@ struct
   structure M = Mil
   structure MRC = MilRewriterClient
 
-  structure VarLabel = 
+  structure VarLabel =
   struct
 
     type t = Rename.t * Mil.label LD.t
@@ -54,10 +54,10 @@ struct
 
     fun replaceLabel (lr, l) = Utils.Option.get (LD.lookup (lr, l), l)
 
-    fun rwVariable (s, e as E {r, ...}, v) = 
+    fun rwVariable (s, e as E {r, ...}, v) =
         MRC.StopWith (e, Rename.use (r, v))
 
-    fun rwLabel (s, e as E {lr, ...}, l) = 
+    fun rwLabel (s, e as E {lr, ...}, l) =
         MRC.StopWith (e, replaceLabel (lr, l))
 
     fun rwOperand (s, e, oper) = MRC.Continue
@@ -65,7 +65,7 @@ struct
     fun rwTransfer (s, e, t) = MRC.Continue
     fun rwBlock (s, e, b) = MRC.Continue
     fun rwGlobal (s, e, g) = MRC.Continue
-                          
+
     fun bind (s,e as E {r, ...}, v) = (e, Rename.use' (r, v))
 
     fun bindLabel (s, e as E {lr, ...}, l) = (e, LD.lookup (lr, l))
@@ -79,7 +79,7 @@ struct
         in blks
         end
 
-    structure MR = 
+    structure MR =
     MilRewriterF (struct
                     type state = state
                     type env = env
@@ -97,7 +97,7 @@ struct
                     val cfgEnum = cfgEnum
                   end)
 
-    fun block (c, r, l, b) = 
+    fun block (c, r, l, b) =
      let
        val (s, e) = mkStateEnv (c, r)
        val (l, b) = MR.block (s, e, (l, b))
@@ -126,14 +126,14 @@ struct
         in t
         end
 
-    fun codeBody (c, r, cb) = 
+    fun codeBody (c, r, cb) =
         let
           val (s, e) = mkStateEnv (c, r)
           val cb = MR.codeBody (s, e, cb)
         in cb
         end
 
-    fun code (c, r, cd) = 
+    fun code (c, r, cd) =
         let
           val (s, e) = mkStateEnv (c, r)
           val cd = MR.code (s, e, cd)
@@ -149,7 +149,7 @@ struct
 
   end
 
-  structure Var = 
+  structure Var =
   struct
     type t = Rename.t
     fun lifts (r : t) : VarLabel.t = (r, LD.empty)
@@ -163,7 +163,7 @@ struct
     val program = lift VarLabel.program
   end
 
-  structure Label = 
+  structure Label =
   struct
     type t = Mil.label LD.t
     fun lifts d = (Rename.none, d)

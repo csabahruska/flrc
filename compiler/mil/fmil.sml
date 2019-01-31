@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -30,7 +30,7 @@ sig
   datatype paramId = PiArg of int | PiCls | PiThunk | PiFreeVar of int
 
   datatype varDef =
-      VdExtern of externId 
+      VdExtern of externId
     | VdFunParam of globalId * paramId
     | VdGlobal of Mil.global
     | VdLabParam of blockId * int
@@ -70,7 +70,7 @@ struct
   fun assert (f, m, b) = if b then fail (f, m) else ()
 
   structure I = Identifier
-  structure VD = I.VariableDict  
+  structure VD = I.VariableDict
   structure VS = I.VariableSet
   structure LD = I.LabelDict
   structure M = Mil
@@ -87,7 +87,7 @@ struct
   datatype paramId = PiArg of int | PiCls | PiThunk | PiFreeVar of int
 
   datatype varDef =
-      VdExtern of externId 
+      VdExtern of externId
     | VdFunParam of globalId * paramId
     | VdGlobal of Mil.global
     | VdLabParam of blockId * int
@@ -96,7 +96,7 @@ struct
 
   datatype labDef = Ld of {inFun : globalId, block : Mil.block}
 
-  datatype state = S of {vars : varDef VD.t ref, 
+  datatype state = S of {vars : varDef VD.t ref,
                          instrs : Mil.instruction ID.t ref,
                          labs : labDef LD.t ref}
 
@@ -237,7 +237,7 @@ struct
 
   fun code' (c, si, f, code) = mk (c, si, analyseCode, (f, code))
 
-  fun program' (c, M.P {includes, externs, symbolTable, globals, entry}) = 
+  fun program' (c, M.P {includes, externs, symbolTable, globals, entry}) =
       let
         fun f (state, env, (includes, externs, globals)) =
             let
@@ -261,7 +261,7 @@ struct
       in (cd, code' (c, si, f, cd))
       end
 
-  fun program (c, p) = 
+  fun program (c, p) =
       let
         val (p, _) = MNI.program (c, p)
       in (p, program' (c, p))
@@ -269,7 +269,7 @@ struct
 
   fun getVariable (P {vars, ...}, v) =
       case VD.lookup (vars, v)
-       of NONE   => 
+       of NONE   =>
           let
             val s = Layout.toString (Identifier.layoutVariable' v)
           in fail ("getVariable", "variable not in FMil: " ^ s)
@@ -278,14 +278,14 @@ struct
 
   fun getLabel (P {labs, ...}, l) =
       case LD.lookup (labs, l)
-       of NONE   => 
+       of NONE   =>
           let
             val s = Layout.toString (Identifier.layoutLabel l)
           in fail ("getLabel", "label not in FMil: " ^ s)
           end
         | SOME d => d
 
-  fun getInstruction (P {instrs, ...}, i) = 
+  fun getInstruction (P {instrs, ...}, i) =
       case ID.lookup (instrs, i)
        of NONE   => fail ("getInstruction", "instruction not in FMil")
         | SOME i => i

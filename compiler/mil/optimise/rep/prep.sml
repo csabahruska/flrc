@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,17 +16,17 @@
  *)
 
 
-signature MIL_REP_PREP = 
+signature MIL_REP_PREP =
 sig
   val debugs : Config.Debug.debug list
   val features : Config.Feature.feature list
   val program : PassData.t * Mil.t -> Mil.t
 end
 
-structure MilRepPrep :> MIL_REP_PREP = 
+structure MilRepPrep :> MIL_REP_PREP =
 struct
   val passname = "MilRepPrep"
-  val fail = 
+  val fail =
    fn (fname, msg) => Fail.fail ("prep.sml", fname, msg)
 
   structure M = Mil
@@ -35,7 +35,7 @@ struct
 
   val debugs = []
 
-  val mkFeature = 
+  val mkFeature =
    fn (tag, description) => PD.mkFeature (passname ^":"^ tag, description)
 
   val (splitAggressiveF, splitAggressive) =
@@ -46,7 +46,7 @@ struct
 
   val features = [splitAggressiveF, noSplittingF]
 
-  structure Split = 
+  structure Split =
   struct
     structure I = Identifier
     structure IM = Identifier.Manager
@@ -55,15 +55,15 @@ struct
     structure VS = I.VariableSet
     structure M = Mil
     structure MSTM = MilUtils.SymbolTableManager
-    structure MRC = MilRewriterClient 
+    structure MRC = MilRewriterClient
     structure MFV = MilFreeVars
 
-    datatype state = S of {stm : MSTM.t, 
+    datatype state = S of {stm : MSTM.t,
                            splitVariables : M.variable list IVD.t}
-                          
+
     datatype env = E of {pd : PassData.t,
                          candidates : VS.t}
-                          
+
     local
       val getS = fn g => fn (S t) => g t
       val getE = fn g => fn (E t) => g t
@@ -72,28 +72,28 @@ struct
       val stateGetSplitVariables = getS #splitVariables
       val envGetPD = getE #pd
       val envGetCandidates = getE #candidates
-      val envSetCandidates = 
+      val envSetCandidates =
        fn (E {pd, ...}, candidates) => E {pd = pd, candidates = candidates}
     end
-           
+
     val envGetConfig = PD.getConfig o envGetPD
 
-    val freshSplitVariable = 
+    val freshSplitVariable =
      fn (state, env, v) => MSTM.variableClone (stateGetStm state, v)
 
-    val generateSplitVariable = 
+    val generateSplitVariable =
      fn (state, env, v) =>
         let
           val d = stateGetSplitVariables state
-          val v = 
+          val v =
               (case IVD.lookup (d, v)
-                of SOME l => 
+                of SOME l =>
                    let
                      val vNew = freshSplitVariable (state, env, v)
                      val () = IVD.insert (d, v, vNew::l)
                    in vNew
                    end
-                 | NONE => 
+                 | NONE =>
                    let
                      val () = IVD.insert (d, v, [])
                    in v
@@ -101,25 +101,25 @@ struct
         in v
         end
 
-    val splitCandidate = 
+    val splitCandidate =
      fn (state, env, v) => VS.member (envGetCandidates env, v)
 
-    val splitVariable = 
-     fn (state, env, v) => 
+    val splitVariable =
+     fn (state, env, v) =>
         if splitCandidate (state, env, v) then
           SOME (generateSplitVariable (state, env, v))
         else
           NONE
 
-    structure Rename = 
+    structure Rename =
     MilRewriterF (struct
                     type state      = state
                     type env        = env
                     val config      = envGetConfig
                     val label       = fn _ => MRC.Continue
-                    val variable    = 
-                     fn (state, env, v) => 
-                        (case splitVariable (state, env, v) 
+                    val variable    =
+                     fn (state, env, v) =>
+                        (case splitVariable (state, env, v)
                           of SOME v => MRC.StopWith (env, v)
                            | NONE => MRC.Stop)
                     val operand     = fn _ => MRC.Continue
@@ -133,34 +133,34 @@ struct
                     val cfgEnum     = fn (_, _, t) => MilUtils.CodeBody.dfsTrees t
                   end)
 
-    val addCandidatesForScc = 
-     fn (state, env, cc) => 
+    val addCandidatesForScc =
+     fn (state, env, cc) =>
         let
-          val splittable = 
-           fn g => 
-              (case g 
-                of M.GCode _ => false 
+          val splittable =
+           fn g =>
+              (case g
+                of M.GCode _ => false
                  | _         => MU.Global.immutable g)
-          val help = 
+          val help =
            fn ((v, g), s) => if splittable g then VS.insert (s, v) else s
           val candidates = List.fold (cc, envGetCandidates env, help)
           val env = envSetCandidates (env, candidates)
         in env
         end
 
-    val splitGlobal = 
-     fn (state, env, vg as (v, g)) => 
+    val splitGlobal =
+     fn (state, env, vg as (v, g)) =>
         (case IVD.lookup (stateGetSplitVariables state, v)
           of SOME vs => vg :: (List.map (vs, fn v => (v, g)))
            | NONE => [vg])
 
     val renameGlobal = Rename.global
 
-    val renameGlobals = 
+    val renameGlobals =
      fn (state, env, gs) => List.map (gs, fn vg => renameGlobal (state, env, vg))
 
-    val rewriteGlobal = 
-     fn (state, env, vg) => 
+    val rewriteGlobal =
+     fn (state, env, vg) =>
         if splitAggressive (envGetPD env) then
           let
             val globals = splitGlobal (state, env, vg)
@@ -172,27 +172,27 @@ struct
             val vg = renameGlobal (state, env, vg)
             val globals = splitGlobal (state, env, vg)
           in globals
-          end 
+          end
 
-    val rec doSccs = 
-     fn (state, env, scc) => 
-        (case scc 
+    val rec doSccs =
+     fn (state, env, scc) =>
+        (case scc
           of [] => []
-           | cc::scc => 
+           | cc::scc =>
              let
-               val globals = 
+               val globals =
                    let
                      val env = addCandidatesForScc (state, env, cc)
                      val globals = doSccs (state, env, scc)
-                   in globals 
+                   in globals
                    end
                val globals =
                    List.fold (cc, globals, fn (vg, globals) => rewriteGlobal (state, env, vg) @ globals)
              in globals
              end)
 
-    val doGlobals = 
-     fn (state, env, globals) => 
+    val doGlobals =
+     fn (state, env, globals) =>
         let
           val config = envGetConfig env
           val depsOf = fn (v, g) => MFV.global (config, v, g)
@@ -202,8 +202,8 @@ struct
         in globals
         end
 
-    val program = 
-     fn (pd, p) => 
+    val program =
+     fn (pd, p) =>
         let
           val M.P {includes, externs, symbolTable, globals, entry} = p
           val stm = IM.fromExistingAll symbolTable
@@ -217,8 +217,8 @@ struct
 
   end (* structure Split *)
 
-  val program = 
-   fn (pd, p) => 
+  val program =
+   fn (pd, p) =>
       let
         val config = PD.getConfig pd
         val p = if noSplitting pd then p else Split.program (pd, p)

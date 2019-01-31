@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -86,11 +86,11 @@ struct
   val maybeTuple : string -> string option =
     fn "(# #)" => SOME "Z1H"
      | "()"    => SOME "Z0T"
-     | s       => 
+     | s       =>
        let fun count_commas n (#"," :: cs) = count_commas (n+1) cs
-             | count_commas n cs	   = (n,cs)
-       in 
-         case explode s 
+             | count_commas n cs           = (n,cs)
+       in
+         case explode s
            of #"(" :: #"#" :: cs =>
               (case count_commas 0 cs
                  of (n, #"#" :: #")" :: _) => SOME ("Z" ^ Int.toString (n+1) ^ "H")

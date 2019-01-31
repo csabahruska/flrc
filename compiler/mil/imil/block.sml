@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature IMIL_BLOCK = 
+signature IMIL_BLOCK =
 sig
   include IMIL_PUBLIC_TYPES
 
@@ -49,7 +49,7 @@ sig
   val outEdges : t * iBlock -> (iBlock * iBlock) list
 
   (* merge (t, b1, b2) => replace the transfer of b1 with the
-   * transfer of b2, and move all of the instructions from b2 
+   * transfer of b2, and move all of the instructions from b2
    * to the end of b1.
    *)
   val merge : t * iBlock * iBlock -> unit
@@ -61,8 +61,8 @@ sig
   val append' : t * iBlock * iInstr -> unit
 
   val replaceTransfer : t * iBlock * Mil.transfer -> unit
-  val replaceLabel : t 
-                     * iBlock 
+  val replaceLabel : t
+                     * iBlock
                      * (Mil.label * (Mil.variable Vector.t) )
                      -> unit
 
@@ -70,7 +70,7 @@ sig
    *   b2 is a new block with cloned parameters that goes to b1.
    *   Note: does not retarget any inedges to b.
    *)
-  val addNewPredecessor : t * iBlock -> iBlock 
+  val addNewPredecessor : t * iBlock -> iBlock
 
   (* makeSinglePred (imil, b) => if b has a single predecessor return it
    * otherwise return addNewPredecessor (p, b)
@@ -80,17 +80,17 @@ sig
 
   (* The following functions attempt to split edges between blocks.
    * This is always possible for ordinary control flow edges, but
-   * may not in general be possible for cut edges.  
+   * may not in general be possible for cut edges.
    *)
 
   (* b3 = splitEdge (p, (b1, b2))
    * Split the first edge between b1 and b2 if possible, returning
-   * the new block 
+   * the new block
    *)
   val splitEdge : t * (iBlock * iBlock) -> iBlock option
 
   (* (bs, cuts) = splitXXXEdges (p, b)
-   * Split all of the non cut in/out edges of b, returning the new blocks. 
+   * Split all of the non cut in/out edges of b, returning the new blocks.
    * cuts is true if any cut edges were left un-split.
    *)
   val splitInEdges : t * iBlock -> iBlock list * bool
@@ -110,10 +110,10 @@ end
 
 structure IMilBlock :
 sig
-  include IMIL_BLOCK 
-  (* Create a new block in code, with a new empty label, 
+  include IMIL_BLOCK
+  (* Create a new block in code, with a new empty label,
    * a new empty transfer, and no instructions. The label and
-   * transfer can be set via replaceTransfer and replaceLabel. 
+   * transfer can be set via replaceTransfer and replaceLabel.
    *)
   val new : t * iFunc * Mil.label -> iBlock
   val init : t * iBlock * (Mil.label * Mil.block) -> unit
@@ -122,11 +122,11 @@ sig
   val replaceLabel' : t * iBlock * mInstr -> unit
 
 end
-  = 
+  =
 struct
   open IMilPublicTypes
 
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("block.sml", f, s)
 
   structure M = Mil
@@ -166,7 +166,7 @@ struct
    fn (p, b) => IMT.iBlockGetLabel b
 
   val getFirst =
-   fn (p, b) => 
+   fn (p, b) =>
       let
         val code = IMT.iBlockGetCode b
         val res = Option.map (DList.first code, DList.getVal)
@@ -180,7 +180,7 @@ struct
         | x => fail ("getLabel'", "bad label inst")
 
   val getTransfer' =
-      fn (p, b) => 
+      fn (p, b) =>
       case IMT.iInstrGetMil (getTransfer (p, b))
        of IMT.MTransfer x => x
         | _ => fail ("getTransfer'", "bad transfer inst")
@@ -197,17 +197,17 @@ struct
 
 
   val delete =
-   fn (p, b) => 
+   fn (p, b) =>
       let
-        val IMT.B {label, 
-                   code, 
+        val IMT.B {label,
+                   code,
                    trans,
                    iFunc,
                    node, ...} = IMT.iBlockGetIBlock' b
-                            
+
         val () = Graph.deleteNode (IMT.iFuncGetCfg iFunc, node)
 
-        val () = 
+        val () =
             (case Instr.getMil (p, label)
               of IMT.MLabel (l, _) => ILD.remove (IMT.iFuncGetIBlocks iFunc, l)
                | _ => ())
@@ -224,12 +224,12 @@ struct
       end
 
   val new' =
-   fn (p, iFunc, l, label, trans) => 
+   fn (p, iFunc, l, label, trans) =>
       let
         val b = IMT.iBlockNewUninitialized ()
         val node = Graph.newNode (IMT.iFuncGetCfg iFunc, SOME b)
         val id = IMT.nextId p
-        val b' = 
+        val b' =
             IMT.B {id     = id,
                    label  = label,
                    code   = DList.empty (),
@@ -237,12 +237,12 @@ struct
                    iFunc  = iFunc,
                    node   = node}
         (* Order is important *)
-        val () = 
+        val () =
             IMT.iBlockSetIBlock' (b, b')
         val () = Instr.setLoc (p, label, b, NONE)
         val () = Instr.setLoc (p, trans, b, NONE)
 
-        val () = 
+        val () =
             if l = IMT.iFuncGetStart iFunc then
               ignore (Graph.addEdge (IMT.iFuncGetCfg iFunc, IMT.iFuncGetEntry iFunc, node, ()))
             else ()
@@ -251,24 +251,24 @@ struct
       end
 
   val new =
-   fn (p, cfg, l) => 
+   fn (p, cfg, l) =>
       new' (p, cfg, l, Instr.new p, Instr.new p)
-      
+
 
   val unBuild =
    fn b =>
       let
         val code = DList.toList (IMT.iBlockGetCode b)
-        val instrs = List.keepAllMap (code, Instr.toInstruction) 
+        val instrs = List.keepAllMap (code, Instr.toInstruction)
 
-        val res = 
-            case (Instr.toLabel (IMT.iBlockGetLabel b), 
-                  Instr.toTransfer (IMT.iBlockGetTrans b), 
+        val res =
+            case (Instr.toLabel (IMT.iBlockGetLabel b),
+                  Instr.toTransfer (IMT.iBlockGetTrans b),
                   instrs)
              of (NONE, NONE, []) => NONE
-              | (SOME (label, args), SOME t, _) => 
+              | (SOME (label, args), SOME t, _) =>
                 let
-                  val block = M.B {parameters = args, 
+                  val block = M.B {parameters = args,
                                    instructions = Vector.fromList instrs,
                                    transfer = t}
                 in SOME (label, block)
@@ -297,7 +297,7 @@ struct
    fn (p, i, b) => addFirst (p, b, i)
 
   val prepend =
-   fn (p, mi, b) => 
+   fn (p, mi, b) =>
       let
         val m = IMT.MInstr mi
         val i = Instr.new' (p, m)
@@ -309,7 +309,7 @@ struct
    fn (p, b, i) => addLast (p, b, i)
 
   val append =
-   fn (p, b, mi) => 
+   fn (p, b, mi) =>
       let
         val m = IMT.MInstr mi
         val i = Instr.new' (p, m)
@@ -319,33 +319,33 @@ struct
   end
 
   val replaceTransfer' =
-   fn (p, b, mi) => 
-      Instr.replaceMil (p, 
-                        getTransfer (p, b), 
+   fn (p, b, mi) =>
+      Instr.replaceMil (p,
+                        getTransfer (p, b),
                         mi)
 
   val replaceLabel' =
-      fn (p, b, mi) => 
-      Instr.replaceMil (p, 
-                        getLabel (p, b), 
+      fn (p, b, mi) =>
+      Instr.replaceMil (p,
+                        getLabel (p, b),
                         mi)
 
   val replaceTransfer =
-   fn (p, b, t) => 
+   fn (p, b, t) =>
       replaceTransfer' (p, b, IMT.MTransfer t)
 
   val replaceLabel =
-   fn (p, b, lv) => 
+   fn (p, b, lv) =>
       replaceLabel' (p, b, IMT.MLabel lv)
 
   val init =
-   fn (p, block, (l, b)) => 
+   fn (p, block, (l, b)) =>
       let
         val M.B {parameters,
                  instructions,
                  transfer} = b
-        val () = Vector.foreachr (instructions, 
-                               fn mi => 
+        val () = Vector.foreachr (instructions,
+                               fn mi =>
                                   let
                                     val i = prepend (p, mi, block)
                                   in ()
@@ -355,7 +355,7 @@ struct
       in ()
       end
 
-  val build = 
+  val build =
    fn (p, iFunc, (l, b)) =>
       let
         val ib = new (p, iFunc, l)
@@ -365,19 +365,19 @@ struct
 
 
   val merge =
-   fn (p, b1, b2) => 
+   fn (p, b1, b2) =>
       let
         val () = if b1 = b2 then fail ("merge", "Tried to merge block with itself") else ()
         val iTrans = getTransfer (p, b2)
         val trans = Instr.getMil (p, iTrans)
         val () = Instr.delete (p, iTrans)
         val () = replaceTransfer' (p, b1, trans)
-                 
+
         val first = getFirst (p, b2)
         val rec loop =
-         fn io => 
+         fn io =>
             (case io
-              of SOME i => 
+              of SOME i =>
                  let
                    val io = Instr.next (p, i)
                    val () = append' (p, b1, i)
@@ -407,44 +407,44 @@ struct
   val addNewPredecessor =
    fn (p, b) => #2 (addNewPredecessor' (p, b))
 
- (* Split an edge between b1 and b2, if possible.  If there are 
+ (* Split an edge between b1 and b2, if possible.  If there are
   * multiple edges, split the first.
   *)
   val splitEdge =
-   fn (p, (b1, b2)) => 
+   fn (p, (b1, b2)) =>
       Try.try
-        (fn () => 
+        (fn () =>
             let
               val (l2, _) = getLabel' (p, b2)
               val t = getTransfer' (p, b1)
-              val isTarget = 
+              val isTarget =
                fn M.T {block, arguments} => block = l2
 
-              val doTarget = 
-               fn (l3, M.T {block, arguments}) => 
+              val doTarget =
+               fn (l3, M.T {block, arguments}) =>
                   M.T {block = l3, arguments = arguments}
 
-              val succeed = 
-               fn f => 
+              val succeed =
+               fn f =>
                   let
                     val (l3, b3) = addNewPredecessor' (p, b2)
                     val t = f l3
                     val () = replaceTransfer (p, b1, t)
                   in b3
                   end
-                  
-              val doSwitch = 
-                  (fn (l3, {select, on = a, cases = v, default = defo}) => 
+
+              val doSwitch =
+                  (fn (l3, {select, on = a, cases = v, default = defo}) =>
                       let
-                        val help = 
+                        val help =
                          fn (arg as ((a, tg), done)) =>
                             if done orelse not (isTarget tg) then
                               arg
                             else
                               ((a, doTarget (l3, tg)), true)
-                        val def = 
-                         fn d => 
-                            case d 
+                        val def =
+                         fn d =>
+                            case d
                              of SOME tg => SOME (doTarget (l3, tg))
                               | NONE => fail ("retargetOutEdge", "Switch")
                       in
@@ -453,19 +453,19 @@ struct
                            | (_, false) => M.TCase {select = select, on = a, cases = v, default = def defo})
                       end)
 
-              val b3 = 
+              val b3 =
                   case t
-                   of M.TGoto tg => 
+                   of M.TGoto tg =>
                       succeed (fn l3 => M.TGoto (doTarget (l3, tg)))
                     | M.TReturn _ => fail ("retargetOutEdge", "Return")
-                    | M.TInterProc {callee, ret, fx} => 
+                    | M.TInterProc {callee, ret, fx} =>
                       (case ret
-                        of M.RNormal {rets, block, cuts} => 
+                        of M.RNormal {rets, block, cuts} =>
                            let
                              val () = Try.require (block = l2)
-                             val r = 
-                                 succeed 
-                                   (fn l3 => 
+                             val r =
+                                 succeed
+                                   (fn l3 =>
                                        let
                                          val ret = M.RNormal {rets = rets, block = l3, cuts = cuts}
                                        in M.TInterProc {callee = callee, ret = ret, fx = fx}
@@ -473,7 +473,7 @@ struct
                            in r
                            end
                          | M.RTail _ => fail ("retargetOutEdge", "TailCall"))
-                    | M.TCase sw => 
+                    | M.TCase sw =>
                       succeed (fn l3 => doSwitch (l3, sw))
                     | M.TCut _ => Try.fail ()
                     | M.THalt _ => fail ("retargetOutEdge", "Halt")
@@ -482,11 +482,11 @@ struct
 
   (* Split all of the non-cut edges of b *)
   val splitEdges =
-   fn (p, es) => 
+   fn (p, es) =>
       let
         val failed = ref false
-        val help = 
-         fn e => 
+        val help =
+         fn e =>
             let
               val bo = splitEdge (p, e)
               val () = if isSome bo then () else failed := true
@@ -498,7 +498,7 @@ struct
 
  (* Split all of the non-cut in edges of b *)
   val splitInEdges =
-   fn (p, b) => 
+   fn (p, b) =>
       let
         val edges = IMT.iBlockGetIBlockInEdges b
       in splitEdges (p, edges)
@@ -506,7 +506,7 @@ struct
 
  (* Split all of the non-cut out edges of b *)
   val splitOutEdges =
-   fn (p, b) => 
+   fn (p, b) =>
       let
         val edges = IMT.iBlockGetIBlockOutEdges b
       in splitEdges (p, edges)
@@ -520,7 +520,7 @@ struct
         addNewPredecessor (p, b)
 
   val freeVars =
-   fn (p, b) => 
+   fn (p, b) =>
       (case unBuild b
         of SOME (l, b) => FV.block (p, l, b)
          | NONE => VS.empty)
@@ -535,17 +535,17 @@ struct
       end
 
   val getUsedBy =
-   fn (p, b) => 
+   fn (p, b) =>
       let
         val l = freeVars' (p, b)
-        val defs = Vector.fromListMap (l, 
+        val defs = Vector.fromListMap (l,
                                     fn v => Def.get (p, v))
         val items = Def.defsToItems (p, defs)
       in items
       end
 
   val isStart =
-   fn (p, b) => 
+   fn (p, b) =>
       let
         val iFunc = IMT.iBlockGetIFunc b
         val entry = IMT.iFuncGetEntry iFunc
@@ -556,7 +556,7 @@ struct
       end
 
   val isExit =
-   fn (p, b) => 
+   fn (p, b) =>
       let
         val iFunc = IMT.iBlockGetIFunc b
         val exit = IMT.iFuncGetExit iFunc
@@ -567,11 +567,11 @@ struct
       end
 
   val isEmpty =
-   fn (p, b) => 
+   fn (p, b) =>
       let
         val l = DList.toListUnordered (IMT.iBlockGetCode b)
         val dead =
-         fn i => 
+         fn i =>
             (case Instr.getMil (p, i)
               of IMT.MDead => true
                | _ => false)
@@ -580,18 +580,18 @@ struct
       end
 
   val isDead =
-   fn (p, b) => 
+   fn (p, b) =>
       (case Instr.getMil (p, IMT.iBlockGetLabel b)
         of IMT.MDead => true
          | _ => false)
 
-  val layout = 
-   fn (p, b) => 
-      let 
+  val layout =
+   fn (p, b) =>
+      let
         val lbl = Instr.layout (p, IMT.iBlockGetLabel b)
         val code = DList.toListMap (IMT.iBlockGetCode b, (fn i => Instr.layout (p, i)))
         val t = Instr.layout (p, IMT.iBlockGetTrans b)
-      in L.align[lbl, 
+      in L.align[lbl,
                  LU.indent (L.align code),
                  t]
       end

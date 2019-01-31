@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -20,11 +20,11 @@
  * TopoSort.sort (l, f) returns L, where L is a list of lists of elements
  * of l. Informally, f(v) returns things that v depends on, and hence that
  * should come before it if possible.
- * 
- * More precisely, L is the topologically sorted list of strongly connected 
- * components of the graph induced by adding edges from x to v for each x 
- * in f(v).  Consequently, if x is in f(v), then x is not after v in L.  
- * 
+ *
+ * More precisely, L is the topologically sorted list of strongly connected
+ * components of the graph induced by adding edges from x to v for each x
+ * in f(v).  Consequently, if x is in f(v), then x is not after v in L.
+ *
  * Note: if x is in f(v), but x is not in l, then x will be ignored.
  *)
 
@@ -34,17 +34,17 @@ functor TopoSortF (structure Dict : DICT
         sig
           type key = Dict.key
           val sort : (key * 'a) list * (key * 'a -> Set.t) -> (key * 'a ) list list
-        end = 
+        end =
 struct
   type key = Dict.key
 
   structure PLG = PolyLabeledGraph
 
   val sort =
-   fn (nodes, df) => 
+   fn (nodes, df) =>
       let
         val node = fn ((v, _), n, map) => Dict.insert (map, v, n)
-        val edges = 
+        val edges =
          fn map =>
             let
               val doNode =

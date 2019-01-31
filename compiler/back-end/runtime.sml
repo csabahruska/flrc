@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -608,33 +608,33 @@ struct
                      val name = if masked then "PointwiseM" else "Pointwise"
                    in doOne (name, descriptor, NONE, getPrimName (config, operator))
                    end
-	         | Mil.Prims.ViConvert {to, from}     =>
+                 | Mil.Prims.ViConvert {to, from}     =>
                    let
                      val operator = Mil.Prims.PNumConvert {to = #typ to, from = #typ from}
                    in doOne ("Convert", #descriptor to, SOME (#descriptor from), getPrimName (config, operator))
                    end
-	         | Mil.Prims.ViCast {to, from}     =>
+                 | Mil.Prims.ViCast {to, from}     =>
                    let
                      val operator = getNumericTypName (config, #typ from) ^ "To" ^ getNumericTypName (config, #typ to)
                    in doOne ("Cast", #descriptor to, SOME (#descriptor from), operator)
                    end
-	         | Mil.Prims.ViCompare {descriptor, typ, operator}     =>
+                 | Mil.Prims.ViCompare {descriptor, typ, operator}     =>
                    let
                      val operator = Mil.Prims.PNumCompare {typ = typ, operator = operator}
                    in doOne ("Compare", descriptor, NONE, getPrimName (config, operator))
                    end
-	         | Mil.Prims.ViReduction {descriptor, associativity, operator}   =>
+                 | Mil.Prims.ViReduction {descriptor, associativity, operator}   =>
                    let
                      val name = "Reduce" ^ getAssocName (config, associativity)
                    in doOne (name, descriptor, NONE, getPrimName (config, operator))
                    end
-	         | Mil.Prims.ViData {descriptor, operator}        =>
+                 | Mil.Prims.ViData {descriptor, operator}        =>
                    doOne ("Data", descriptor, NONE, getDataOpName (config, operator, typs))
-	         | Mil.Prims.ViMaskData {descriptor, operator}    =>
+                 | Mil.Prims.ViMaskData {descriptor, operator}    =>
                    doOne ("MaskData", descriptor, NONE, getDataOpName (config, operator, typs))
-	         | Mil.Prims.ViMaskBoolean {descriptor, operator} =>
+                 | Mil.Prims.ViMaskBoolean {descriptor, operator} =>
                    doOne ("MaskBool", descriptor, NONE, getLogicOpName (config, operator))
-	         | Mil.Prims.ViMaskConvert {to, from} =>
+                 | Mil.Prims.ViMaskConvert {to, from} =>
                    doOne ("MaskConvert", to, SOME from, ""))
         in res
         end

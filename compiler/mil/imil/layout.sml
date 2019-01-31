@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature IMIL_LAYOUT = 
+signature IMIL_LAYOUT =
 sig
   include IMIL_PUBLIC_TYPES
   val var   : t * variable -> Layout.t
@@ -42,7 +42,7 @@ sig
   val iInstrH : (t * iInstr -> Layout.t) BackPatch.t
   val iGlobalH : (t * iGlobal -> Layout.t) BackPatch.t
 end
-= 
+=
 struct
   open IMilPublicTypes
 
@@ -53,24 +53,24 @@ struct
   structure IVD = IMT.IVD
   structure BP = BackPatch
 
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("layout.sml",
                            f,
-                           s)                 
+                           s)
 
-  val var  = 
+  val var  =
    fn (p, v) => MilLayout.layoutVariable (IMT.tGetConfig p, IMT.tGetSi p, v)
 
-  val label = 
+  val label =
    fn (p, l) => ID.layoutLabel l
 
-  val layoutIInstrName = 
-   fn (p, i) => 
+  val layoutIInstrName =
+   fn (p, i) =>
       let
         val id = Int.layout (IMT.iInstrGetId i)
-        val l = 
+        val l =
             (case IMT.iInstrGetMil i
-              of IMT.MInstr (M.I {dests, n, rhs}) => 
+              of IMT.MInstr (M.I {dests, n, rhs}) =>
                  (case Vector.toListMap (dests, fn v => var (p, v))
                    of [] => L.str "Instr(!)"
                     | l  => L.seq [L.str "Instr", LayoutUtils.parenSeq l])
@@ -81,40 +81,40 @@ struct
       in l
       end
 
-  val layoutIGlobalName = 
+  val layoutIGlobalName =
    fn (p, g) =>
       (case IMT.iGlobalGetMil g
         of IMT.GGlobal (v, g) => var (p, v)
          | IMT.GDead => L.str "GDead!")
-      
-  val use = 
+
+  val use =
    fn (p, u) =>
       (case u
         of IMT.Used => L.str "Used"
          | IMT.UseInstr i => layoutIInstrName (p, i)
          | IMT.UseGlobal g => layoutIGlobalName (p, g))
-      
-  val mInstr = 
+
+  val mInstr =
    fn (p, mi) =>
       let
         val si = IMT.tGetSi p
-        val l = 
+        val l =
             case mi
-             of IMT.MInstr mi => 
+             of IMT.MInstr mi =>
                 MilLayout.layoutInstruction (IMT.tGetConfig p, si, mi)
-              | IMT.MTransfer t => 
+              | IMT.MTransfer t =>
                 MilLayout.layoutTransfer (IMT.tGetConfig p, si, t)
-              | IMT.MLabel (l, ops) => 
+              | IMT.MLabel (l, ops) =>
                 L.seq[Identifier.layoutLabel l,
                       Vector.layout (fn v => var (p, v)) ops]
               | IMT.MDead => L.str "Dead"
       in l
       end
 
-  val mGlobal = 
+  val mGlobal =
    fn (p, g) =>
       case g
-       of IMT.GGlobal mg => 
+       of IMT.GGlobal mg =>
           MilLayout.layoutGlobal (IMT.tGetConfig p, IMT.tGetSi p, mg)
         | IMT.GDead => L.str "Dead"
 
@@ -127,56 +127,56 @@ struct
   val iGlobalH : (IMT.t * IMT.iGlobal, Layout.t) BP.func = BP.new ()
   val iGlobal = BP.apply iGlobalH
 
-  val item = 
+  val item =
    fn (p, i) =>
       case i
        of IMT.ItemInstr i  => iInstr (p, i)
         | IMT.ItemGlobal g => iGlobal (p, g)
         | IMT.ItemFunc c   => iFunc (p, c)
 
-  val def = 
+  val def =
    fn (p, d) =>
       let
         val var = fn v => var (p, v)
-        val d = 
+        val d =
             case d
              of IMT.DefUnk => L.str "Unk"
               | IMT.DefExtern => L.str "Extern"
-              | IMT.DefInstr i => 
+              | IMT.DefInstr i =>
                 let
-                  val vars = IVD.layout (IMT.iInstrGetVars i, 
+                  val vars = IVD.layout (IMT.iInstrGetVars i,
                                          var o #1)
                 in vars
                 end
-              | IMT.DefGlobal g => 
+              | IMT.DefGlobal g =>
                 let
-                  val vars = IVD.layout (IMT.iGlobalGetVars g, 
+                  val vars = IVD.layout (IMT.iGlobalGetVars g,
                                          var o #1)
                 in vars
                 end
-              | IMT.DefFunc iFunc => 
-                L.seq [L.str "Func ", 
+              | IMT.DefFunc iFunc =>
+                L.seq [L.str "Func ",
                        var (IMT.iFuncGetFName iFunc),
                        L.str ", size = ",
                        Int.layout (!(IMT.iFuncGetSize iFunc))]
               | IMT.DefParameter func =>
                 L.seq [L.str "Parameter ", var (IMT.iFuncGetFName func)]
-                
+
       in d
       end
 
-  val t = 
+  val t =
    fn p =>
       let
         val IMT.P {uses, defs, ...} = p
         val var = fn v => var (p, v)
-        fun layoutVD (v, d) = 
+        fun layoutVD (v, d) =
             L.seq[var v, L.str " <- ", def (p, d)]
         val layoutUse = fn u => use (p, u)
-        fun layoutUseList (v, l) = 
+        fun layoutUseList (v, l) =
             L.seq[var v, L.str " -> ",
                   DList.layout (l, layoutUse)]
-        val l = 
+        val l =
             L.align [L.str "USES",
                      IVD.layout (uses, layoutUseList),
                      L.str "DEFS",

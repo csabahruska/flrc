@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -43,12 +43,12 @@ struct
 
   type node = node
 
-  structure NodeDict = DictF (struct 
+  structure NodeDict = DictF (struct
                                 type t = node;
                                 val compare = compare;
                               end);
 
-  datatype t = DT of {tree : node Tree.t, 
+  datatype t = DT of {tree : node Tree.t,
                       ints : (int * int) NodeDict.t}
 
   val getTree : t -> node Tree.t =
@@ -65,16 +65,16 @@ struct
             in e + 1
             end
         val _ = doTree (t, 0)
-      in 
+      in
         !ints
       end
-      
+
   val new : node Tree.t -> t =
    fn (tree) => DT {tree = tree, ints = mkInts (tree)}
-   
+
   val contains : t * node -> bool =
    fn (DT {ints, ...}, n) => NodeDict.contains (ints, n)
-             
+
   val dominates: t * node * node -> bool =
    fn (DT {ints, ...}, l1, l2) =>
       let

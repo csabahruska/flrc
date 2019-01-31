@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -32,9 +32,9 @@ sig
   (* create an empty rep manager *)
   val size        : 'base manager -> int
   (* create a managed rep, store it with the manager *)
-  val newRep      : 'base manager * 'base -> 'base rep 
+  val newRep      : 'base manager * 'base -> 'base rep
   (* create an un-managed rep, which should only be used for temporary cases *)
-  val newRep_     : 'base -> 'base rep 
+  val newRep_     : 'base -> 'base rep
   (* unwrap the rep and return the base type *)
   val repToBase   : 'base rep -> 'base
   (* helper functions to compute hash *)
@@ -50,16 +50,16 @@ struct
   structure UO = Utils.Option
 
   (* Exception is required by sml-nj's HashTable, though we don't use it *)
-  exception NotFound 
+  exception NotFound
 
   (* The optional meta fields are to speed up hashing and comparison operations *)
   datatype 'base rep = Ty of { base : 'base, meta : { hash : word, uid : word } option }
 
-  (* 
+  (*
    * The manager uses a stamp to generate uids for rep, and a hash table to
    * store reps for hash-consing.
-   *) 
-  datatype 'base manager = Tbl of { stamp : word ref, 
+   *)
+  datatype 'base manager = Tbl of { stamp : word ref,
                                     table : ('base, 'base rep) H.hash_table,
                                     hashBase : 'base -> word }
 
@@ -68,7 +68,7 @@ struct
   type 'base baseEq   = ('base rep * 'base rep -> bool) -> 'base * 'base -> bool
 
   val hashRep : ('base -> word) -> 'base rep -> word
-    = fn hashBase => fn Ty { base, meta } => 
+    = fn hashBase => fn Ty { base, meta } =>
       UO.dispatch (meta, fn { hash, ... } => hash, fn () => hashBase base)
 
   val hashRepWithManager : 'base manager * 'base rep -> word
@@ -81,7 +81,7 @@ struct
            | _ => eqBase (x, y))
 
   val newManager : 'base baseHash * 'base baseEq -> 'base manager
-    = fn (hash, eq) => 
+    = fn (hash, eq) =>
       let
         fun hashBase x = hash (hashRep hashBase) x
         fun eqBase x = eq (eqRep eqBase) x

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -19,21 +19,21 @@
 (* Graph implementations *)
 
 (* Imperative polymorphic graphs *)
-signature IMP_POLY_LABELED_GRAPH = 
-sig 
+signature IMP_POLY_LABELED_GRAPH =
+sig
 
   eqtype ('a, 'b) node
   eqtype ('a, 'b) edge
 
   type ('a, 'b) t
-     
+
   structure Node : sig
     val id        : ('a, 'b) node -> int
     val compare   : ('a, 'b) node * ('a, 'b) node -> order
     val equal     : ('a, 'b) node * ('a, 'b) node -> bool
-    (* Set of sucessor nodes. No duplicates. *) 
+    (* Set of sucessor nodes. No duplicates. *)
     val succs     : ('a, 'b) node -> ('a, 'b) node List.t
-    (* Set of predecessor nodes. No duplicates. *) 
+    (* Set of predecessor nodes. No duplicates. *)
     val preds     : ('a, 'b) node -> ('a, 'b) node List.t
     (* List of input edges. *)
     val inEdges   : ('a, 'b) node -> ('a, 'b) edge List.t
@@ -44,7 +44,7 @@ sig
     val setLabel  : ('a, 'b) node * 'a -> unit
     val getLabel  : ('a, 'b) node -> 'a
   end
-                   
+
   structure Edge : sig
     val compare  : ('a, 'b) edge * ('a, 'b) edge -> order
     val equal    : ('a, 'b) edge * ('a, 'b) edge -> bool
@@ -53,7 +53,7 @@ sig
     val setLabel : ('a, 'b) edge * 'b -> unit
     val getLabel : ('a, 'b) edge -> 'b
   end
-                   
+
   (* Graph: Nodes operations. *)
   val newNode        : ('a, 'b) t * 'a -> ('a, 'b) node
   val deleteNode     : ('a, 'b) t * ('a, 'b) node -> unit
@@ -68,15 +68,15 @@ sig
   (* Graph operations. *)
   val new           : unit -> ('a, 'b) t
   val copy          : ('a, 'b) t
-                      -> ('a, 'b) t * 
+                      -> ('a, 'b) t *
                          (('a, 'b) node -> ('a, 'b) node) *
                          (('a, 'b) edge -> ('a, 'b) edge)
   val map           : ('a, 'b) t * ('a -> 'c) * ('b -> 'd)
-                      -> ('c, 'd) t * 
+                      -> ('c, 'd) t *
                          (('a, 'b) node -> ('c, 'd) node) *
                          (('a, 'b) edge -> ('c, 'd) edge)
-         
-  (* List of strongly connected components, topologically sorted.  No 
+
+  (* List of strongly connected components, topologically sorted.  No
    * edges in the graph point backward in the list *)
   val scc          : ('a, 'b) t -> ('a, 'b) node list list
   val cc           : ('a, 'b) t -> ('a, 'b) node list list
@@ -94,38 +94,38 @@ sig
                     graphOptions : Dot.GraphOption.t list,
                     graphTitle   : Layout.t}
                    -> Layout.t
-  val layoutDot  : ('a, 'b) t * 
-                   {nodeName   : ('a, 'b) node -> Layout.t, 
+  val layoutDot  : ('a, 'b) t *
+                   {nodeName   : ('a, 'b) node -> Layout.t,
                     graphTitle : Layout.t}
                    -> Layout.t
 end;
 
-structure ImpPolyLabeledGraph :> IMP_POLY_LABELED_GRAPH = 
+structure ImpPolyLabeledGraph :> IMP_POLY_LABELED_GRAPH =
 struct
 
   fun fail (f, m) = Fail.fail ("ImpPolyLabeledGraph", f, m)
-                  
+
   datatype  ('a, 'b) t = G of {nodes : ('a, 'b) node List.t ref,
                                edges : ('a, 'b) edge List.t ref,
                                idGen : int ref}
-                              
+
        and ('a, 'b) node = N of {uniqueId : int,
                                  outEdges : ('a, 'b) edge List.t ref,
                                  inEdges  : ('a, 'b) edge List.t ref,
                                  preds    : ('a, 'b) node List.t ref, (* no duplicates *)
                                  succs    : ('a, 'b) node List.t ref, (* no duplicates *)
                                  label    : 'a ref}
-                                
+
        and ('a, 'b) edge = E of {uniqueId : int,
                                  to       : ('a, 'b) node,
                                  from     : ('a, 'b) node,
                                  label    : 'b ref}
-                                
+
   fun compareNode (N n1, N n2) = Int.compare (#uniqueId n1, #uniqueId n2)
-                                 
+
   fun compareEdge (E e1, E e2) = Int.compare (#uniqueId e1, #uniqueId e2)
 
-  structure Edge = 
+  structure Edge =
   struct
     val compare  = compareEdge
     val equal    = fn (e1, e2) => (compare (e1, e2) = EQUAL)
@@ -134,8 +134,8 @@ struct
     val getLabel = fn (E e) => !(#label e)
     val setLabel = fn (E e, v) => (#label e) := v
   end
-  
-  structure Node = 
+
+  structure Node =
   struct
     val id = fn N n => #uniqueId n
     val compare  = compareNode
@@ -152,8 +152,8 @@ struct
     val getLabel = fn (N n) => !(#label n)
 
   end
-  
-  fun generateId (G g) = 
+
+  fun generateId (G g) =
       let
         val idGen = #idGen g
         val newId = !idGen
@@ -161,18 +161,18 @@ struct
       in
         newId
       end
-      
-  fun filterEdge (list, e) = 
+
+  fun filterEdge (list, e) =
       List.remove (list, fn e' => Edge.equal (e, e'))
 
-  fun filterNode (list, n) = 
+  fun filterNode (list, n) =
       List.remove (list, fn n' => Node.equal (n, n'))
 
   fun getNodeId (N n) = #uniqueId n
 
   fun getEdgeId (E e) = #uniqueId e
 
-  fun addNodeInEdge (N n, edge) = 
+  fun addNodeInEdge (N n, edge) =
       let
         val () = (#inEdges n) := edge::(!(#inEdges n))
         val () = case List.peek (!(#preds n), fn n => Node.equal (n, Edge.from edge))
@@ -180,8 +180,8 @@ struct
                    | NONE => (#preds n) := (Edge.from edge) :: (!(#preds n))
       in ()
       end
-                                  
-  fun addNodeOutEdge (N n, edge) = 
+
+  fun addNodeOutEdge (N n, edge) =
       let
         val () = (#outEdges n) := edge::(!(#outEdges n))
         val () = case List.peek (!(#succs n), fn n => Node.equal (n, Edge.to edge))
@@ -238,7 +238,7 @@ struct
         val node = N {uniqueId = generateId (G g),
                       outEdges = ref nil,
                       inEdges  = ref nil,
-                      preds    = ref nil, 
+                      preds    = ref nil,
                       succs    = ref nil,
                       label    = ref label}
         val nodes = #nodes g
@@ -247,7 +247,7 @@ struct
         node
       end
 
-  val deleteNode = 
+  val deleteNode =
    fn (G g, N n) =>
       let
         (* Delete adjacent edges. XXX EB: Could be improved for performance. *)
@@ -261,15 +261,15 @@ struct
 
   val nodes = fn (G g) => !(#nodes g)
 
-  val new = 
+  val new =
    fn () => G {nodes = ref nil,
                edges = ref nil,
                idGen = ref 0}
-            
+
   fun mapRev (G g, mapNodeData, mapEdgeData, rev) =
       let
         (* Map nodes. *)
-        fun mapNode (N n) = 
+        fun mapNode (N n) =
             let
               val uniqueId = #uniqueId n
               val ref label = #label n
@@ -283,22 +283,22 @@ struct
                  label    = ref newLabel}
             end
         val newNodes = List.map (nodes (G g), mapNode)
-        val idToNewNodeDict = 
+        val idToNewNodeDict =
             IntDict.fromList (List.map (newNodes, fn n => (getNodeId (n), n)))
-        fun nodeToNewNode (node) = 
+        fun nodeToNewNode (node) =
             case IntDict.lookup (idToNewNodeDict, getNodeId node)
              of SOME n => n
               | NONE => fail ("nodeToNewNode", "Could not map node to new node")
         (* Map nodes. *)
-        fun mapEdge (E e) = 
+        fun mapEdge (E e) =
             let
               val uniqueId = #uniqueId e
               val ref label = #label e
               val newLabel = mapEdgeData label
               val dst = Edge.to (E e)
               val src = Edge.from (E e)
-              val (newSrc, newDst) = 
-                  if rev then 
+              val (newSrc, newDst) =
+                  if rev then
                     (nodeToNewNode (dst), nodeToNewNode (src))
                   else
                     (nodeToNewNode (src), nodeToNewNode (dst))
@@ -312,33 +312,33 @@ struct
               newEdge
             end
         val newEdges = List.map (edges (G g), mapEdge)
-        val idToNewEdgeDict = 
+        val idToNewEdgeDict =
             IntDict.fromList (List.map (newEdges, fn n => (getEdgeId (n), n)))
-        fun edgeToNewEdge (edge) = 
+        fun edgeToNewEdge (edge) =
             case IntDict.lookup (idToNewEdgeDict, getEdgeId edge)
              of SOME n => n
               | NONE => fail ("edgeToNewEdge", "Could not map edge to new edge")
         val ref idGen = #idGen g
       in
-        (G {nodes = ref newNodes, 
-            edges = ref newEdges, 
+        (G {nodes = ref newNodes,
+            edges = ref newEdges,
             idGen = ref idGen},
-         nodeToNewNode, 
+         nodeToNewNode,
          edgeToNewEdge)
       end
-      
+
   val map : ('a, 'b) t * ('a -> 'c) * ('b -> 'd)
-            -> ('c, 'd) t * 
+            -> ('c, 'd) t *
                (('a, 'b) node -> ('c, 'd) node) *
-               (('a, 'b) edge -> ('c, 'd) edge) = 
-   fn (g, mapNodeData, mapEdgeData) => 
+               (('a, 'b) edge -> ('c, 'd) edge) =
+   fn (g, mapNodeData, mapEdgeData) =>
       mapRev (g, mapNodeData, mapEdgeData, false)
-      
-  val copy : ('a, 'b) t -> ('a, 'b) t * 
+
+  val copy : ('a, 'b) t -> ('a, 'b) t *
                            (('a, 'b) node -> ('a, 'b) node) *
                            (('a, 'b) edge -> ('a, 'b) edge) =
    fn (g) => mapRev (g, fn n => n, fn e => e, false)
-      
+
   (* EB: Slow (n^2) function, use it carefully. *)
   fun checkForDuplicates (nil, m) = ()
     | checkForDuplicates ([x], m) = ()
@@ -348,7 +348,7 @@ struct
       else
         checkForDuplicates (xs, m)
 
-  fun checkNodesUniqueIds (g) = 
+  fun checkNodesUniqueIds (g) =
       let
         val idList = List.map (nodes (g), getNodeId)
       in
@@ -357,7 +357,7 @@ struct
 
   structure DG = DirectedGraph
 
-  (* Build DG to reuse MLTON graph algorithms. 
+  (* Build DG to reuse MLTON graph algorithms.
    * Returns
    *  DG graph    : dg
    *  getDGNode   : IPLG.node -> DG.node
@@ -369,14 +369,14 @@ struct
         (* val () = checkNodesUniqueIds (G g) *)
         val dg = DG.new ()
         val prop = Property.initRaise ("node data", DG.Node.layout)
-        val {set, get=getIPLGNode, ...} = 
+        val {set, get=getIPLGNode, ...} =
             Property.getSetOnce (DG.Node.plist, prop)
         val idToDGNodeDict = ref IntDict.empty
-        fun getDGNode n = 
+        fun getDGNode n =
             case IntDict.lookup (!idToDGNodeDict, getNodeId (n))
              of SOME n => n
               | NONE => fail ("getDGNode", "Could not map id to DG node.")
-        fun createDGNode (n) = 
+        fun createDGNode (n) =
             let
               val dgNode = DG.newNode dg
               val id = getNodeId (n)
@@ -385,7 +385,7 @@ struct
                set (dgNode, n))
             end
         val () = List.foreach (nodes (G g), createDGNode)
-        fun createDGEdge (e) = 
+        fun createDGEdge (e) =
             let
               val src = getDGNode (Edge.from (e))
               val dst = getDGNode (Edge.to (e))
@@ -397,7 +397,7 @@ struct
             end
         val () = List.foreach (edges (G g), createDGEdge)
       in
-        {dg          = dg, 
+        {dg          = dg,
          getIPLGNode = getIPLGNode,
          getDGNode   = getDGNode}
       end
@@ -443,7 +443,7 @@ struct
 
   fun treeToList (t) = Tree.foldPost (t, nil, fn (a, l) => a::l)
 
-  val reachable = 
+  val reachable =
    fn (g, start) => treeToList (dfsTree (g, start))
 
   val unreachable =
@@ -461,19 +461,19 @@ struct
   structure EC = EquivalenceClass
 
   val cc : ('a, 'b) t -> ('a, 'b) node list list =
-   fn g => 
+   fn g =>
       let
         val ns = nodes g
         val help = fn (n, (i, nd)) => (i+1, IntDict.insert (nd, getNodeId n, EC.new i))
         val (_, classes) = List.fold (ns, (0, IntDict.empty), help)
-        val class = fn n => 
-                       (case IntDict.lookup (classes, getNodeId n) 
+        val class = fn n =>
+                       (case IntDict.lookup (classes, getNodeId n)
                          of SOME ec => ec
                           | NONE => fail ("cc", "Bad node"))
         val es = edges g
         val join = fn e => ignore (EC.join (class (Edge.from e), class (Edge.to e)))
         val () = List.foreach (edges g, join)
-        val add = fn (d, i, n) => 
+        val add = fn (d, i, n) =>
                      (case IntDict.lookup (d, i)
                        of SOME l => IntDict.insert (d, i, n::l)
                         | NONE   => IntDict.insert (d, i, [n]))
@@ -489,35 +489,35 @@ struct
         val visited = ref IntDict.empty
         fun visitedNode n = IntDict.contains (!visited, getNodeId n)
         fun visit (n) = visited := IntDict.insert (!visited, getNodeId (n), ())
-        fun rpoVisit n = 
+        fun rpoVisit n =
             let
               val () = visit n
-              (* This has side effects.  For non-trees, this means that 
-               * reversing the outedges before visiting gives a wrong answer 
+              (* This has side effects.  For non-trees, this means that
+               * reversing the outedges before visiting gives a wrong answer
                *)
               val subTrees = List.map (Node.outEdges (n), visitSucc o Edge.to)
             in
               n :: List.concat (List.rev subTrees)
             end
-        and visitSucc dst = 
+        and visitSucc dst =
             if visitedNode dst then nil else rpoVisit dst
       in
         rpoVisit start
       end
 
-  val postOrderDfs : ('a, 'b) t * ('a, 'b) node -> ('a, 'b) node List.t = 
+  val postOrderDfs : ('a, 'b) t * ('a, 'b) node -> ('a, 'b) node List.t =
       fn (g, start) => List.rev (revPostOrderDfs (g, start))
 
-  val layoutDot' = 
+  val layoutDot' =
    fn (G g, {edgeOptions, nodeOptions, graphOptions, graphTitle}) =>
       let
         fun nameNode (n) = Int.toString (getNodeId (n))
-        fun doNode (n) = 
+        fun doNode (n) =
             let
-              fun doEdge (e) = 
+              fun doEdge (e) =
                   {name    = nameNode (Edge.to e),
                    options = edgeOptions e}
-            in 
+            in
               {name       = nameNode n,
                options    = nodeOptions n,
                successors = List.map (Node.outEdges (n), doEdge)}
@@ -528,12 +528,12 @@ struct
                     title   = Layout.toString graphTitle}
       end
 
-  val layoutDot = 
+  val layoutDot =
    fn (G g, {nodeName, graphTitle}) =>
       let
         fun edgeOptions e = []
         val graphOptions  = []
-        fun nodeOptions n = 
+        fun nodeOptions n =
             [Dot.NodeOption.label (Layout.toString (nodeName n))]
       in
         layoutDot' (G g, {edgeOptions  = edgeOptions,
@@ -591,7 +591,7 @@ sig
   val map : ('a, 'b) t * ('a -> 'c) * ('b -> 'd)
             -> ('c, 'd) t * (('a, 'b) node -> ('c, 'd) node) * (('a, 'b) edge -> ('c, 'd) edge)
 
-  (* List of strongly connected components, topologically sorted.  No 
+  (* List of strongly connected components, topologically sorted.  No
    * edges in the graph point backward in the list *)
   val scc          : ('a, 'b) t -> ('a, 'b) node list list
   val dfsTree      : ('a, 'b) t * ('a, 'b) node -> ('a, 'b) node Tree.t
@@ -617,7 +617,7 @@ struct
   structure G = ImpPolyLabeledGraph
   open G
 
-  val new = 
+  val new =
    fn {nodes = nodeLabels, init, node = folder, edges = edgeGen} =>
       let
         val g = G.new ()

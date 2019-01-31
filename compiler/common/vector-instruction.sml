@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -25,26 +25,26 @@ sig
       ViUInt8   | ViUInt16  | ViUInt32 | ViUInt64
     | ViSInt8   | ViSInt16  | ViSInt32 | ViSInt64
     | ViFloat16 | ViFloat32 | ViFloat64
-   
+
   datatype prim =
          (* bitwise ops per element *)
            ViShiftL of elemType (* shift logical *)
-         | ViShiftA of elemType (* shift arithmetic *)  
+         | ViShiftA of elemType (* shift arithmetic *)
          | ViRotateL of elemType (* rotate left *)
          | ViRotateR of elemType (* rotate right *)
          | ViBitNot of elemType
          | ViBitAnd of elemType
-         | ViBitXor of elemType 
-         | ViBitOr of elemType 
+         | ViBitXor of elemType
+         | ViBitOr of elemType
          (* logical ops per element *)
          | ViNot of elemType
          | ViAnd of elemType
          | ViOr of elemType
          | ViMaskNot of elemType
-         | ViMaskAnd of elemType  
-         | ViMaskOr of elemType  
+         | ViMaskAnd of elemType
+         | ViMaskOr of elemType
          (* two-source ops*)
-         | ViAdd of elemType 
+         | ViAdd of elemType
          | ViSub of elemType
          | ViMul of elemType
          | ViDiv of elemType
@@ -80,7 +80,7 @@ sig
          (* misc *)
          | ViSelect of elemType
          | ViPermute of elemType * int Vector.t
-         | ViInit of elemType 
+         | ViInit of elemType
 
   datatype t = TVector of elemType | TMask of elemType
   val typeOf : prim -> t list * t
@@ -128,26 +128,26 @@ struct
     | ViFloat16 | ViFloat32 | ViFloat64
 
   structure IA = IntArb
-  
+
   datatype prim =
          (* bitwise ops per element *)
            ViShiftL of elemType (* shift logical *)
-         | ViShiftA of elemType (* shift arithmetic *)  
+         | ViShiftA of elemType (* shift arithmetic *)
          | ViRotateL of elemType (* rotate left *)
          | ViRotateR of elemType (* rotate right *)
          | ViBitNot of elemType
          | ViBitAnd of elemType
-         | ViBitXor of elemType 
-         | ViBitOr of elemType 
+         | ViBitXor of elemType
+         | ViBitOr of elemType
          (* logical ops per element *)
          | ViNot of elemType
          | ViAnd of elemType
          | ViOr of elemType
          | ViMaskNot of elemType
-         | ViMaskAnd of elemType  
-         | ViMaskOr of elemType  
+         | ViMaskAnd of elemType
+         | ViMaskOr of elemType
          (* two-source ops*)
-         | ViAdd of elemType 
+         | ViAdd of elemType
          | ViSub of elemType
          | ViMul of elemType
          | ViDiv of elemType
@@ -189,7 +189,7 @@ struct
   datatype t = TVector of elemType | TMask of elemType
 
 
-  fun typeOf prim = 
+  fun typeOf prim =
       case prim
        of  ViShiftL et  => ([TVector et, TVector et], TVector et)
          | ViShiftA et  => ([TVector et, TVector et], TVector et)
@@ -198,14 +198,14 @@ struct
          | ViBitNot et  => ([TVector et, TVector et], TVector et)
          | ViBitAnd et  => ([TVector et, TVector et], TVector et)
          | ViBitXor et  => ([TVector et, TVector et], TVector et)
-         | ViBitOr et   => ([TVector et, TVector et], TVector et) 
+         | ViBitOr et   => ([TVector et, TVector et], TVector et)
          | ViNot et     => ([TVector et, TVector et], TVector et)
          | ViAnd et     => ([TVector et, TVector et], TVector et)
          | ViOr et      => ([TVector et, TVector et], TVector et)
          | ViMaskNot et => ([TVector et, TVector et], TVector et)
-         | ViMaskAnd et => ([TVector et, TVector et], TVector et)  
-         | ViMaskOr et  => ([TVector et, TVector et], TVector et)  
-         | ViAdd et     => ([TVector et, TVector et], TVector et) 
+         | ViMaskAnd et => ([TVector et, TVector et], TVector et)
+         | ViMaskOr et  => ([TVector et, TVector et], TVector et)
+         | ViAdd et     => ([TVector et, TVector et], TVector et)
          | ViSub et     => ([TVector et, TVector et], TVector et)
          | ViMul et     => ([TVector et, TVector et], TVector et)
          | ViDiv et     => ([TVector et, TVector et], TVector et)
@@ -238,7 +238,7 @@ struct
          | ViLe et      => ([TVector et, TVector et], TVector et)
          | ViSelect et  => ([TVector et, TVector et], TVector et)
          | ViPermute (et,  _) => ([TVector et, TVector et], TVector et)
-         | ViInit et    => ([TVector et            ], TVector et) 
+         | ViInit et    => ([TVector et            ], TVector et)
 
 
   fun numElemTypeBytes vet =
@@ -339,7 +339,7 @@ struct
         | i::is =>
           "[" ^ Int.toString i ^ String.concat (List.map (is, fn i => "," ^ Int.toString i)) ^ "]"
 
-  fun stringOfPrim p = 
+  fun stringOfPrim p =
       case p
        of ViShiftL et         => "ViShiftL" ^ stringOfElemTypeShort et
          | ViShiftA et        => "ViShiftA" ^ stringOfElemTypeShort et
@@ -431,7 +431,7 @@ struct
           | (ViFloat32, _        ) => GREATER
           | (_,         ViFloat32) => LESS
           | (ViFloat64, ViFloat64) => EQUAL
-    
+
     fun prim (x1, x2) =
         case (x1, x2)
          of (ViShiftL x1,  ViShiftL x2 ) => elemType (x1, x2)

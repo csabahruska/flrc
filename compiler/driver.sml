@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -220,7 +220,7 @@ struct
                                 of MLton.Platform.OS.Cygwin => Config.OsCygwin
                                  | MLton.Platform.OS.Linux => Config.OsLinux
                                  | MLton.Platform.OS.MinGW => Config.OsMinGW
-			         | p => raise Fail ("Unsupported host: " ^ MLton.Platform.OS.toString p))
+                                 | p => raise Fail ("Unsupported host: " ^ MLton.Platform.OS.toString p))
         (* val libDir      = ref initLibDir *)
         val keeps       = Passes.keeps
         val keep        = ref SS.empty
@@ -269,7 +269,7 @@ struct
             liftPassF (usage, name, fn pd => PassData.setShowPost (pd, b))
         fun setStatPost (usage, name, b) =
             liftPassF (usage, name, fn pd => PassData.setStatPost (pd, b))
-        fun setShowLineCount (usage, name, b) = 
+        fun setShowLineCount (usage, name, b) =
             liftPassF (usage, name, fn pd => PassData.setShowLineCount (pd, b))
 
         fun rest (s, i) = String.substring (s, i, String.size s - i)
@@ -296,7 +296,7 @@ struct
                   end
                 else
                   setShowPost (usage, rest (s, 1), true)
-              | #"%" => 
+              | #"%" =>
                 setShowLineCount (usage, rest (s, 1), true)
               | #"*" =>
                 let

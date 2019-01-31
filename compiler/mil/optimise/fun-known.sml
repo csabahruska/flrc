@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -22,20 +22,20 @@ signature MIL_FUN_KNOWN =
 sig
   val debugs : Config.Debug.debug list
   val stats : (string * string) list
-  val flatten : PassData.t 
-                * IMil.t 
-                * IMil.WorkSet.ws 
+  val flatten : PassData.t
+                * IMil.t
+                * IMil.WorkSet.ws
                 * Mil.variable
                 * IMil.cfg
                 -> unit Try.t
-  val parameters : PassData.t 
-                   * IMil.t 
+  val parameters : PassData.t
+                   * IMil.t
                    * IMil.WorkSet.ws
                    * Mil.variable
                    * IMil.cfg
                    -> unit Try.t
-  val return : PassData.t 
-               * IMil.t 
+  val return : PassData.t
+               * IMil.t
                * IMil.WorkSet.ws
                * Mil.variable
                * IMil.cfg
@@ -122,7 +122,7 @@ struct
            IRhsFun of IMil.instr * M.variable option *
                       (M.variable * M.variable option * M.operand Vector.t)
          | IRhsThunk of IMil.instr * M.variable option *
-                        {thunk    : M.variable, 
+                        {thunk    : M.variable,
                          effects  : M.effects,
                          code     : M.variable,
                          freeVars : M.operand Vector.t}
@@ -134,7 +134,7 @@ struct
         fun fail () =
             if e then ()
             else Fail.fail ("MilFunKnown", "rewriteInits",
-                            "bad use of non-escaping function") 
+                            "bad use of non-escaping function")
         fun doOne use =
             case use
              of IMil.UseInstr i =>
@@ -168,7 +168,7 @@ struct
       let
         val uses = IMil.Use.getUses (imil, f)
         fun fail () = Fail.fail ("MilFunKnown", "rewriteCallers",
-                                 "use of non-escaping function not a call") 
+                                 "use of non-escaping function not a call")
         fun doOne use =
             case use
              of IMil.UseInstr i =>
@@ -341,20 +341,20 @@ struct
       in s
       end
 
-  fun useIsNotClosureProjection (d, imil, c, u) = 
+  fun useIsNotClosureProjection (d, imil, c, u) =
       let
         val cOp = M.SVariable c
         fun isClosOp oper = MOU.eqOperand (imil, oper, cOp)
         fun cNotIn ops = Vector.forall (ops, not o isClosOp)
 
-        fun doTransfer t = 
+        fun doTransfer t =
             case t
              of M.TCall (M.CDirectClosure _, args, _, _, _)  => cNotIn args
               | M.TTailCall (M.CDirectClosure _, args, _)    => cNotIn args
               | M.TEvalThunk (M.EDirectThunk _, _, _, _)     => true
               | _ => false
 
-        fun doRhs rhs = 
+        fun doRhs rhs =
             case rhs
              of M.RhsPFunctionInit (clos, _, fvs) => cNotIn fvs
               | M.RhsThunkInit {thunk, freeVars, ...} => cNotIn freeVars
@@ -367,19 +367,19 @@ struct
               | IMil.MLabel _ => false
               | IMil.MDead => false
 
-        val res = 
+        val res =
             (case u
               of IMil.UseGlobal g => false
                | IMil.UseInstr i => doIInstr i
                | IMil.Used => false)
       in res
-      end 
+      end
 
-  fun closureIsNotProjected (d, imil, c) = 
+  fun closureIsNotProjected (d, imil, c) =
       let
         val uses = IMil.Use.getUses (imil, c)
-        val res = 
-            Vector.forall (uses, 
+        val res =
+            Vector.forall (uses,
                         fn u => useIsNotClosureProjection (d, imil, c, u))
       in res
       end
@@ -392,7 +392,7 @@ struct
         | M.CcThunk (c, _)    => closureIsNotProjected (d, imil, c)
         | M.CcBulkSpawn       => true
 
-  fun parameters (d, imil, wl, f, cfg) = Try.try (fn () => 
+  fun parameters (d, imil, wl, f, cfg) = Try.try (fn () =>
       let
         (*** Analyse the parameters ***)
         val cc = IMil.Cfg.getCallConv (imil, cfg)
@@ -441,13 +441,13 @@ struct
                      doArgs (a, Vector.new0 ())
                    | IMil.MInstr (M.I {rhs, ...}) =>
                      (case rhs
-                       of M.RhsPFunctionInit (c, _, fvs) => 
+                       of M.RhsPFunctionInit (c, _, fvs) =>
                           if closureIsNotProjected (d, imil, c) then
                             doFvs (a, fvs)
                           else
                             keepFvs a
                         | M.RhsThunkInit {freeVars, thunk, ...} =>
-                          if closureIsNotProjected (d, imil, thunk) then 
+                          if closureIsNotProjected (d, imil, thunk) then
                             doFvs (a, freeVars)
                           else
                             keepFvs a
@@ -465,11 +465,11 @@ struct
         val () =
             debug (d, fn () => "parameters: " ^ I.variableString' f ^ ": " ^
                                layoutParameters a)
-        val () = 
+        val () =
             let
-              val help = 
-                  fn p => 
-                     case p 
+              val help =
+                  fn p =>
+                     case p
                       of PiUnknown => false
                        | PiKeep => false
                        | PiDead => true
@@ -628,9 +628,9 @@ struct
       end)
 
   (* Bool indicates whether deleting the return value is allowed. *)
-  datatype returnInfo = RiDead 
+  datatype returnInfo = RiDead
                       | RiNotDead of bool
-                      | RiConstant of bool * M.simple 
+                      | RiConstant of bool * M.simple
                       | RiKeep
 
   fun layoutReturnInfo ri =
@@ -661,19 +661,19 @@ struct
             fun doRet (a, cfg, ret) =
                 let
                   val retb = IMil.Cfg.getBlockByLabel (imil, cfg, ret)
-                  val hasDest = 
+                  val hasDest =
                       List.length (IMil.Block.preds (imil, retb)) = 1
                 in
                   case a
-                   of RiDead => 
+                   of RiDead =>
                       let
                         val param =
-                            Vector.sub (IMil.Block.getParameters (imil, retb), 
+                            Vector.sub (IMil.Block.getParameters (imil, retb),
                                         0)
                         val uses = IMil.Use.getUses (imil, param)
                         val a =
-                            if (Vector.length uses = 0) andalso hasDest then 
-                              RiDead 
+                            if (Vector.length uses = 0) andalso hasDest then
+                              RiDead
                             else RiNotDead hasDest
                       in a
                       end
@@ -686,7 +686,7 @@ struct
                 case a
                  of RiDead       => RiNotDead false
                   | RiNotDead a  => RiNotDead false
-                  | RiConstant _ => RiKeep 
+                  | RiConstant _ => RiKeep
                   | RiKeep       => RiKeep
 
             fun doOne (use, a) =
@@ -696,12 +696,12 @@ struct
                       of IMil.MTransfer (t as M.TCall (_, _, ret, _, _)) =>
                          doRet (a, IMil.Instr.getCfg (imil, i), ret)
                        | IMil.MTransfer (t as M.TTailCall _) => RiKeep
-                       | IMil.MTransfer (t as M.TEvalThunk _) => 
+                       | IMil.MTransfer (t as M.TEvalThunk _) =>
                          notDead a
                        | IMil.MInstr (M.I {rhs, ...}) =>
                          (case rhs
                            of M.RhsPFunctionInit (_, _, fvs) => a
-                            | M.RhsThunkInit {freeVars, ...} => 
+                            | M.RhsThunkInit {freeVars, ...} =>
                               notDead a
                             | _ => fail ())
                        | _ => fail ())
@@ -712,7 +712,7 @@ struct
                   | _ => fail ()
 
             val a = case IMil.Cfg.getCallConv (imil, cfg)
-                     of M.CcThunk _ => RiNotDead false 
+                     of M.CcThunk _ => RiNotDead false
                       | _ => RiDead
 
             val uses = IMil.Use.getUses (imil, f)
@@ -762,7 +762,7 @@ struct
             val () =
                 debug (d, fn () => "return: " ^ I.variableString' f ^ ": " ^
                                    layoutReturnInfo a)
-            val () = 
+            val () =
                 case a
                  of RiDead => ()
                   | RiNotDead _ => Try.fail ()
@@ -777,8 +777,8 @@ struct
                 let
                   val ccfg = IMil.Instr.getCfg (imil, i)
                   val retb = IMil.Cfg.getBlockByLabel (imil, ccfg, ret)
-                  val retb = 
-                      (case a 
+                  val retb =
+                      (case a
                         of RiConstant (false, _) =>
                            IMil.Block.makeSinglePred (imil, retb)
                          | _ => retb)
@@ -793,7 +793,7 @@ struct
                             val uses = IMil.Use.getUses (imil, param)
                             val () = IMil.Use.replaceUses (imil, param, c)
                             val () = WS.addUses (wl, uses)
-                            val () = 
+                            val () =
                                 if Vector.length uses > 0 orelse kill then
                                   progress := true
                                 else

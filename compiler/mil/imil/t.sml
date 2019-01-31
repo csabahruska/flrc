@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,14 +16,14 @@
  *)
 
 
-signature IMIL_T = 
+signature IMIL_T =
 sig
   include IMIL_PUBLIC_TYPES
 
   val build    : Config.t * Mil.t -> t
   val unBuild  : t -> Mil.t
   val check    : t -> unit
-                      
+
   val getSi : t -> Mil.symbolInfo
   val getEntry : t -> Mil.variable
   val getIncludes : t -> Mil.includeFile Vector.t
@@ -40,7 +40,7 @@ sig
 
   val getStm : t -> Mil.symbolTableManager
 end
- = 
+ =
 struct
   open IMilPublicTypes
 
@@ -59,7 +59,7 @@ struct
 
   type t = IMT.t
 
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("t.sml", f, s)
 
 
@@ -73,16 +73,16 @@ struct
   fun buildExtern (p, v) = IMilDef.add (p, v, IMT.DefExtern)
 
   val buildGlobal =
-   fn (p, v, m) => 
+   fn (p, v, m) =>
       let
-        val () = 
+        val () =
             case m
-             of M.GCode c => 
+             of M.GCode c =>
                 let
                   val c = Func.new (p, v, c)
                 in ()
                 end
-              | _ => 
+              | _ =>
                 let
                   val g = Global.build (p, (v, m))
                 in ()
@@ -91,7 +91,7 @@ struct
       end
 
   val build =
-   fn (config, m) => 
+   fn (config, m) =>
       let
         val M.P {includes, externs, symbolTable = milST, entry = milEntry, globals = milGlobals} = m
         val globals = IVD.empty ()
@@ -111,7 +111,7 @@ struct
                        iFuncs   = funs}
         val () =
             Vector.foreach (includes, fn (M.IF {externs, ...}) => VS.foreach (externs, fn v => buildExtern (p, v)))
-        val () = 
+        val () =
             Vector.foreach (externs, fn (M.EG {externs, ...}) => VS.foreach (externs, fn v => buildExtern (p, v)))
         val () = VD.foreach (milGlobals, fn (v, g) => buildGlobal (p, v, g))
         val () = Use.markUsed (p, milEntry)
@@ -119,11 +119,11 @@ struct
       end
 
   val tCheck =
-   fn (p, m) => 
+   fn (p, m) =>
       let
         val () = Func.checkAll p
         val s = FV.program (p, m)
-        val () = 
+        val () =
             if VS.isEmpty s then ()
             else
               (print "Program has free variables:\n";
@@ -133,16 +133,16 @@ struct
                fail ("check", "bad program"))
       in ()
       end
-      
+
   val debugCheck =
-   fn (p, m) => 
+   fn (p, m) =>
       IMC.debugDo (p, fn () => tCheck (p, m))
-      
+
   val unBuildGlobals =
    fn globals => List.keepAllMap (globals, fn (v, g) => Global.unBuild g)
 
   val unBuildFun =
-   fn (v, f) => 
+   fn (v, f) =>
       let
         val vg = Func.unBuild f
       in vg
@@ -152,7 +152,7 @@ struct
    fn funs => List.map (funs, unBuildFun)
 
   val unBuildSTM =
-   fn (defs, stm) => 
+   fn (defs, stm) =>
       let
         val new = IM.fromExistingNoInfo' stm
         val add =
@@ -163,21 +163,21 @@ struct
       end
 
   val unBuild =
-   fn p => 
+   fn p =>
       let
         val IMT.P {includes, externs, nextId, config, stm, entry, iGlobals, defs, uses, iFuncs} = p
         val g1 = unBuildGlobals (IVD.toList iGlobals)
         val g2 = unBuildFuns (IVD.toList iFuncs)
         val globals = g1 @ g2
-        val globals = VD.fromList globals 
+        val globals = VD.fromList globals
         val st = unBuildSTM (defs, stm)
         val m = M.P {includes = includes, externs = externs, globals = globals, symbolTable = st, entry = entry}
         val () = debugCheck (p, m)
       in m
       end
-  
+
   val check =
-   fn p => 
+   fn p =>
       let
         val m = unBuild p
         val () = tCheck (p, m)
@@ -188,20 +188,20 @@ struct
   val layout = IMilLayout.t
 
   val print = LayoutUtils.printLayout o IMilLayout.t
-  val printIFunc = 
-      fn (imil, iFunc) => 
+  val printIFunc =
+      fn (imil, iFunc) =>
          MilLayout.printGlobal
-           (IMT.tGetConfig imil, 
-            IMT.tGetSi imil, 
+           (IMT.tGetConfig imil,
+            IMT.tGetSi imil,
             unBuildFun (Func.getFName (imil, iFunc),
                         iFunc))
 
-   
-  val splitCriticalEdges = 
+
+  val splitCriticalEdges =
    fn imil => List.foreach (IMilEnumerate.T.funcs imil, fn f => IMilFunc.splitCriticalEdges (imil, f))
 
   val callGraph =
-   fn imil => 
+   fn imil =>
       let
         val config = getConfig imil
         val si = getSi imil
@@ -210,5 +210,5 @@ struct
         val graph = MCG.Graph.make cg
       in graph
       end
-            
+
 end

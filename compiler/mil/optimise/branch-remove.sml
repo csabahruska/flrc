@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -299,7 +299,7 @@ struct
   end (* structure Debug *)
 
   (*
-   *	Split critical edges.
+   *    Split critical edges.
    *    This guarantees that every branch with more than one out edge
    *    immediately dominates all of its successors
    *    (and hence each successor is in a 1:1 correspondence with the outedges).

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -325,10 +325,10 @@ struct
         val config = getConfig env
         val tc = MU.Bool.T config
         val fc = MU.Bool.F config
-        fun genSwitch (lt, lf) = 
-            (MS.empty, M.TCase {select = M.SeConstant, on = on, 
-                                cases = Vector.new2 ((tc, MU.Target.mkNoArgs lt), 
-                                                     (fc, MU.Target.mkNoArgs lf)), 
+        fun genSwitch (lt, lf) =
+            (MS.empty, M.TCase {select = M.SeConstant, on = on,
+                                cases = Vector.new2 ((tc, MU.Target.mkNoArgs lt),
+                                                     (fc, MU.Target.mkNoArgs lf)),
                                 default = NONE})
         val s = join (state, env, genSwitch, t, f, vs)
       in s
@@ -337,9 +337,9 @@ struct
   fun ifConst (state : state, env : env, on : M.operand, c : M.constant, t : exp, f : exp, vs : M.variable Vector.t)
       : MS.t =
       let
-        fun genSwitch (lt, lf) = 
-            (MS.empty, M.TCase {select = M.SeConstant, on = on, 
-                                cases = Vector.new1 (c, MU.Target.mkNoArgs lt), 
+        fun genSwitch (lt, lf) =
+            (MS.empty, M.TCase {select = M.SeConstant, on = on,
+                                cases = Vector.new1 (c, MU.Target.mkNoArgs lt),
                                 default = SOME (MU.Target.mkNoArgs lf)})
         val s = join (state, env, genSwitch, t, f, vs)
       in s

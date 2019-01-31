@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,16 +16,16 @@
  *)
 
 
-signature MIL_REP_SUMMARY = 
+signature MIL_REP_SUMMARY =
 sig
   type summary
-  val summarize : PassData.t * Mil.symbolTable 
+  val summarize : PassData.t * Mil.symbolTable
                   * {varNodes : MilRepNode.node Mil.VD.t,
                      iInfo : MilRepNode.node MilRepBase.iInfo MilUtils.Id.ImpDict.t,
                      nodes : MilRepNode.node list,
                      labelNodes : MilRepNode.node Mil.LD.t,
                      names : Mil.variable IntDict.t} -> summary
-                                                   
+
   val layoutReasons : summary * Mil.symbolInfo -> Layout.t
   val layout : summary * Mil.symbolInfo -> Layout.t
 
@@ -50,12 +50,12 @@ sig
   val debugs : Config.Debug.debug list
 end (* signature MIL_REP_SUMMARY *)
 
-structure MilRepSummary :> MIL_REP_SUMMARY = 
+structure MilRepSummary :> MIL_REP_SUMMARY =
 struct
 
   val passname = "MilRepSummary"
 
-  val fail = 
+  val fail =
    fn (f, m) => Fail.fail ("summary.sml", f, m)
 
   structure PD = PassData
@@ -113,57 +113,57 @@ struct
        (setVarNodes, getVarNodes),
        (setIInfo, getIInfo),
        (setLabelNode, getLabelNodes),
-       (setNames, getNames)) = 
+       (setNames, getNames)) =
       let
-        val r2t = 
-         fn (S {pd, st, typs, nodes, edges, varNodes, iInfo, labelNodes, names}) => 
+        val r2t =
+         fn (S {pd, st, typs, nodes, edges, varNodes, iInfo, labelNodes, names}) =>
             (pd, st, typs, nodes, edges, varNodes, iInfo, labelNodes, names)
-        val t2r = 
-         fn (pd, st, typs, nodes, edges, varNodes, iInfo, labelNodes, names) => 
-            S {pd = pd, st = st, typs = typs, nodes = nodes, edges = edges, varNodes = varNodes, 
+        val t2r =
+         fn (pd, st, typs, nodes, edges, varNodes, iInfo, labelNodes, names) =>
+            S {pd = pd, st = st, typs = typs, nodes = nodes, edges = edges, varNodes = varNodes,
                iInfo = iInfo, labelNodes = labelNodes, names = names}
       in
         FunctionalUpdate.mk9 (r2t, t2r)
       end
-      
-  val summarize = 
-   fn (pd : PassData.t, 
+
+  val summarize =
+   fn (pd : PassData.t,
        symbolTable : Mil.symbolTable,
        {varNodes : Node.node VD.t,
         nodes : Node.node list,
         iInfo : Node.node MRB.iInfo IIdD.t,
         labelNodes : Node.node LD.t,
-        names : M.variable ID.t}) => 
+        names : M.variable ID.t}) =>
       let
         val summary =
-            S {pd = pd, 
+            S {pd = pd,
                st = symbolTable,
                typs = IID.empty (),
                nodes = ID.fromList (List.map (nodes, fn n => (Node.id n, n))),
                edges = ref ES.empty,
-               varNodes = varNodes, 
-               iInfo = iInfo, 
-               labelNodes = labelNodes, 
+               varNodes = varNodes,
+               iInfo = iInfo,
+               labelNodes = labelNodes,
                names = names}
       in summary
       end
 
-  val getConfig = 
+  val getConfig =
    fn summary => PD.getConfig (getPd summary)
 
-  val getSi = 
+  val getSi =
    fn summary => Identifier.SymbolInfo.SiTable (getSt summary)
 
-  val iInfo' = 
-   fn (summary, id) => 
+  val iInfo' =
+   fn (summary, id) =>
       let
         val iInfo = getIInfo summary
         val info = IIdD.lookup (iInfo, id)
       in info
       end
 
-  val iInfo = 
-   fn (summary, id) => 
+  val iInfo =
+   fn (summary, id) =>
       let
         val info =
             (case iInfo' (summary, id)
@@ -177,8 +177,8 @@ struct
       in info
       end
 
-  val setIInfo = 
-   fn (summary, id, ii) => 
+  val setIInfo =
+   fn (summary, id, ii) =>
       let
         val iInfo = getIInfo summary
         val () = IIdD.insert (iInfo, id, ii)
@@ -186,33 +186,33 @@ struct
       end
 
   val updateIInfo =
-   fn (summary, f) => 
+   fn (summary, f) =>
       let
         val iInfo = getIInfo summary
         val () = IIdD.modify (iInfo, f)
       in ()
       end
 
-  val variableHasNode = 
-   fn (summary, v) => 
+  val variableHasNode =
+   fn (summary, v) =>
       let
         val varNodes = getVarNodes summary
       in VD.contains (varNodes, v)
       end
 
-  val variableNode = 
-   fn (summary, v) => 
+  val variableNode =
+   fn (summary, v) =>
       let
         val varNodes = getVarNodes summary
-        val n = 
-            (case VD.lookup (varNodes, v) 
+        val n =
+            (case VD.lookup (varNodes, v)
               of SOME n => n
                | NONE => fail ("variableNode", "Unknown variable"))
       in n
       end
 
-  val variableClassId = 
-   fn (summary, v) => 
+  val variableClassId =
+   fn (summary, v) =>
       let
         val node = variableNode (summary, v)
         val id = Node.classId node
@@ -220,7 +220,7 @@ struct
       end
 
   val variableUsesKnown =
-   fn (summary, v) => 
+   fn (summary, v) =>
       let
         val node = variableNode (summary, v)
         val b = Node.usesKnown node
@@ -228,15 +228,15 @@ struct
       end
 
   val variableDefsKnown =
-   fn (summary, v) => 
+   fn (summary, v) =>
       let
         val node = variableNode (summary, v)
         val b = Node.defsKnown node
       in b
       end
 
-  val nodeFlatTyp = 
-   fn (summary, n) => 
+  val nodeFlatTyp =
+   fn (summary, n) =>
       let
         val config = getConfig summary
         val shape = Node.shape n
@@ -244,11 +244,11 @@ struct
       in flatTyp
       end
 
-  val rec nodeTyp = 
-   fn (summary, n) => 
+  val rec nodeTyp =
+   fn (summary, n) =>
       (case IID.lookup (getTyps summary, Node.id n)
         of SOME t => t
-         | NONE => 
+         | NONE =>
            let
              val config = getConfig summary
              val id = Node.id n
@@ -257,7 +257,7 @@ struct
              val flatTyp = Shape.flatTypOf (config, shape)
              val () = IID.insert (typs, id, flatTyp)
 
-             val typ = 
+             val typ =
                  let
                    val node = fn n => nodeTyp (summary, n)
                    val variance = fn n => Node.fieldVariance n
@@ -270,7 +270,7 @@ struct
                    let
                      val si = getSi summary
                      val l = Layout.align [Layout.seq [Layout.str "Type for node ",
-                                                       Int.layout id, 
+                                                       Int.layout id,
                                                        Layout.str " = "],
                                            MilLayout.layoutTyp (config, si, typ)]
                      val () = LayoutUtils.printLayout l
@@ -283,23 +283,23 @@ struct
            in typ
            end)
 
-  val variableTyp = 
+  val variableTyp =
    fn (summary, v) => nodeTyp (summary, variableNode (summary, v))
 
-  val variableFlatTyp = 
+  val variableFlatTyp =
    fn (summary, v) => nodeFlatTyp (summary, variableNode (summary, v))
 
-  val resetTyps = 
+  val resetTyps =
    fn summary => IID.clear (getTyps summary)
 
   val listVariables = fn summary => List.map (VD.toList (getVarNodes summary), #1)
 
-  val nodes = getNodes 
+  val nodes = getNodes
 
   val edges = ES.toList o (op !) o getEdges
 
-  val addEdge = 
-   fn (summary, e) => 
+  val addEdge =
+   fn (summary, e) =>
       let
         val edges as (ref s) = getEdges summary
         val s = ES.insert(s, e)
@@ -307,15 +307,15 @@ struct
       in ()
       end
 
-  val layoutReasons = 
-   fn (summary, si) => 
+  val layoutReasons =
+   fn (summary, si) =>
       let
         val config = getConfig summary
         val names = getNames summary
-        val nameNode = 
-         fn id => 
+        val nameNode =
+         fn id =>
             Option.map (ID.lookup (names, id), fn v => MU.SymbolInfo.layoutVariable (si, v))
-        val layoutNode = fn n => 
+        val layoutNode = fn n =>
                             let
                               val h = Node.layoutShort (config, si, n, SOME nameNode)
                               val r1 = case Node.defsUnknownReason n
@@ -326,7 +326,7 @@ struct
                                          | NONE   => L.empty
                             in L.mayAlign [h, LU.indent r1, LU.indent r2]
                             end
-        val varNodes = 
+        val varNodes =
             let
               val nodes = getVarNodes summary
               val l = VD.layout (nodes, fn (v, n) => layoutNode n)
@@ -336,12 +336,12 @@ struct
                   LU.indent varNodes]
       end
 
-  val layout = 
-   fn (summary, si) => 
+  val layout =
+   fn (summary, si) =>
       let
         val config = getConfig summary
-        val showFilter = 
-            fn n => 
+        val showFilter =
+            fn n =>
                (case (showEscapes config, Node.usesKnown n, showIntrudes config, Node.defsKnown n)
                  of (true, false, _, _) => SOME n
                   | (_, _, true, false) => SOME n
@@ -349,12 +349,12 @@ struct
                   | (_, _, true, true) => NONE
                   | _ => SOME n)
         val names = getNames summary
-        val nameNode = 
-         fn id => 
+        val nameNode =
+         fn id =>
             Option.map (ID.lookup (names, id), fn v => MU.SymbolInfo.layoutVariable (si, v))
         val layoutNode = fn n => Node.layout (config, si, n, SOME nameNode)
-        val nodeShallow = 
-            fn n => 
+        val nodeShallow =
+            fn n =>
                let
                  val id = Node.id n
                in case nameNode id
@@ -362,35 +362,35 @@ struct
                     | NONE => Int.layout id
                end
         val layoutIInfo = fn i => MRB.layoutIInfo (config, getSi summary, i, nodeShallow)
-        val edges = 
+        val edges =
             let
               val le = fn (n1, n2) => L.seq[nodeShallow n1, L.str " => ", nodeShallow n2]
               val s = ES.layout (!(getEdges summary), le)
             in s
             end
-        val varNodes = 
+        val varNodes =
             let
               val filter = fn (id, n) => showFilter n
               val nodes = VD.keepAllMap (getVarNodes summary, filter)
               val l = VD.layout (nodes, fn (v, n) => layoutNode n)
             in l
             end
-        val internalNodes = 
+        val internalNodes =
             let
               val filter = fn (id, n) => if ID.contains (names, id) then NONE else showFilter n
               val nodes = ID.keepAllMap (getNodes summary, filter)
               val l = ID.layout (nodes, fn (i, n) => layoutNode n)
             in l
             end
-        val labelNodes = 
+        val labelNodes =
             let
               val filter = fn (id, n) => showFilter n
               val nodes = LD.keepAllMap (getLabelNodes summary, filter)
               val l = LD.layout (nodes, fn (l, n) => layoutNode n)
             in l
             end
-        val layoutIInfoEntry = 
-         fn (id, i) => L.mayAlign [L.seq [MU.Id.layout (si, id), L.str " => "], 
+        val layoutIInfoEntry =
+         fn (id, i) => L.mayAlign [L.seq [MU.Id.layout (si, id), L.str " => "],
                                    LU.indent (layoutIInfo i)]
         val iInfo = IIdD.layout (getIInfo summary, layoutIInfoEntry)
       in L.align [L.str "VARIABLE NODES",

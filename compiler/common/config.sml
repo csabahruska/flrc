@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -26,19 +26,19 @@ sig
   datatype agcProg = AgcGcMf | AgcTgc | AgcCgc
   datatype gcStyle = GcsNone | GcsConservative | GcsAccurate
   type gcConfig = {registerVtables: bool,
-		   reportGlobals: bool,
-		   reportRoots: bool,
-		   rootsInGlobals: bool,
-		   style: gcStyle}
+                   reportGlobals: bool,
+                   reportRoots: bool,
+                   rootsInGlobals: bool,
+                   style: gcStyle}
   datatype os = OsCygwin | OsLinux | OsMinGW
   datatype outputKind = OkC | OkPillar
   datatype parStyle = PNone | PAll | PAuto | PPar
   type passInfo = {enable: bool,
-		   showPost: bool,
-		   showPre: bool,
+                   showPost: bool,
+                   showPre: bool,
                    showLineCount: bool,
-		   statPost: bool,
-		   statPre: bool}
+                   statPost: bool,
+                   statPre: bool}
   type runtimeConfig = {stackWorker    : int option,
                         stackMain      : int option,
                         singleThreaded : bool}
@@ -64,54 +64,54 @@ sig
                                                  enabled  : string List.t}
                                 }
   datatype t = C of {agc : agcProg,
-		     control_ : string StringDict.t,
-		     debugLev : verbosity,
-		     debug_ : StringSet.t,
-		     feature_ : StringSet.t,
-		     gc: {registerVtables: bool,
-			  reportGlobals: bool,
-			  reportRoots: bool,
-			  rootsInGlobals: bool,
-			  style: gcStyle},
-		     ghcOpt : string list,
-		     home : Path.t,
+                     control_ : string StringDict.t,
+                     debugLev : verbosity,
+                     debug_ : StringSet.t,
+                     feature_ : StringSet.t,
+                     gc: {registerVtables: bool,
+                          reportGlobals: bool,
+                          reportRoots: bool,
+                          rootsInGlobals: bool,
+                          style: gcStyle},
+                     ghcOpt : string list,
+                     home : Path.t,
                      host : os,
                      (* flrcLibDirectory : Path.t, *)
-		     flrcOpt : int,
-		     keep: StringSet.t,
-		     linkStr: string list,
-		     linkDirectories: string list,
-		     linkLibraries: string list,
-		     logLev: verbosity,
-		     output: outputKind,
-		     parStyle: parStyle,
-		     passes: {enable: bool,
-			      showPost: bool,
-			      showPre: bool,
+                     flrcOpt : int,
+                     keep: StringSet.t,
+                     linkStr: string list,
+                     linkDirectories: string list,
+                     linkLibraries: string list,
+                     logLev: verbosity,
+                     output: outputKind,
+                     parStyle: parStyle,
+                     passes: {enable: bool,
+                              showPost: bool,
+                              showPre: bool,
                               showLineCount: bool,
-			      statPost: bool,
-			      statPre: bool} StringDict.t,
-		     pilcStr: string list,
-		     pilDebug: bool,
-		     pilOpt: int,
-		     report: StringSet.t,
+                              statPost: bool,
+                              statPre: bool} StringDict.t,
+                     pilcStr: string list,
+                     pilDebug: bool,
+                     pilOpt: int,
+                     report: StringSet.t,
                      runtime : runtimeConfig,
-		     sloppyFp: bool,
-		     stop: string,
+                     sloppyFp: bool,
+                     stop: string,
                      synchThunks : bool,
-		     targetWordSize: wordSize,
-		     timeExecution: string option,
+                     targetWordSize: wordSize,
+                     timeExecution: string option,
                      vectorConfig : vectorConfig,
-		     warnLev: verbosity}
+                     warnLev: verbosity}
   val agc: t -> agcProg
   val debug: bool
   val debugLevel: t * 'a -> int
   val gc: t
-	  -> {registerVtables: bool,
-	      reportGlobals: bool,
-	      reportRoots: bool,
-	      rootsInGlobals: bool,
-	      style: gcStyle}
+          -> {registerVtables: bool,
+              reportGlobals: bool,
+              reportRoots: bool,
+              rootsInGlobals: bool,
+              style: gcStyle}
   val ghcOpt: t -> string list
   val home : t -> Path.t
   val host : t -> os
@@ -126,12 +126,12 @@ sig
   val parStyle: t -> parStyle
   val passEnabled: t * string -> bool
   val passGet: t * string
-	       -> {enable: bool,
-		   showPost: bool,
-		   showPre: bool,
+               -> {enable: bool,
+                   showPost: bool,
+                   showPre: bool,
                    showLineCount: bool,
-		   statPost: bool,
-		   statPre: bool}
+                   statPost: bool,
+                   statPre: bool}
   val passIs: t * string -> bool
   val passShowPost: t * string -> bool
   val passShowPre: t * string -> bool
@@ -158,27 +158,27 @@ sig
     type control
     val add: ({check: string -> bool,
                describe: unit -> Layout.t} StringDict.t
-	      * string StringDict.t ref)
-	     * string
-	     * string
-	     -> bool
+              * string StringDict.t ref)
+             * string
+             * string
+             -> bool
     val describeControl: ({check: string -> bool,
                            describe: unit -> Layout.t} StringDict.t
-			  * 'a)
-			 * string
-			 -> Layout.t
+                          * 'a)
+                         * string
+                         -> Layout.t
     val finalise: 'a * 'b ref -> 'b
     val isControl: ('a StringDict.t * 'b) * string -> bool
     val listControls: 'a StringDict.t * 'b -> string list
     val mk: string
-	    * (unit -> Layout.t)
-	    * (string -> 'a option)
-	    * (t -> 'a)
-	    -> control * (t -> 'a)
+            * (unit -> Layout.t)
+            * (string -> 'a option)
+            * (t -> 'a)
+            -> control * (t -> 'a)
     val mks: control list
-	     -> {check: string -> bool,
+             -> {check: string -> bool,
                  describe: unit -> Layout.t} StringDict.t
-		* 'a StringDict.t ref
+                * 'a StringDict.t ref
   end
   structure Debug : sig
     type debug
@@ -186,7 +186,7 @@ sig
     val finalise: 'a * 'b ref -> 'b
     val mk: string * string -> debug * (t -> bool)
     val mks: debug list
-	     -> string StringDict.t * StringSet.t ref
+             -> string StringDict.t * StringSet.t ref
     val usage: string StringDict.t * 'a -> string
   end
   structure Feature : sig
@@ -195,7 +195,7 @@ sig
     val finalise: 'a * 'b ref -> 'b
     val mk: string * string -> feature * (t -> bool)
     val mks: feature list
-	     -> string StringDict.t * StringSet.t ref
+             -> string StringDict.t * StringSet.t ref
     val usage: string StringDict.t * 'a -> string
   end
 end

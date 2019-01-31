@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -20,13 +20,13 @@ sig
   type strictness = CoreHs.strictness
   type effectful = ANormLazy.effectful
   type var   = Identifier.variable
-  type con   = Identifier.name 
+  type con   = Identifier.name
   type lit   = CoreHs.coreLit
   type mname = string
   type pname = string
   type cc    = CoreHs.callconv
 
-  datatype exp 
+  datatype exp
     = Var   of var
     | Multi of var list
     | Con   of con * (var * strictness) list
@@ -35,24 +35,24 @@ sig
     | Let   of vDefg * exp
     | GLB   of var list
     | LUB   of var list
-    | Cond  of exp * exp 
+    | Cond  of exp * exp
     | Const of Dom.t
 
-  and vDefg 
+  and vDefg
     = Rec of vDef list
     | Nonrec of vDef
 
-  and vDef 
+  and vDef
     = Vdef of vBind * exp
 
-  and vBind 
+  and vBind
     = VbSingle of var
     | VbMulti  of var list * effectful
 
   type im = ANormLazy.ty Identifier.symbolTable
 
-  datatype module 
-      = Module of var * vDefg list 
+  datatype module
+      = Module of var * vDefg list
 
   type t = module * im
 end
@@ -63,14 +63,14 @@ struct
   type strictness = CoreHs.strictness
   type effectful = ANormLazy.effectful
   type var   = Identifier.variable
-  type con   = Identifier.name 
+  type con   = Identifier.name
   type lit   = CoreHs.coreLit
   type mname = string
   type pname = string
   type cc    = CoreHs.callconv
   type ty    = ANormLazy.ty
 
-  datatype exp 
+  datatype exp
     = Var   of var
     | Multi of var list
     | Con   of con * (var * strictness) list
@@ -79,24 +79,24 @@ struct
     | Let   of vDefg * exp
     | GLB   of var list
     | LUB   of var list
-    | Cond  of exp * exp 
+    | Cond  of exp * exp
     | Const of Dom.t
 
-  and vDefg 
+  and vDefg
     = Rec of vDef list
     | Nonrec of vDef
 
-  and vDef 
+  and vDef
     = Vdef of vBind * exp
 
-  and vBind 
+  and vBind
     = VbSingle of var
     | VbMulti  of var list * effectful
 
   type im = ty Identifier.symbolTable
 
-  datatype module 
-      = Module of var * vDefg list 
+  datatype module
+      = Module of var * vDefg list
 
   type t = module * im
 end
@@ -104,7 +104,7 @@ end
 signature ABS_CORE_LAYOUT =
 sig
   structure AbsCore : ABS_CORE
-  type module 
+  type module
   type exp
   type vDef
   type vDefg
@@ -116,13 +116,13 @@ sig
   val layout       : Config.t * ty Identifier.symbolTable * module -> Layout.t
 end
 
-functor AbsCoreLayoutF 
+functor AbsCoreLayoutF
   (structure AbsCore : ABS_CORE
    type ty
    val layoutTy     : (Config.t * ty Identifier.SymbolInfo.t) * ty -> Layout.t
-  ) :> ABS_CORE_LAYOUT 
+  ) :> ABS_CORE_LAYOUT
   where type module = AbsCore.module
-    and type exp = AbsCore.exp 
+    and type exp = AbsCore.exp
     and type vDefg = AbsCore.vDefg
     and type ty = ty
   =
@@ -160,9 +160,9 @@ struct
 
   fun layoutVBinds (env, vbs) = LU.sequence ("", "", " ") (List.map (vbs, fn b => layoutVBind (env, b)))
 
-  fun layoutVBinds1 (env, vbs) = 
+  fun layoutVBinds1 (env, vbs) =
       let
-        fun layoutVBind1 (v, t, s) = 
+        fun layoutVBind1 (v, t, s) =
           let
             val l = layoutVBind (env, v)
           in
@@ -174,9 +174,9 @@ struct
   fun layoutVariables (env, vs) = angleList (List.map (vs, fn v => IS.layoutVariable (v, getIM env)))
 
   fun layoutVariables' (env, vs)
-    = angleList (List.map (vs, fn (v, strict) => L.seq [ if strict then L.str "!" else L.empty, 
+    = angleList (List.map (vs, fn (v, strict) => L.seq [ if strict then L.str "!" else L.empty,
                                                          IS.layoutVariable (v, getIM env) ]))
-  
+
   and layoutAExp (env, e)
     = (case e
         of Var x => IS.layoutVariable (x, getIM env)
@@ -191,7 +191,7 @@ struct
          | e       => L.paren (layoutExp (env, e)))
 
   and layoutLamExp (env, bs, e)
-    = (case e 
+    = (case e
         of Lam (b, e) => layoutLamExp (env, b :: bs, e)
          | _ => L.mayAlign [ L.seq [ layoutVBinds (env, List.rev bs), L.str " ->" ], layoutExp (env, e)])
 
@@ -202,9 +202,9 @@ struct
                                   , L.seq [L.str "%in ", layoutExp (env, e)]]
          | _ => layoutAExp (env, e))
 
-  and layoutVDef (env, Vdef (bind, e)) = 
+  and layoutVDef (env, Vdef (bind, e)) =
       let
-        val (vs, header) = 
+        val (vs, header) =
             case bind
              of VbSingle v => ([v], L.empty)
               | VbMulti (vs, effectful) => (vs, L.str (if effectful then "multi# " else "multi "))
@@ -213,13 +213,13 @@ struct
       end
 
   and layoutVDefg (env, vdefg)
-    = (case vdefg 
+    = (case vdefg
         of Rec vdefs   => L.mayAlign [ L.str "%rec {"
                                  , indent (L.align (semiMap (vdefs, fn d => layoutVDef (env, d))))
                                  , L.str "}"]
          | Nonrec vdef => layoutVDef (env, vdef))
 
-  fun layout (cfg, im, Module (_, vdefgs)) = 
+  fun layout (cfg, im, Module (_, vdefgs)) =
       let
         val variables = I.listVariables im
         val im = IS.SiTable im

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature DATAFLOW = 
+signature DATAFLOW =
 sig
   type analysis
   type node
@@ -28,7 +28,7 @@ end (* signature DATAFLOW *)
 functor DataFlowF(type analysis
                   type node
                   structure NodeDict : DICT where type key = node
-                  structure Info : 
+                  structure Info :
                             sig
                               type info
                               type infoRef
@@ -42,17 +42,17 @@ functor DataFlowF(type analysis
                   val successors : analysis * node -> node List.t
                   val transfer : analysis * node -> (Info.info * Info.infoRef -> bool)
                  ) : DATAFLOW where type node = node
-                                and type info = Info.info 
-                                and type analysis = analysis = 
-struct 
+                                and type info = Info.info
+                                and type analysis = analysis =
+struct
   type node = node
   type info = Info.info
   type analysis = analysis
 
   type result = node -> {iInfo : info, oInfo : info}
 
-  datatype item = I of {node : node, 
-                        input : Info.infoRef, 
+  datatype item = I of {node : node,
+                        input : Info.infoRef,
                         transfer : Info.info * Info.infoRef -> bool,
                         active : bool ref,
                         successors : item List.t ref}
@@ -62,23 +62,23 @@ struct
   val fail = fn (f, msg) => Fail.fail ("DataFlowF", f, msg)
 
   (* TODO put each component in a good order (e.g. reverse post order) *)
-  val orderComponents : node List.t List.t -> node List.t List.t = 
+  val orderComponents : node List.t List.t -> node List.t List.t =
    fn ccs => ccs
 
-  val foldCCs = 
-   fn (ccs, init, doIt) => 
+  val foldCCs =
+   fn (ccs, init, doIt) =>
       List.fold (ccs, init, fn (cc, d) => List.fold (cc, d, doIt))
 
-  val mapCCs = 
-   fn (ccs, doIt) => 
+  val mapCCs =
+   fn (ccs, doIt) =>
       List.map (ccs, fn cc => List.map (cc, doIt))
 
-  val foreachCCs = 
-   fn (ccs, doIt) => 
+  val foreachCCs =
+   fn (ccs, doIt) =>
       List.foreach (ccs, fn cc => List.foreach (cc, doIt))
 
-  val initialize : analysis -> item List.t List.t = 
-   fn analysis => 
+  val initialize : analysis -> item List.t List.t =
+   fn analysis =>
       let
         val initialVal = initialVal analysis
         val bottom = bottom analysis
@@ -87,10 +87,10 @@ struct
 
         val ccs = orderComponents ccs
 
-        val ccs = 
+        val ccs =
             let
-              val doIt = 
-               fn node => I {node = node, 
+              val doIt =
+               fn node => I {node = node,
                              input = Info.refMk (if initial (analysis, node) then initialVal else bottom),
                              transfer = transfer (analysis, node),
                              active = ref true,
@@ -100,7 +100,7 @@ struct
 
         val getItem =
             let
-              val doIt = 
+              val doIt =
                fn (item as I {node, ...}, d) => ND.insert (d, node, item)
               val d = foldCCs (ccs, ND.empty, doIt)
             in fn n => case ND.lookup (d, n)
@@ -108,10 +108,10 @@ struct
                          | NONE   => fail ("initialize", "Graph is not closed")
             end
 
-        val () = 
+        val () =
             let
-              val doIt = 
-               fn (I {node, successors = ssR, ...}) => 
+              val doIt =
+               fn (I {node, successors = ssR, ...}) =>
                   let
                     val ss = successors (analysis, node)
                     val ssItems = List.map (ss, getItem)
@@ -123,18 +123,18 @@ struct
       in ccs
       end
 
-  val propagateEdge : item * item -> unit = 
+  val propagateEdge : item * item -> unit =
    fn (I {input = i1, transfer, ...}, I {active, input = i2, ...}) =>
       if transfer (Info.refGet i1, i2) then
         active := true
       else
         ()
 
-  val propagate : item -> unit = 
+  val propagate : item -> unit =
    fn (i1 as I {successors, ...}) => List.foreach (!successors, fn i2 => propagateEdge (i1, i2))
 
-  val step1 : item -> bool = 
-   fn (item as I {active, ...}) => 
+  val step1 : item -> bool =
+   fn (item as I {active, ...}) =>
       let
         val b = !active
         val () = active := false
@@ -143,10 +143,10 @@ struct
       end
 
   val step : item List.t -> bool =
-   fn cc => 
+   fn cc =>
       let
-        val doOne = 
-         fn (item, b) => 
+        val doOne =
+         fn (item, b) =>
             let
               val active = step1 item
             in b orelse active
@@ -157,22 +157,22 @@ struct
   val iterate1 : item List.t -> unit =
    fn cc =>
       let
-        val rec loop = 
-         fn () => 
+        val rec loop =
+         fn () =>
             if step cc then loop () else ()
       in loop ()
       end
 
-  val iterate : item List.t List.t -> unit = 
+  val iterate : item List.t List.t -> unit =
    fn ccs => List.foreach (ccs, iterate1)
 
-  val extract : item List.t List.t * info -> result = 
-   fn (ccs, bottom) => 
+  val extract : item List.t List.t * info -> result =
+   fn (ccs, bottom) =>
       let
-        val doOne = 
-         fn (I {node, input, transfer, active, ...}, d) => 
+        val doOne =
+         fn (I {node, input, transfer, active, ...}, d) =>
             let
-              val () = if !active then fail ("extract", "Didn't properly reach a fixed point") 
+              val () = if !active then fail ("extract", "Didn't properly reach a fixed point")
                        else ()
               val iInfo = Info.refGet input
               val output = Info.refMk bottom
@@ -181,14 +181,14 @@ struct
             in ND.insert (d, node, {iInfo = iInfo, oInfo = oInfo})
             end
         val d = foldCCs (ccs, ND.empty, doOne)
-        val result = 
+        val result =
          fn n => (case ND.lookup (d, n)
                    of SOME r => r
                     | NONE   => fail ("extract", "Not a node"))
       in result
       end
-      
-  val analyze : analysis -> result = 
+
+  val analyze : analysis -> result =
    fn analysis =>
       let
         val ccs = initialize analysis
@@ -212,13 +212,13 @@ functor BitVectorDataFlowF(type analysis
                            val components : analysis -> node List.t List.t
                            val successors : analysis * node -> node List.t
                            val transfer   : analysis * node -> {phis : index * (index List.t) List.t,
-                                                                gen  : index List.t, 
+                                                                gen  : index List.t,
                                                                 kill : index List.t}
                  ) : DATAFLOW where type graph = graph
                                 and type node = node
-                                and type info = IndexSet.t 
+                                and type info = IndexSet.t
                                 and type analysis = analysis =
-struct 
+struct
   structure IBS = ImpBitSet
   structure ID = IndexDict
   structure IS = IndexSet
@@ -226,7 +226,7 @@ struct
   val fail = fn (f, msg) => Fail.fail ("BitVectorDataFlowF", f, msg)
 
   type analysis0 = analysis
-  type analysis = {analysis0 : analysis0, 
+  type analysis = {analysis0 : analysis0,
                    upwards : bool,
                    offsets : int IndexDict.t,
                    indices : index Vector.t,
@@ -236,8 +236,8 @@ struct
   type info = IndexSet.t
   type result = node -> {iInfo : info, oInfo : info}
 
-  val indexToOffset : analysis * index -> int = 
-   fn (analysis, index) => 
+  val indexToOffset : analysis * index -> int =
+   fn (analysis, index) =>
       let
         val offsets = #offsets analysis
       in case ID.lookup (offsets, index)
@@ -245,25 +245,25 @@ struct
            | NONE => fail ("indexToOffset", "No offset for index")
       end
 
-  val offsetToIndex : analysis * int -> index = 
+  val offsetToIndex : analysis * int -> index =
    fn (analysis, i) => Vector.sub (#indices analysis, i)
 
-  val emptyVector : analysis -> IBS.t = 
+  val emptyVector : analysis -> IBS.t =
    fn analysis => IBS.empty (#indexCount analysis)
 
-  val newVector : analysis * bool -> IBS.t = 
+  val newVector : analysis * bool -> IBS.t =
    fn (analysis, b) => IBS.new (#indexCount analysis, b)
 
-  val indexListToVector : analysis * index List.t -> IBS.t = 
-   fn (analysis, elts) => 
+  val indexListToVector : analysis * index List.t -> IBS.t =
+   fn (analysis, elts) =>
       let
         val bv = emptyVector analysis
         val () = List.foreach (elts, fn i => IBS.insert (bv, indexToOffset (analysis, i)))
       in bv
       end
 
-  val vectorToIndexSet : analysis * IBS.t -> IS.t = 
-   fn (analysis, bv) => 
+  val vectorToIndexSet : analysis * IBS.t -> IS.t =
+   fn (analysis, bv) =>
       let
         val indices = IBS.toList bv
         val indices = List.map (indices, fn i => offsetToIndex (analysis, i))
@@ -271,7 +271,7 @@ struct
       in s
       end
 
-  structure DFArg = 
+  structure DFArg =
   struct
     type analysis = analysis
     type node = node
@@ -288,7 +288,7 @@ struct
     val bottom = fn analysis => newVector (analysis, bottom (#analysis0 analysis))
     val components = fn analysis => components (#analysis0 analysis)
     val successors = fn (analysis, node) => successors (#analysis0 analysis, node)
-    val transfer : analysis * node -> (IBS.t * IBS.t -> bool) = 
+    val transfer : analysis * node -> (IBS.t * IBS.t -> bool) =
      fn (analysis, node) =>
         let
           val analysis0 = #analysis0 analysis
@@ -296,31 +296,31 @@ struct
           val genV = indexListToVector (analysis0, gen)
           val killV = indexListToVector (analysis0, kill)
           (* XXX this could be optimized for the cases that these are empty *)
-          val operator = 
-           fn (bv1, bv2) => 
+          val operator =
+           fn (bv1, bv2) =>
               let
                 val tmpV = IBS.copy bv1
-                val () = 
+                val () =
                     if upwards analysis then
-                      List.foreach (phis, 
+                      List.foreach (phis,
                 val () = IBS.difference (tmpV, killV)
                 val () = IBS.union (tmpV, genV)
                 val bv2Old = IBS.copy bv2
-                val () = 
+                val () =
                     if upwards analysis then
                       IBS.union (bv2, tmpV)
                     else
                       IBS.intersection (bv2, tmpV)
-                val changed = IBS.equal (bv2, bv2Old) 
+                val changed = IBS.equal (bv2, bv2Old)
               in changed
               end
         in operator
         end
-  end 
+  end
 
   structure DF = DataFlowF(DFArg)
 
-  val analyze : analysis -> result = 
+  val analyze : analysis -> result =
    fn analysis0 =>
       let
         val indices = Vector.fromList (indices analysis0)
@@ -331,7 +331,7 @@ struct
                         indices = indices,
                         indexCount = ID.size offsets}
         val result0 = DF.analyze analysis
-        val result = fn node => 
+        val result = fn node =>
                         let
                           val {iInfo, oInfo} = result0 node
                         in {iInfo = vectorToIndexSet iInfo,

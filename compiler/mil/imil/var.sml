@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature IMIL_VAR = 
+signature IMIL_VAR =
 sig
   include IMIL_PUBLIC_TYPES
 
@@ -32,13 +32,13 @@ sig
   val layout    : t * variable -> Layout.t
 
   val labelFresh : t -> label
-end 
+end
 
-structure IMilVar : 
+structure IMilVar :
 sig
   include IMIL_VAR
 end
-= 
+=
 struct
   open IMilPublicTypes
 
@@ -47,10 +47,10 @@ struct
   structure IMT = IMilTypes
   structure Def = IMilDef
 
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("var.sml", f, s)
 
-  val new = 
+  val new =
    fn (p, hint, t, g) =>
       let
         val v = IM.variableFresh (IMT.tGetStm p, hint, t, g)
@@ -58,7 +58,7 @@ struct
       in v
       end
 
-  val clone = 
+  val clone =
    fn (p, v) =>
       let
         val v = IM.variableClone (IMT.tGetStm p, v)
@@ -66,7 +66,7 @@ struct
       in v
       end
 
-  val related = 
+  val related =
       fn (p, b, hint, t, k) =>
       let
         val v = IM.variableRelated (IMT.tGetStm p, b, hint, t, k)
@@ -74,35 +74,35 @@ struct
       in v
       end
 
-  val setInfo = 
-   fn (p, v, t, k) => 
+  val setInfo =
+   fn (p, v, t, k) =>
       let
         val v = IM.variableSetInfo (IMT.tGetStm p, v, M.VI {typ = t, kind = k})
       in ()
       end
 
-  val getInfo = 
-   fn (p, b) => 
-      let 
+  val getInfo =
+   fn (p, b) =>
+      let
         val M.VI {typ, kind} = IM.variableInfo (IMT.tGetStm p, b)
       in (typ, kind)
       end
 
-  val kind = 
+  val kind =
    fn (p, v) => IM.variableKind (IMT.tGetStm p, v)
 
-  val typ = 
-   fn (p, v) => 
+  val typ =
+   fn (p, v) =>
       IM.variableTyp (IMT.tGetStm p, v)
 
-  val fieldKind = 
+  val fieldKind =
       fn (p, v) => MilUtils.FieldKind.fromTyp (IMT.tGetConfig p, typ (p, v))
 
   val layout = IMilLayout.var
 
   val print = LayoutUtils.printLayout o layout
 
-  val labelFresh = 
+  val labelFresh =
    fn p =>
       Identifier.Manager.labelFresh (IMT.tGetStm p)
 

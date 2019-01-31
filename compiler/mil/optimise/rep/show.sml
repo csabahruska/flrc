@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,14 +16,14 @@
  *)
 
 
-signature MIL_REP_SHOW = 
+signature MIL_REP_SHOW =
 sig
-  val annotate : PassData.t * MilRepSummary.summary * Mil.t -> Mil.t 
+  val annotate : PassData.t * MilRepSummary.summary * Mil.t -> Mil.t
   val printAnalysis : PassData.t * MilRepSummary.summary * Mil.t -> unit
   val printReasons : PassData.t * MilRepSummary.summary * Mil.t -> unit
 end (* signature MIL_REP_SHOW *)
 
-structure MilRepShow :> MIL_REP_SHOW = 
+structure MilRepShow :> MIL_REP_SHOW =
 struct
   structure PD = PassData
   structure M = Mil
@@ -46,33 +46,33 @@ struct
   structure L = Layout
   structure LU = LayoutUtils
 
-  val annotate = 
+  val annotate =
    fn (pd, summary, p) =>
       let
         val M.P {includes, externs, entry, globals, symbolTable} = p
         val stm = STM.fromExistingNoInfo symbolTable
-        val renameVar = 
-         fn (v, rename) => 
-            if MRS.variableHasNode (summary, v) then 
+        val renameVar =
+         fn (v, rename) =>
+            if MRS.variableHasNode (summary, v) then
               let
                 val info = ST.variableInfo (symbolTable, v)
                 val id = MRS.variableClassId (summary, v)
                 val string = Int.toString id
-                val string = 
+                val string =
                     if MRS.variableUsesKnown (summary, v) then
                       string
-                    else 
+                    else
                       string ^ "^"
-                val string = 
+                val string =
                     if MRS.variableDefsKnown (summary, v) then
                       string
                     else
                       string ^ "?"
                 val string = "id="^string
-                val string = 
+                val string =
                     let
                       val info = STM.variableString (stm, v)
-                      val info = 
+                      val info =
                           case String.findSubstring (info, {substring = ".id="})
                            of SOME i => String.prefix (info, i)
                             | NONE => info
@@ -88,17 +88,17 @@ struct
                 val () = STM.variableSetInfo (stm, v, info)
               in rename
               end
-        val keepVar = 
-         fn v => 
+        val keepVar =
+         fn v =>
             let
               val info = ST.variableInfo (symbolTable, v)
               val () = STM.variableSetInfo (stm, v, info)
             in ()
             end
         val vars = STM.variablesList stm
-        val (vars, varsE) = 
+        val (vars, varsE) =
             let
-              val extern = 
+              val extern =
                fn v => (case MilUtils.SymbolTable.variableKind (symbolTable, v)
                          of Mil.VkExtern => true
                           | _            => false)
@@ -114,8 +114,8 @@ struct
       end
 
 
-  val printAnalysis = 
-   fn (pd, summary, p) => 
+  val printAnalysis =
+   fn (pd, summary, p) =>
       let
         val l = MilRepSummary.layout (summary, Identifier.SymbolInfo.SiTable (MU.Program.symbolTable p))
         val l = L.align [L.str "ANALYSIS RESULTS",
@@ -123,8 +123,8 @@ struct
       in LayoutUtils.printLayout l
       end
 
-  val printReasons = 
-   fn (pd, summary, p) => 
+  val printReasons =
+   fn (pd, summary, p) =>
       let
         val l = MilRepSummary.layoutReasons (summary, Identifier.SymbolInfo.SiTable (MU.Program.symbolTable p))
         val l = L.align [L.str "ANALYSIS ESCAPE/INTRUDES REASONS",

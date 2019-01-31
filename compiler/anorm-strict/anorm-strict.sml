@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -19,7 +19,7 @@
  * explicit thunks and effect annotation.
  *
  * In addition to side effects in ANormLazy, non-termination
- * (or partial) is also considered as an effect. But we only 
+ * (or partial) is also considered as an effect. But we only
  * annotate each App because:
  * 1. The effect of PrimApp can be looked up from GhcPrimOp.
  * 2. The effect of ExtApp is assumed to any.
@@ -48,13 +48,13 @@ struct
 
   type vbinds = (var * ty) list
 
-  datatype cast 
-      = FromAddr of var 
+  datatype cast
+      = FromAddr of var
       | ToAddr   of var
       | NullRef
       | Bottom   of var                  (* keep the var live *)
 
-  datatype exp 
+  datatype exp
       = Return   of var List.t
       | PrimApp  of GHCPrimOp.primOp * var list          (* saturated prim application *)
       | ExtApp   of pname * cc * string * ty * var list  (* saturated extern application *)
@@ -72,28 +72,28 @@ struct
       | Adefault of exp
 
   (* f not escapes => every use is syntactically as the callee in a call
-   * f not recursive => 
-   *  calling f never leads to another call to f before the 
+   * f not recursive =>
+   *  calling f never leads to another call to f before the
    *  return of the first call.
    *)
   and vDef
       (* lambda must be bound to variable, where the first ty is type of var, not exp *)
-      = Vfun of {name : var, ty : ty, 
-                 escapes : bool, recursive : bool, 
+      = Vfun of {name : var, ty : ty,
+                 escapes : bool, recursive : bool,
                  fvs : var list, args : vbinds, body : exp}
       (* thunks must also be bound to variable *)
-      | Vthk of {name : var, ty : ty, 
-                 escapes : bool, recursive : bool, 
+      | Vthk of {name : var, ty : ty,
+                 escapes : bool, recursive : bool,
                  fvs : var list, body : exp}
 
-  and vDefg 
+  and vDefg
       = Rec of vDef list
-      | Nonrec of vDef 
+      | Nonrec of vDef
       | Vdef of (var * ty) list * exp
 
   type tDef = var * ty
 
-  datatype variableKind = VkGlobal | VkLocal 
+  datatype variableKind = VkGlobal | VkLocal
 
   type symbolTable = (ty * variableKind) Identifier.symbolTable
 
@@ -103,8 +103,8 @@ struct
 
   type typeManager = ty_ TypeRep.manager
 
-  datatype module 
-      = Module of var * vDefg list 
+  datatype module
+      = Module of var * vDefg list
 
   type t = module * symbolTable * typeManager
 
@@ -117,7 +117,7 @@ struct
           of (Boxed, Boxed) => true
            | (Prim a, Prim b) => GHCPrimType.eqPrimTy f (a, b)
            | (Arr (a, b, c), Arr (u, v, w)) => both (a, u, f) andalso both (b, v, f) andalso c = w
-           | (Sum xs, Sum ys) => 
+           | (Sum xs, Sum ys) =>
             let
               fun g (((u, i), l), ((v, j), m)) = u = v andalso i = j andalso both (l, m, f)
             in
@@ -128,15 +128,15 @@ struct
       end
 
   val hashTy_ : ty_ TypeRep.baseHash
-    = fn hashRep => fn t => 
-       (case t 
+    = fn hashRep => fn t =>
+       (case t
           of Boxed => 0w1
            | Prim p => TypeRep.hash2 (0w2, GHCPrimType.hashPrimTy hashRep p)
-           | Arr (t1, t2, _) => TypeRep.hash3 (0w3, TypeRep.hashList (List.map (t1, hashRep)), 
+           | Arr (t1, t2, _) => TypeRep.hash3 (0w3, TypeRep.hashList (List.map (t1, hashRep)),
                                                     TypeRep.hashList (List.map (t2, hashRep)))
-           | Sum arms => 
+           | Sum arms =>
             let
-              fun doArm ((_, i), tys) 
+              fun doArm ((_, i), tys)
                 = TypeRep.hash2 (Word.fromInt i, TypeRep.hashList (List.map (tys, hashRep)))
             in
               TypeRep.hash2 (0w4, TypeRep.hashList (List.map (arms, doArm)))

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature MIL_REP_FLOW_GRAPH = 
+signature MIL_REP_FLOW_GRAPH =
 sig
   type 'data t
   type node = MilRepNode.node
@@ -29,7 +29,7 @@ sig
    * forward: forward flow or backward?
    * merge:
    *   must return NONE if no change (required for termination)
-   *   should be associative and commutative 
+   *   should be associative and commutative
    *)
   val build : {pd : PassData.t,
                forward : bool,
@@ -41,7 +41,7 @@ sig
                equal : 'data * 'data -> bool} -> 'data t
 end (* signature MIL_REP_FLOW_GRAPH *)
 
-structure MilRepFlowGraph :> MIL_REP_FLOW_GRAPH = 
+structure MilRepFlowGraph :> MIL_REP_FLOW_GRAPH =
 struct
 
   val fail = fn (f, m) => Fail.fail ("flowgraph.sml", f, m)
@@ -64,27 +64,27 @@ struct
   withtype 'data graph = ('data nodeLabel, unit) IPLG.t
        and 'data graphNode = ('data nodeLabel, unit) IPLG.node
 
-  structure NodeLabel = 
+  structure NodeLabel =
   struct
 
-    val r2t = 
+    val r2t =
      fn (NL {data}) => data
-    val t2r = 
+    val t2r =
      fn data => NL {data = data}
 
     val setData = fn nl => #1 (FunctionalUpdate.mk1 (r2t, t2r)) nl
     val data = fn nl => #2 (FunctionalUpdate.mk1 (r2t, t2r)) nl
 
-    val new = 
+    val new =
      fn data => NL {data = data}
   end
-  
-  structure FlowGraph = 
+
+  structure FlowGraph =
   struct
-    val r2t = 
+    val r2t =
      fn (FG {forward, pd, graph, classNodes, merge, equal}) => (forward, pd, graph, classNodes, merge, equal)
-    val t2r = 
-     fn  (forward, pd, graph, classNodes, merge, equal) => 
+    val t2r =
+     fn  (forward, pd, graph, classNodes, merge, equal) =>
          FG {forward = forward, pd = pd, graph = graph, classNodes = classNodes, merge = merge, equal =equal}
     val forward    = fn fg => (#2 o #1) (FunctionalUpdate.mk6 (r2t, t2r)) fg
     val pd         = fn fg => (#2 o #2) (FunctionalUpdate.mk6 (r2t, t2r)) fg
@@ -94,16 +94,16 @@ struct
     val equal      = fn fg => (#2 o #6) (FunctionalUpdate.mk6 (r2t, t2r)) fg
   end (* structure FlowGraph *)
 
-  val getDataForClassNode = 
-   fn classNode => 
+  val getDataForClassNode =
+   fn classNode =>
       let
         val label = IPLG.Node.getLabel classNode
         val cd = NodeLabel.data label
       in cd
       end
 
-  val setDataForClassNode = 
-   fn (classNode, cd) => 
+  val setDataForClassNode =
+   fn (classNode, cd) =>
       let
         val label = IPLG.Node.getLabel classNode
         val label = NodeLabel.setData (label, cd)
@@ -117,35 +117,35 @@ struct
         val g = IPLG.new ()
         val uDefO = Option.map (uDefInit, fn uDefInit => IPLG.newNode (g, NodeLabel.new uDefInit))
         val uUseO = Option.map (uUseInit, fn uUseInit => IPLG.newNode (g, NodeLabel.new uUseInit))
-        val addEdge = 
-         fn (from, to) => 
+        val addEdge =
+         fn (from, to) =>
             let
-              val (from, to) = if forward then 
+              val (from, to) = if forward then
                                  (from, to)
-                               else 
+                               else
                                  (to, from)
               val edge = IPLG.addEdge (g, from, to, ())
             in ()
             end
-        val addUDefEdge = 
+        val addUDefEdge =
          fn cn => case uDefO of SOME uDef => addEdge (uDef, cn) | NONE      => ()
-        val addUUseEdge = 
+        val addUUseEdge =
          fn cn => case uUseO of SOME uUse => addEdge (cn, uUse) | NONE      => ()
-        val help = 
-         fn (id, n, classNodes) => 
+        val help =
+         fn (id, n, classNodes) =>
             let
               val classId = MRN.classId n
               val data = initialize n
-              val classNodes = 
+              val classNodes =
                   (case ID.lookup (classNodes, classId)
-                    of SOME classNode => 
+                    of SOME classNode =>
                        let
                          val cd = getDataForClassNode classNode
                          val cd = merge (data, cd)
                          val () = setDataForClassNode (classNode, cd)
                        in classNodes
                        end
-                     | NONE => 
+                     | NONE =>
                        let
                          val classNode = IPLG.newNode (g, NodeLabel.new data)
                          val classNodes = ID.insert (classNodes, classId, classNode)
@@ -157,7 +157,7 @@ struct
             end
         val classNodes = ID.fold (MRS.nodes summary, ID.empty, help)
         val edges = MRS.edges summary
-        val () = 
+        val () =
             let
               val cn = fn a => valOf (ID.lookup (classNodes, MRN.classId a))
             in List.foreach (edges, (fn (a, b) => addEdge (cn a, cn b)))
@@ -166,14 +166,14 @@ struct
       in fg
       end
 
-  val classNodeForNode = 
-   fn (fg, n) => 
+  val classNodeForNode =
+   fn (fg, n) =>
       (case ID.lookup (FlowGraph.classNodes fg, MRN.classId n)
         of SOME classNode => classNode
          | NONE => fail ("classNodeForNode", "Node has no class node in graph"))
 
   val add : 'data t * node * 'data -> unit =
-   fn (fg, n, d) => 
+   fn (fg, n, d) =>
       let
         val classNode = classNodeForNode (fg, n)
         val cd = getDataForClassNode classNode
@@ -183,12 +183,12 @@ struct
       end
 
   val addEdge : 'data t * node * node -> unit =
-   fn (fg, from, to) => 
+   fn (fg, from, to) =>
       let
         val forward = FlowGraph.forward fg
-        val (from, to) = if forward then 
+        val (from, to) = if forward then
                            (from, to)
-                         else 
+                         else
                            (to, from)
         val from = classNodeForNode (fg, from)
         val to = classNodeForNode (fg, to)
@@ -196,8 +196,8 @@ struct
       in ()
       end
 
-  val propagate0 = 
-   fn (fg, classNode) => 
+  val propagate0 =
+   fn (fg, classNode) =>
       let
         val graph = FlowGraph.graph fg
         val merge = FlowGraph.merge fg
@@ -213,11 +213,11 @@ struct
                    ()
       in changed
       end
-  val propagate1 = 
+  val propagate1 =
    fn (fg, component) =>
       let
         val help = fn (n, changed) => propagate0 (fg, n) orelse changed
-        val rec loop =  
+        val rec loop =
          fn () => if List.fold (component, false, help) then
                     loop ()
                   else
@@ -226,8 +226,8 @@ struct
       end
   val propagate2 = fn (fg, components) => List.foreach (components, fn component => propagate1 (fg, component))
 
-  val propagate = 
-   fn fg => 
+  val propagate =
+   fn fg =>
       let
         val graph = FlowGraph.graph fg
         val components = IPLG.scc graph
@@ -235,8 +235,8 @@ struct
       in ()
       end
 
-  val query = 
-   fn (fg, n) => 
+  val query =
+   fn (fg, n) =>
       let
         val classNode = classNodeForNode (fg, n)
         val label = IPLG.Node.getLabel classNode
@@ -244,17 +244,17 @@ struct
       in cd
       end
 
-  val cc : MilRepSummary.summary * 'data t -> int MilRepNode.Dict.t = 
-   fn (summary, fg as FG {classNodes, graph, ...}) => 
+  val cc : MilRepSummary.summary * 'data t -> int MilRepNode.Dict.t =
+   fn (summary, fg as FG {classNodes, graph, ...}) =>
       let
-        val nodeComponentNumber = 
+        val nodeComponentNumber =
             let
               val components = IPLG.cc graph
               val help2 = fn i => fn (cn, d) => IntDict.insert (d, IPLG.Node.id cn, i)
               val help = fn (i, component, d) => List.fold (component, d, help2 i)
               (* Map graph node ids to equivalence class # *)
               val d : int ID.t = List.foldi (components, IntDict.empty, help)
-              val map = 
+              val map =
                fn n => case IntDict.lookup (d, IPLG.Node.id (classNodeForNode (fg, n)))
                         of SOME i => i
                          | NONE   => fail ("cc", "Bad node")

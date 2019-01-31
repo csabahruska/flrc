@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature IMIL_ITEM = 
+signature IMIL_ITEM =
 sig
   include IMIL_PUBLIC_TYPES
 
@@ -45,24 +45,24 @@ sig
   val print     : t * item -> unit
 end
 
-structure IMilItem : 
+structure IMilItem :
 sig
   include IMIL_ITEM
   val itemGetId : item -> int
 end
-  = 
+  =
 struct
   open IMilPublicTypes
 
   structure IMT = IMilTypes
   structure Global = IMilGlobal
   structure Instr = IMilInstr
-  structure Func = IMilFunc 
+  structure Func = IMilFunc
 
   datatype item = datatype IMT.item
-                           
+
   val itemGetId =
-   fn i => 
+   fn i =>
       case i
        of ItemInstr i  => IMT.iInstrGetId i
         | ItemGlobal g => IMT.iGlobalGetId g
@@ -72,44 +72,44 @@ struct
    fn (p, i) => itemGetId i
 
   val getUses =
-   fn (p, i) => 
+   fn (p, i) =>
       case i
        of ItemInstr i  => Instr.getUses (p, i)
         | ItemGlobal g => Global.getUses (p, g)
         | ItemFunc c => Func.getUses (p, c)
 
   val getUsedBy =
-   fn (p, i) => 
+   fn (p, i) =>
       let
-        val items = 
+        val items =
             case i
              of ItemInstr i  => Instr.getUsedBy (p, i)
               | ItemGlobal g => Global.getUsedBy (p, g)
               | ItemFunc c => Func.getUsedBy (p, c)
-                           
+
       in items
       end
 
   local
     val gen =
-     fn (fi, gi, ci) => 
-     fn (p, i) => 
+     fn (fi, gi, ci) =>
+     fn (p, i) =>
         let
-          val items = 
+          val items =
               case i
                of ItemInstr i  => fi (p, i)
                 | ItemGlobal g => gi (p, g)
                 | ItemFunc c   => ci (p, c)
-                               
+
         in items
         end
-  in 
+  in
   val freeVars  = gen (Instr.freeVars,  Global.freeVars,  Func.freeVars)
   val freeVars' = gen (Instr.freeVars', Global.freeVars', Func.freeVars')
   end
 
   val delete =
-   fn (p, i) => 
+   fn (p, i) =>
       case i
        of ItemInstr i  => Instr.delete (p, i)
         | ItemGlobal g => Global.delete (p, g)
@@ -125,15 +125,15 @@ struct
   val toLabel       = Utils.Option.compose (IMT.iInstrToLabel, toIInstr)
   val toGlobal      = Utils.Option.compose (IMT.iGlobalToGlobal, toIGlobal)
 
-  val fx = 
+  val fx =
    fn (imil, i) =>
       (case i
         of IMT.ItemInstr i  => Instr.fx (imil, i)
          | IMT.ItemGlobal g => Effect.Total
          | IMT.ItemFunc c   => Effect.Total)
 
-  val splitUses' = 
-   fn (t, i, us) => 
+  val splitUses' =
+   fn (t, i, us) =>
       (case toIInstr i
         of SOME i => Instr.splitUses' (t, i, us)
          | NONE => {inits = Vector.new0(), others = us})

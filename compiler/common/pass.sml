@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -30,7 +30,7 @@ sig
   val getLevel : t -> int
   val click : t * string -> unit
   val clickN : t * string * int -> unit
-  val clicker : {stats : (string * string) List.t, passname : string, name : string, desc : string} 
+  val clicker : {stats : (string * string) List.t, passname : string, name : string, desc : string}
                 -> {stats : (string * string) List.t, click : t -> unit}
   val mk : Config.t * (string * string) list -> t
   val mk' : Config.t * Stats.t * int -> t
@@ -47,17 +47,17 @@ sig
    *  it is set on the command line
    *  or if the debug level is greater than level and debugPass returns true
    *)
-  val mkLevelDebug : string * string * string * int * (t -> bool) -> (Config.Debug.debug * (t -> bool)) 
+  val mkLevelDebug : string * string * string * int * (t -> bool) -> (Config.Debug.debug * (t -> bool))
 
   val phase : {measure : 'state * t  * string * 'object -> unit,
                print   : 'state * t * string * 'object -> unit,
-               log     : t * string -> unit} 
+               log     : t * string -> unit}
               -> {name       : string,
                   doIt       : 'state * t * 'object -> 'object,
                   measureItP : t -> bool,
                   printItP   : t -> bool,
                   skipItP    : t -> bool,
-                  statItP    : t -> bool} 
+                  statItP    : t -> bool}
               -> 'state * t * 'object -> 'object
 
 end;
@@ -78,7 +78,7 @@ struct
   fun clicker {stats, passname, name, desc} =
       let
         val globalNm = passname ^ ":" ^ name
-        val stats = 
+        val stats =
             if List.exists (stats, fn (nm, _) => nm = globalNm) then
               Fail.fail ("PassData", "clicker", "Duplicate stat")
             else
@@ -94,69 +94,69 @@ struct
   fun push (PD {config, stats, level}) =
       PD {config = config, stats = Stats.push stats, level = level + 1}
 
-  fun report (pd, passname) = 
+  fun report (pd, passname) =
       if Config.reportEnabled(getConfig pd, passname) then
         Stats.report (getStats pd)
       else
         ()
 
-  val mkLogFeature : string * string * string * int -> (Config.Feature.feature * (t -> bool)) = 
+  val mkLogFeature : string * string * string * int -> (Config.Feature.feature * (t -> bool)) =
    fn (passname, tag, description, level) =>
       let
-        val (featureD, feature) = 
+        val (featureD, feature) =
             Config.Feature.mk (tag, description)
-        val feature = 
-         fn d => 
+        val feature =
+         fn d =>
             let
               val config = getConfig d
-            in feature config orelse 
+            in feature config orelse
                (Config.logLevel (config, passname) >= level)
             end
       in (featureD, feature)
       end
 
-  val mkFeature : string * string -> (Config.Feature.feature * (t -> bool)) = 
+  val mkFeature : string * string -> (Config.Feature.feature * (t -> bool)) =
    fn (tag, description) =>
       let
-        val (featureD, feature) = 
+        val (featureD, feature) =
             Config.Feature.mk (tag, description)
-        val feature = 
+        val feature =
          fn d => feature (getConfig d)
       in (featureD, feature)
       end
 
-  val mkDebug : string * string -> (Config.Debug.debug * (t -> bool)) = 
+  val mkDebug : string * string -> (Config.Debug.debug * (t -> bool)) =
    fn (tag, description) =>
       let
-        val (debugD, debug) = 
+        val (debugD, debug) =
             Config.Debug.mk (tag, description)
-        val debug = 
-         fn d => 
+        val debug =
+         fn d =>
             let
               val config = getConfig d
-            in debug config 
+            in debug config
             end
       in (debugD, debug)
       end
 
-  val mkLevelDebug : string * string * string * int * (t -> bool) -> (Config.Debug.debug * (t -> bool)) = 
+  val mkLevelDebug : string * string * string * int * (t -> bool) -> (Config.Debug.debug * (t -> bool)) =
    fn (passname, tag, description, level, debugPass) =>
       let
         val (debugD, debug) = mkDebug (tag, description)
-        val debug = 
-         fn d => 
+        val debug =
+         fn d =>
             let
               val config = getConfig d
-            in debug d orelse 
+            in debug d orelse
                (debugPass d andalso Config.debugLevel (config, passname) >= level)
             end
       in (debugD, debug)
       end
 
   val phase =
-   fn {measure, print, log} => 
-      fn {name, doIt, measureItP, skipItP, printItP, statItP} => 
-         fn (state, pd, object) => 
+   fn {measure, print, log} =>
+      fn {name, doIt, measureItP, skipItP, printItP, statItP} =>
+         fn (state, pd, object) =>
             if skipItP pd then
               let
                 val () = log (pd, "Skipping "^name)
@@ -203,7 +203,7 @@ sig
   val unitHelpers : unit irHelpers
   val mkCompulsoryPass : ('a, 'b) description
                          * ('a, 'b) associates
-                         * ('a * PassData.t -> 'b) 
+                         * ('a * PassData.t -> 'b)
                          -> ('a, 'b) t
   val mkOptPass : ('a, 'a) description
                   * ('a, 'a) associates
@@ -215,7 +215,7 @@ sig
                       -> ('a, 'a) t
   val mkFilePass : ('a, 'b) description
                    * ('a, 'b) associates
-                   * ('a * PassData.t * Path.t -> 'b) 
+                   * ('a * PassData.t * Path.t -> 'b)
                    -> ('a, 'b) t
   val getDescription : ('a, 'b) t -> ('a, 'b) description
   val getName : ('a, 'b) t -> string
@@ -240,7 +240,7 @@ sig
   val doSubPass : ('a, 'b) t -> ('a, 'b) processor
   exception Done
   val stopAt : string -> ('a, 'a) processor
-  val extractConfig : ('a, 'a * Config.t) processor 
+  val extractConfig : ('a, 'a * Config.t) processor
   val >> : ('a, 'b) processor * ('b, 'c) processor -> ('a, 'c) processor
   val >>> : ('a, 'b * Config.t) processor * ('b, 'c) processor -> ('a, 'c) processor
   val first : ('a, 'b) processor -> ('a * 'c, 'b * 'c) processor
@@ -308,7 +308,7 @@ struct
                           val name = "Toplevel"
                           val indent = 0)
 
-  fun bold s = 
+  fun bold s =
       let
         val s = "========== " ^ s
         val s = StringCvt.padRight #"=" 60 (s ^ " ")
@@ -368,7 +368,7 @@ struct
              doLayout (config, "After Pass " ^ name ^ " IR",
                        (#printer outIr) (output, config))
            else ()
-       val () = 
+       val () =
            if Config.passShowLineCount (config, name) then
              doLineCount (config, "After Pass " ^ name ^ " IR Line Count",
                        (#printer outIr) (output, config))
@@ -381,7 +381,7 @@ struct
      in output
      end
 
-  fun skipPass (pd, name, skipIt, arg) = 
+  fun skipPass (pd, name, skipIt, arg) =
       let
         val () = Chat.log0 (PassData.getConfig pd,
                             bold ("Skipping Pass " ^ name))
@@ -505,7 +505,7 @@ struct
 
   fun >>> (T f1, T f2) =
       let
-        fun f (pd, base, arg) = 
+        fun f (pd, base, arg) =
             let
               val (r, config) = f1 (pd, base, arg)
               val pd = PassData.mk' (config, PassData.getStats pd, PassData.getLevel pd)
@@ -532,7 +532,7 @@ struct
   fun lookupCmdInEnv (cmd, morePaths) =
       case Process.getEnv "PATH"
         of NONE => Fail.fail ("pass", "run", "missing PATH variable in environment")
-         | SOME paths => 
+         | SOME paths =>
           let
             val (d, s, ext) = case MLton.Platform.OS.host
                             of MLton.Platform.OS.MinGW => (#";", "\\", ".exe")
@@ -541,7 +541,7 @@ struct
             (* try to be smart about file extensions of executables *)
             val basename = #file (OS.Path.splitDirFile cmd)
             val cmdExe = if String.contains (basename, #".") then cmd else cmd ^ ext
-            fun find (d :: dirs) = 
+            fun find (d :: dirs) =
                 let
                   val p = d ^ s ^ cmdExe
                 in
@@ -561,10 +561,10 @@ struct
    * When silent, it returns the output from running the command;
    * otherwise, prints output and return empty string.
    *)
-  fun runCmd (cmd, args, morePaths, silent) = 
-      let 
+  fun runCmd (cmd, args, morePaths, silent) =
+      let
         val cmdPath = lookupCmdInEnv (cmd, morePaths)
-        val p = MLton.Process.create 
+        val p = MLton.Process.create
                    { args = args
                    , env  = NONE
                    , path = cmdPath
@@ -572,14 +572,14 @@ struct
                    , stdin  = MLton.Process.Param.null
                    , stdout = MLton.Process.Param.pipe
                    }
-        fun echo h = case TextIO.inputLine h 
+        fun echo h = case TextIO.inputLine h
                        of NONE => ""
                         | SOME s => (print s; echo h)
         val wrap = if silent then TextIO.inputAll else echo
       in
         wrap (MLton.Process.Child.textIn (MLton.Process.getStdout p))
-          before 
-            (case MLton.Process.reap p 
+          before
+            (case MLton.Process.reap p
               of Posix.Process.W_EXITED => ()
                | Posix.Process.W_EXITSTATUS s => Fail.fail ("pass", "run", "command exit status " ^ Word8.toString s)
                | Posix.Process.W_SIGNALED s =>
@@ -588,13 +588,13 @@ struct
                  Fail.fail ("pass", "run", "command stop signaled " ^ SysWord.toString (Posix.Signal.toWord s)))
       end
 
-  fun run (config, logger, cmd, args) = 
+  fun run (config, logger, cmd, args) =
       let
         val cmd = Config.pathToHostString (config, cmd)
         val () = logger (config, String.concatWith (cmd::args, " "))
         val () = MLton.GC.collect ()
         val () = MLton.GC.pack ()
-        val _  = runCmd (cmd, args, [], Config.silent config) handle any => 
+        val _  = runCmd (cmd, args, [], Config.silent config) handle any =>
                        Fail.fail ("Pass", "run", "Command could not be run: "^Exn.toString any)
         val () = MLton.GC.unpack ()
       in ()

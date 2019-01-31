@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,11 +16,11 @@
  *)
 
 
-signature MIL_NAME_SMALL_VALUES = 
+signature MIL_NAME_SMALL_VALUES =
 sig
-  val program : Config.t 
+  val program : Config.t
                 * (Mil.constant -> bool)
-                * Mil.t 
+                * Mil.t
                 -> Mil.t
 end
 
@@ -31,12 +31,12 @@ struct
   structure VD = I.VariableDict
   structure M = Mil
   structure MSTM = MilUtils.SymbolTableManager
-  structure MRC = MilRewriterClient 
+  structure MRC = MilRewriterClient
 
   datatype state = S of {stm : M.symbolTableManager, globals : (M.variable * M.global) list ref}
 
   datatype env = E of {name : M.constant -> bool, config : Config.t}
-                         
+
   local
     val getS = fn g => fn (S t) => g t
     val getE = fn g => fn (E t) => g t
@@ -47,7 +47,7 @@ struct
   val envGetName = getE #name
   end
 
-  val stateBindGlobal = 
+  val stateBindGlobal =
    fn (state, t, oper) =>
       let
         val v = MSTM.variableFresh (stateGetStm state, "mnm_#", t, M.VkGlobal)
@@ -57,16 +57,16 @@ struct
       in v
       end
 
-  val nameOperand = 
-   fn (env, opnd) => 
+  val nameOperand =
+   fn (env, opnd) =>
       (case opnd
         of M.SVariable _ => false
          | M.SConstant c => envGetName env c)
 
   structure TO = MilType.Typer
 
-  val bind = 
-   fn (state, env, oper) => 
+  val bind =
+   fn (state, env, oper) =>
       let
         val c = envGetConfig env
         val si = I.SymbolInfo.SiManager (stateGetStm state)
@@ -75,18 +75,18 @@ struct
       in M.SVariable v
       end
 
-  structure Rewrite = 
+  structure Rewrite =
   MilRewriterF (struct
                   type state      = state
                   type env        = env
                   val config      = envGetConfig
                   val label       = fn _ => MRC.Continue
                   val variable    = fn _ => MRC.Continue
-                  val operand     = 
-                   fn (state, env, oper) => 
+                  val operand     =
+                   fn (state, env, oper) =>
                       if nameOperand (env, oper) then
                         MRC.StopWith (env, bind (state, env, oper))
-                      else 
+                      else
                         MRC.Stop
                   val instruction = fn _ => MRC.Continue
                   val transfer    = fn _ => MRC.Continue
@@ -99,8 +99,8 @@ struct
                 end)
 
 
-  val program = 
-   fn (config, name, p) => 
+  val program =
+   fn (config, name, p) =>
       let
         val M.P {symbolTable, ...} = p
         val stm = IM.fromExistingAll symbolTable

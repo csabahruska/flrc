@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -92,15 +92,15 @@ struct
 
   fun bindVar (state, env, v) =
       let
-	val (env, vo) = clientBind (state, env, v)
-	val v = Pervasive.Option.getOpt (vo, v)
+        val (env, vo) = clientBind (state, env, v)
+        val v = Pervasive.Option.getOpt (vo, v)
       in (env, v)
       end
 
   fun bindLabel (state, env, l) =
       let
-	val (env, lo) = clientBindLabel (state, env, l)
-	val l = Pervasive.Option.getOpt (lo, l)
+        val (env, lo) = clientBindLabel (state, env, l)
+        val l = Pervasive.Option.getOpt (lo, l)
       in (env, l)
       end
 
@@ -113,10 +113,10 @@ struct
 
   fun callClientCode (itemhandler, doitem, state, env, item) =
       case itemhandler (state, env, item)
-	of StopWith     (env, i) => i
-	 | ContinueWith (env, i) => doitem (state, env, i)
-	 | Continue              => doitem (state, env, item)
-	 | Stop                  => item
+        of StopWith     (env, i) => i
+         | ContinueWith (env, i) => doitem (state, env, i)
+         | Continue              => doitem (state, env, item)
+         | Stop                  => item
 
   fun label (state, env, l) =
       let
@@ -232,11 +232,11 @@ struct
         fun doInstrs (env, instrs) =
             Utils.Function.flipOut Vector.mapAndFold (instrs, env, Utils.Function.flip doInstr)
       in
-	case clientInstruction (state, env, i)
-	 of StopWith     (env, i) => bindInstr (env, i)
-	  | ContinueWith (env, i) => doInstr   (env, i)
-	  | Continue              => doInstr   (env, i)
-	  | Stop                  => bindInstr (env, i)
+        case clientInstruction (state, env, i)
+         of StopWith     (env, i) => bindInstr (env, i)
+          | ContinueWith (env, i) => doInstr   (env, i)
+          | Continue              => doInstr   (env, i)
+          | Stop                  => bindInstr (env, i)
       end
 
   fun instructions (state, env, is) =

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -98,7 +98,7 @@ struct
                of [] => r
                 | v::wl =>
                   (case FMil.getVariable (getFMil env, v)
-                    of FMil.VdGlobal g => 
+                    of FMil.VdGlobal g =>
                        let
                          val r =
                              case g
@@ -249,8 +249,8 @@ struct
                 fun doIndirectCall (caller, callee, rl, es) = (root, funNode callee, ())::es
                 fun callIsInlineable (c, MCG.CI {knownCallees, unknownCallees}) =
                     let
-                      val indirect = VS.size knownCallees <> 1 orelse unknownCallees 
-                      val closure = 
+                      val indirect = VS.size knownCallees <> 1 orelse unknownCallees
+                      val closure =
                           (case MU.Transfer.Dec.tInterProc (FMil.getTransfer (getFMil env, c))
                             of SOME {callee = M.IpCall {call = M.CClosure _, ...}, ...} => true
                              | _ => false)
@@ -258,7 +258,7 @@ struct
                     end
                 fun doCall1 (c, call as MCG.CI {knownCallees, unknownCallees}, es) =
                     let
-                      val doCall2 = if callIsInlineable (c, call) then doDirectCall else doIndirectCall 
+                      val doCall2 = if callIsInlineable (c, call) then doDirectCall else doIndirectCall
                       val f = FMil.getLabelFun (getFMil env, c)
                       val rl = getReturnLabel (env, c)
                       val es = VS.fold (knownCallees, es, fn (g, es) => doCall2 (f, g, rl, es))
@@ -392,7 +392,7 @@ struct
       blks : M.block LD.t ref
     }
 
-    fun stateMk (pd, stm, entry) = S {pd = pd, stm = stm, 
+    fun stateMk (pd, stm, entry) = S {pd = pd, stm = stm,
                                       self = ref (entry, SeNone, M.CcCode), (* entry, entry label, cc *)
                                       blks = ref LD.empty}
 
@@ -541,15 +541,15 @@ struct
      *)
     fun isSelfTailcall (state, env, c) =
         case c
-         of M.CCode {ptr, ...}           => 
+         of M.CCode {ptr, ...}           =>
             (case isSelf (state, ptr)
               of SOME (l, M.CcCode) => SOME (l, Vector.new0 (), Vector.new0 ())
                | SOME _             => Fail.fail ("MilContify", "isSelfTailCall", "Code: mismatched calling convention")
                | NONE               => NONE)
           | M.CClosure _                 => NONE
-          | M.CDirectClosure {code, cls} => 
+          | M.CDirectClosure {code, cls} =>
             (case isSelf (state, code)
-              of SOME (l, M.CcClosure {cls = _, fvs}) => 
+              of SOME (l, M.CcClosure {cls = _, fvs}) =>
                  let
                    val fvs = Vector.map (fvs, fn v => cloneVar (state, v))
                    val ts = Vector.map (fvs, fn v => MU.SymbolTableManager.variableTyp (getStm state, v))
@@ -559,7 +559,7 @@ struct
                    val args = Vector.map (Utils.Vector.cons (cls, fvs), M.SVariable)
                  in SOME (l, instrs, args)
                  end
-               | SOME _                         => 
+               | SOME _                         =>
                  Fail.fail ("MilContify", "isSelfTailCall", "Closure: mismatched calling convention")
                | NONE                           => NONE)
 
@@ -570,7 +570,7 @@ struct
      *)
     fun isSelfTailInterProc (state, env, ip) =
         case ip
-         of M.IpCall {call, args, ...} => 
+         of M.IpCall {call, args, ...} =>
             Option.map (isSelfTailcall (state, env, call), fn (l, is, vs) => (l, is, Vector.concat [vs, args]))
           | M.IpEval _ => NONE
 
@@ -627,7 +627,7 @@ struct
                                          (is, M.TGoto (M.T {block = l, arguments = args}))
                                        end)
                                 (* This CB is inlined and returns to r, must convert tail back to normal *)
-                            | SOME r => 
+                            | SOME r =>
                               let
                                 val () = click (state, "untail")
                                 (* Generate return vars and a label that jumps to r with those return vars as args *)
@@ -657,7 +657,7 @@ struct
                      in
                        just (M.TGoto (M.T {block = r, arguments = os}))
                      end)
-            | M.TCut {cont, args, cuts} => 
+            | M.TCut {cont, args, cuts} =>
               just (M.TCut {cont = cont, args = args, cuts = rewriteCuts (state, env, cuts)})
             | M.THalt _ => nochange
         end
@@ -665,7 +665,7 @@ struct
     fun doInstr (state, env, i as M.I {dests, n, rhs}) =
         case rhs
          of M.RhsClosureInit {cls, code = SOME codeVar, fvs} =>
-            if keep (env, codeVar) then 
+            if keep (env, codeVar) then
               i
             else
               let
@@ -742,7 +742,7 @@ struct
               case opnd
                of M.SVariable v' => v = v'
                 | _              => false
-          val args = 
+          val args =
               case cc
                of M.CcClosure {cls, fvs} => Utils.Vector.cons (cls, Vector.concat [fvs, args])
                 | _                      => args
@@ -765,9 +765,9 @@ struct
         let
           val nentry = newLabel state
           val nargs = Vector.map (args, fn x => cloneVar (state, x))
-          val (cc, nformals, nactuals, args) = 
+          val (cc, nformals, nactuals, args) =
               case cc
-               of M.CcClosure {cls, fvs} => 
+               of M.CcClosure {cls, fvs} =>
                   let
                     val ncls = cloneVar (state, cls)
                     val nfvs = Vector.map (fvs, fn v => cloneVar (state, v))
@@ -881,9 +881,9 @@ struct
 
   end (* structure T *)
 
-  structure Prep = 
+  structure Prep =
   struct
-    (* We make sure that every call of the form f(x) -> (rvars) Lret 
+    (* We make sure that every call of the form f(x) -> (rvars) Lret
      * is in a canonical form:
      *  f(x) -> (rvars) Lret'
      *  Lret'():
@@ -898,34 +898,34 @@ struct
 
     val ((stateSetBlocks, stateGetBlocks),
          (stateSetRLbls, stateGetRLbls),
-         (stateSetStm, stateGetStm)) = 
+         (stateSetStm, stateGetStm)) =
         let
           val r2t = fn S {blocks, rLbls, stm} => (blocks, rLbls, stm)
-          val t2r = fn (blocks, rLbls, stm) => 
+          val t2r = fn (blocks, rLbls, stm) =>
                        S {blocks = blocks, rLbls = rLbls, stm = stm}
         in FunctionalUpdate.mk3 (r2t, t2r)
         end
 
     val ((envSetPd, envGetPd)
-        ) = 
+        ) =
         let
           val r2t = fn E {pd} => (pd)
           val t2r = fn (pd) => E {pd = pd}
         in FunctionalUpdate.mk1 (r2t, t2r)
         end
 
-    val getBlock : state * env * M.label -> M.block = 
+    val getBlock : state * env * M.label -> M.block =
      fn (state, env, l) => valOf (LD.lookup (!(stateGetBlocks state), l))
 
-    val addBlock : state * M.label * M.block -> unit = 
-     fn (state, l, b) => 
+    val addBlock : state * M.label * M.block -> unit =
+     fn (state, l, b) =>
         let
           val br = stateGetBlocks state
           val () = br := LD.insert (!br, l, b)
         in ()
         end
 
-    val addRLbl : state * M.label * M.label -> unit = 
+    val addRLbl : state * M.label * M.label -> unit =
      fn (state, l, rl) =>
         let
           val rlr = stateGetRLbls state
@@ -936,47 +936,47 @@ struct
     val newLabel = fn state => MSTM.labelFresh (stateGetStm state)
 
     val cloneVariables = fn (state, vs) => Vector.map (vs, fn v => MSTM.variableClone (stateGetStm state, v))
-   
-    val doTransfer : state * env * M.label * M.transfer -> M.transfer = 
-     fn (state, env, blockL, t) => 
+
+    val doTransfer : state * env * M.label * M.transfer -> M.transfer =
+     fn (state, env, blockL, t) =>
         let
-          val getPassthru' = 
-              Try.lift 
-                (fn (M.B {parameters, instructions, transfer}, rvs) => 
+          val getPassthru' =
+              Try.lift
+                (fn (M.B {parameters, instructions, transfer}, rvs) =>
                     let
                       val () = Try.require (Vector.isEmpty instructions)
                       val () = Try.require (Vector.isEmpty parameters)
                       val M.T {block, arguments} = Try.<@ MU.Transfer.Dec.tGoto transfer
                       val () = Try.require (Vector.length rvs = Vector.length arguments)
-                      val eq1 = fn (v, oper) => 
-                                   (case oper 
+                      val eq1 = fn (v, oper) =>
+                                   (case oper
                                      of M.SVariable v' => v = v'
                                       | M.SConstant _  => false)
                       val () = Try.require (Vector.forall2 (rvs, arguments, eq1))
                     in block
                     end)
 
-          val getPassthru = 
+          val getPassthru =
            fn (block, rvs) => if Vector.isEmpty rvs then SOME block
                               else getPassthru' (getBlock (state, env, block), rvs)
 
-          val t = 
+          val t =
               case t
-               of M.TInterProc {callee = callee as M.IpCall _, ret = M.RNormal {rets, block, cuts}, fx} => 
+               of M.TInterProc {callee = callee as M.IpCall _, ret = M.RNormal {rets, block, cuts}, fx} =>
                   (case getPassthru (block, rets)
-                    of SOME retL => 
+                    of SOME retL =>
                        let
                          val () = addRLbl (state, blockL, retL)
                        in t
                        end
-                     | NONE => 
+                     | NONE =>
                        let
                          val retL = newLabel state
                          val mergeL = newLabel state
                          val rets' = cloneVariables (state, rets)
                          val retB = M.B {parameters = Vector.new0 (),
                                          instructions = Vector.new0 (),
-                                         transfer = M.TGoto (M.T {block = mergeL, 
+                                         transfer = M.TGoto (M.T {block = mergeL,
                                                                   arguments = Vector.map (rets', M.SVariable)})}
                          val mergeB = M.B {parameters = rets,
                                            instructions = Vector.new0 (),
@@ -992,8 +992,8 @@ struct
         in t
         end
 
-    val doCodeBody : state * env * M.codeBody -> M.codeBody = 
-     fn (state, env, cb) => 
+    val doCodeBody : state * env * M.codeBody -> M.codeBody =
+     fn (state, env, cb) =>
         let
           val M.CB {entry, blocks} = cb
           val br = ref blocks
@@ -1006,7 +1006,7 @@ struct
         in M.CB {entry = entry, blocks = blocks}
         end
 
-    val rewrite = 
+    val rewrite =
      fn (p, pd) =>
         let
           val M.P {includes, externs, entry, globals, symbolTable} = p
@@ -1017,7 +1017,7 @@ struct
           val globals = MU.Globals.Map.codeBodies (globals, fn g => doCodeBody (state, env, g))
           val symbolTable = IM.finish stm
           val rLbls = !rlr
-          val p = M.P {includes = includes, externs = externs, entry = entry, 
+          val p = M.P {includes = includes, externs = externs, entry = entry,
                        globals = globals, symbolTable = symbolTable}
         in (p, rLbls)
         end

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -730,12 +730,12 @@ struct
              mkVarInfo (VS.fromList [v], noIvs, noReads, [wi], NONE)
            end
 (*         | M.SConstant c => deriveConstant (env, c))*)
-	 | M.SConstant c =>
-	   let
+         | M.SConstant c =>
+           let
                val wi = W {source = value, iv = iv, offset = Rat.fromInt fixed}
-	   in
-	       mkVarInfo (noDeps, noIvs, noReads, [wi], milToLocalConst c)
-	   end)
+           in
+               mkVarInfo (noDeps, noIvs, noReads, [wi], milToLocalConst c)
+           end)
     end
 
   fun layoutRhsTyp rhs =
@@ -749,7 +749,7 @@ struct
          | Mil.RhsTupleWait {tupField as Mil.TF {tupDesc, tup, field}, pred} => L.str "RhsTupleWait"
          | Mil.RhsTupleInited _ => L.str "RhsTupleInited"
          | Mil.RhsIdxGet _ => L.str "RhsIdxGet"
-         | Mil.RhsCont _ => L.str "RhsCont" 
+         | Mil.RhsCont _ => L.str "RhsCont"
          | Mil.RhsThunkMk _ => L.str "RhsThunMk"
          | Mil.RhsThunkInit _ => L.str "RhsThunkInit"
          | Mil.RhsThunkGetFv _ => L.str "RhsThunkGetFv"
@@ -776,8 +776,8 @@ struct
         val some = Vector.new1
         val none = Vector.new0 ()
         val dest = fn () => Vector.sub (v, 0)
-	val () = Debug.printLayout (config, L.seq [L.str "deriveInstr: ",
-					                           ML.layoutRhs (config, si, rhs)])
+        val () = Debug.printLayout (config, L.seq [L.str "deriveInstr: ",
+                                                                   ML.layoutRhs (config, si, rhs)])
       in
       case rhs
        of Mil.RhsSimple s => some (dest (), deriveFromSimple (env, dict, s))
@@ -799,23 +799,23 @@ struct
             (case field
               of Mil.FiFixed idx => some (tup, deriveFromWrite (env, dict, tup, idx, NONE, ofVal))
                | Mil.FiVariable dyn => some (tup, deriveFromWrite (env, dict, tup,
-								   MilUtils.TupleDescriptor.numFixed (tupDesc),
-								   SOME dyn, ofVal))
+                                                                   MilUtils.TupleDescriptor.numFixed (tupDesc),
+                                                                   SOME dyn, ofVal))
                | _ =>
-		 let
-		     val () = Debug.addmeAbort (env, "deriveInstr.RhsTupleSet", layoutRhsTyp rhs)
-		 in
-		     none
-		 end)
+                 let
+                     val () = Debug.addmeAbort (env, "deriveInstr.RhsTupleSet", layoutRhsTyp rhs)
+                 in
+                     none
+                 end)
           end
-	| Mil.RhsSumProj {typs, sum, tag, idx} =>
-	  let
-	  in some (dest (), deriveFromSimple (env, dict, Mil.SVariable sum))
-	  end
-	| Mil.RhsSumGetTag {typ, sum} =>
-	  let
-	  in some (dest (), deriveFromSimple (env, dict, Mil.SVariable sum))
-	  end
+        | Mil.RhsSumProj {typs, sum, tag, idx} =>
+          let
+          in some (dest (), deriveFromSimple (env, dict, Mil.SVariable sum))
+          end
+        | Mil.RhsSumGetTag {typ, sum} =>
+          let
+          in some (dest (), deriveFromSimple (env, dict, Mil.SVariable sum))
+          end
         | x =>
           let
             val () = Debug.addmeAbort (env, "deriveInstr", layoutRhsTyp rhs)
@@ -1008,8 +1008,8 @@ struct
         fun writeOne (W {source, iv, offset}, r) =
             Layout.seq [LayoutUtils.sequence (" W[", "]", "/")
                                         [(case source
-					   of Mil.SVariable v => I.layoutVariable' v
-					    | _ => L.str "constant "),
+                                           of Mil.SVariable v => I.layoutVariable' v
+                                            | _ => L.str "constant "),
                                          (case iv
                                            of SOME v => I.layoutVariable' v
                                             | NONE => Layout.str "--"),

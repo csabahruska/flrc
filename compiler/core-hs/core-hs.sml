@@ -24,7 +24,7 @@ structure CoreHs = struct
       = M of anMName'
 
   type mName = anMName option
-  
+
   type 'a qualified = mName * 'a
 
   datatype ty
@@ -86,7 +86,7 @@ structure CoreHs = struct
       | Appt of exp * ty
       | Lam of bind * exp
       | Let of vDefg * exp
-      | Case of exp * vBind * ty * alt list 
+      | Case of exp * vBind * ty * alt list
       | Cast of exp * ty
       | Note of string * exp
       | External of string * callconv * string * ty
@@ -131,8 +131,8 @@ struct
 
   val getModule : 't qualified -> mName = #1
 
-  val compareCoreLit : coreLit * coreLit -> order = 
-   fn (l1, l2) => 
+  val compareCoreLit : coreLit * coreLit -> order =
+   fn (l1, l2) =>
       (case (l1, l2)
         of (Lint i1, Lint i2)            => IntInf.compare (i1, i2)
          | (Lint _, _)                   => GREATER
@@ -145,7 +145,7 @@ struct
          | (_, Lchar _)                  => LESS
          | (Lstring s1, Lstring s2)      => String.compare (s1, s2))
 
-  val eqCoreLit : coreLit * coreLit -> bool = 
+  val eqCoreLit : coreLit * coreLit -> bool =
       fn (l1, l2) => compareCoreLit (l1, l2) = EQUAL
 
   (* eqKind : kind * kind -> bool *)
@@ -177,9 +177,9 @@ struct
       case t
         of Tvar _             => NONE
          | Tcon t             => SOME (t,[])
-         | Tapp (rator, rand) => (case splitTyConApp_maybe rator 
+         | Tapp (rator, rand) => (case splitTyConApp_maybe rator
                                     of SOME (r,rs) => SOME (r,rs @ [rand])
-                                     | NONE => case rator 
+                                     | NONE => case rator
                                                   of Tcon tc => SOME (tc,[rand])
                                                    | _       => NONE)
          | _                  => NONE
@@ -224,8 +224,8 @@ struct
       end
 
   val baseKind : kind -> bool =
-    fn k => 
-      case k 
+    fn k =>
+      case k
         of Karrow _ => false
          | _        => true
 
@@ -260,7 +260,7 @@ struct
 
   val maxUtuple : int = 100
 
-  val tcUtuple : int -> tcon qualified = 
+  val tcUtuple : int -> tcon qualified =
     fn n => (SOME primMname, "Z" ^ Int.toString n ^ "H")
 
   val ktUtuple : int -> kind =
@@ -274,13 +274,13 @@ struct
           (case (p, explode s)
              of (SOME pm, #"Z" :: rest) =>
                if pm = primMname andalso List.last rest = #"H"
-                 then 
+                 then
                    let val mid = List.firstN (rest, (length rest) - 1)
                        val num = Int.fromString (implode mid)
-                   in case num 
+                   in case num
                      of SOME n => if List.forall (mid, Char.isDigit) andalso 1 <= n andalso n <= maxUtuple
                                     then SOME n else NONE
-                      | NONE   => NONE 
+                      | NONE   => NONE
                    end
                  else NONE
               | _ => NONE)
@@ -373,7 +373,7 @@ struct
 
   val primDcs : (dcon * ty) list =
       List.tabulate (CHU.maxUtuple,
-	   fn i => let val n = i + 1
+           fn i => let val n = i + 1
                    val ((_, c), t) = (CHU.dcUtuple n, CHU.dcUtupleTy n)
                in (c, t)
                end)
@@ -456,7 +456,7 @@ struct
   val tMutVarzh            : ty -> ty -> ty = fn s => fn a => Tapp (Tapp (Tcon tcMutVarzh, s), a)
   val errorVals : (var * ty) list = []
 
- 
+
   val primId = pv o CHU.zEncodeString
 
   val tIntzh       : ty = Tcon (primId "Int#")

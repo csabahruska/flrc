@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -18,7 +18,7 @@
  * Definitions of primitive operators and their types from GHC.Prim.
  *)
 
-signature GHC_PRIM_OP = 
+signature GHC_PRIM_OP =
 sig
   datatype primOp
       (* char *)
@@ -1360,7 +1360,7 @@ struct
       , ("deRefStablePtrzh", DeRefStablePtrzh)
       , ("freeStablePtrzh", FreeStablePtrzh)
       , ("eqStablePtrzh", EqStablePtrzh)
-      (* 
+      (*
       , ("makeStableNamezh", MakeStableNamezh)
       , ("eqStableNamezh", EqStableNamezh)
       , ("stableNameToIntzh", StableNameToIntzh)
@@ -1374,7 +1374,7 @@ struct
 
   val fromString : string -> primOp option = fn v => StringDict.lookup (strTable, v)
 
-  val toString : primOp -> string = 
+  val toString : primOp -> string =
      fn GtCharzh => "gtCharzh"
       | GeCharzh => "geCharzh"
       | EqCharzh => "eqCharzh"
@@ -1789,7 +1789,7 @@ struct
       | DeRefStablePtrzh => "deRefStablePtrzh"
       | FreeStablePtrzh => "freeStablePtrzh"
       | EqStablePtrzh => "eqStablePtrzh"
-      (* 
+      (*
       | MakeStableNamezh => "makeStableNamezh"
       | EqStableNamezh => "eqStableNamezh"
       | StableNameToIntzh => "stableNameToIntzh"
@@ -1845,7 +1845,7 @@ struct
     val mv = CHP.tMVarzh ds da
     val muv = CHP.tMutVarzh ds da
     val sp = CHP.tStablePtrzh da
-    val wp = CHP.tWeakPtrzh 
+    val wp = CHP.tWeakPtrzh
     val ti = CHP.tThreadIdzh
     val z0t = CHU.z0t
     fun z1h u = CHU.tUtuple [u]
@@ -2271,7 +2271,7 @@ struct
       | DeRefStablePtrzh => [sp,srw,tsrw da]
       | FreeStablePtrzh => [sp,srw,srw]
       | EqStablePtrzh => [sp,sp,b]
-      (* 
+      (*
       | MakeStableNamezh => [da,s,ts sn]
       | EqStableNamezh => [sn,sn,b]
       | StableNameToIntzh => [sn,i]

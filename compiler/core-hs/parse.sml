@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -72,8 +72,8 @@ struct
 
   structure CoreHsYacc =
     Join(structure LrParser = LrParser
-	 structure ParserData = CoreHsLrVals.ParserData
-	 structure Lex = CoreHsLex)
+         structure ParserData = CoreHsLrVals.ParserData
+         structure Lex = CoreHsLex)
 
   fun yaccParse (filename, strm, strmWithPos) =
       let val strmRef = ref strm
@@ -91,16 +91,16 @@ struct
                in CoreHsYacc.parse (15, lexstream, print_error, ())
               end
 
-	  val dummyEOF = CoreHsLrVals.Tokens.EOF(0,0)
-	  fun loop lexer =
-	      let val (result,lexer) = invoke lexer
-		  val (nextToken,lexer) = CoreHsYacc.Stream.get lexer
-	          (* if CoreHsYacc.sameToken(nextToken,dummyEOF) *)
+          val dummyEOF = CoreHsLrVals.Tokens.EOF(0,0)
+          fun loop lexer =
+              let val (result,lexer) = invoke lexer
+                  val (nextToken,lexer) = CoreHsYacc.Stream.get lexer
+                  (* if CoreHsYacc.sameToken(nextToken,dummyEOF) *)
               in
-	        case result
-	          of SOME r => SOME (strmWithPos, r)
-	           | NONE   => NONE
-	      end
+                case result
+                  of SOME r => SOME (strmWithPos, r)
+                   | NONE   => NONE
+              end
        in loop lexer
       end
 

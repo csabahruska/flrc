@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 (* Collect free variables *)
-signature ANORM_STRICT_FREE_VARS = 
+signature ANORM_STRICT_FREE_VARS =
 sig
   type 'a t = Config.t * 'a -> Identifier.VariableSet.t
   val exp     : ANormStrict.exp t
@@ -28,7 +28,7 @@ sig
   val module  : ANormStrict.module t
 end (* signature ANORM_STRICT_FREE_VARS *)
 
-structure ANormStrictFreeVars :> ANORM_STRICT_FREE_VARS = 
+structure ANormStrictFreeVars :> ANORM_STRICT_FREE_VARS =
 struct
 
   structure AS = ANormStrict
@@ -63,7 +63,7 @@ struct
       end
 
 
-  structure Analyze = 
+  structure Analyze =
   ANormStrictAnalyzeF(struct
                         type state = state
                         type env = Config.t
@@ -76,9 +76,9 @@ struct
                         val analyzeVDef = NONE
                         val analyzeVDefg = NONE
                       end)
-  val lift = 
-   fn f => 
-   fn (c, e) => 
+  val lift =
+   fn f =>
+   fn (c, e) =>
       let
         val state = mkState ()
         val _ = f (state, c, e)

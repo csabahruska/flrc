@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -26,7 +26,7 @@
  * interface to each other than the should be exported to clients.  This
  * design provides such an interface while still ensuring that clients
  * are restricted to the safer public interface.
- *                  
+ *
  * All of the basic IMil types are defined in the structure IMilTypes.
  * This structure also defines various set and get operations, and few
  * other derived operations.  This structure is sealed to hide the
@@ -45,7 +45,7 @@
  * exposes the fact that the types in the signature are equal to the
  * types defined in IMilTypes .  So for example, we have something like:
  *
- * signature IMIL_VAR = 
+ * signature IMIL_VAR =
  * sig
  *   include IMIL_PUBLIC_TYPES
  *  (* All of the publicly exported functions here*)
@@ -56,7 +56,7 @@
  *   (* All of the public functions are implemented by this structure*)
  *   include IMIL_VAR
  *   (* Some additional private functions go here *)
- * end = 
+ * end =
  * struct
  *   open IMilPublicTypes (* include the public types *)
  *  (* implementation goes here*)
@@ -79,10 +79,10 @@
  *****************************************************************************)
 
 
-signature IMIL_TYPES = 
+signature IMIL_TYPES =
 sig
 
-  structure Graph : IMP_POLY_LABELED_GRAPH  
+  structure Graph : IMP_POLY_LABELED_GRAPH
         where type ('a, 'b) t = ('a, 'b) ImpPolyLabeledGraph.t
         and type ('a, 'b) node = ('a, 'b) ImpPolyLabeledGraph.node
         and type ('a, 'b) edge = ('a, 'b) ImpPolyLabeledGraph.edge
@@ -113,13 +113,13 @@ sig
   type edge = (iBlock option, unit) Graph.edge
   type graph = (iBlock option, unit) Graph.t
 
-  datatype mInstr = 
+  datatype mInstr =
            MInstr of Mil.instruction
          | MTransfer of Mil.transfer
          | MLabel of Mil.label * Mil.variable Vector.t
          | MDead
 
-  datatype mGlobal = 
+  datatype mGlobal =
            GGlobal of Mil.variable * Mil.global
          | GDead
 
@@ -134,7 +134,7 @@ sig
            args        : Mil.variable Vector.t,
            rtyps       : Mil.typ Vector.t,
            start       : Mil.label,
-           iBlocks     : iBlock ILD.t, 
+           iBlocks     : iBlock ILD.t,
            entry       : node,
            exit        : node,
            cfg         : graph}
@@ -147,7 +147,7 @@ sig
                             node  : node}
 
        and iInstr'  = I of {id     : int,
-                            mil    : mInstr, 
+                            mil    : mInstr,
                             vars   : use DList.cursor IVD.t,
                             loc    : iInstr DList.cursor option,
                             iBlock : iBlock}
@@ -156,12 +156,12 @@ sig
                             mil   : mGlobal,
                             vars  : use DList.cursor IVD.t}
 
-       and use = 
+       and use =
            Used
          | UseInstr  of iInstr
          | UseGlobal of iGlobal
 
-  datatype def = 
+  datatype def =
            DefUnk
          | DefExtern
          | DefInstr of iInstr
@@ -169,7 +169,7 @@ sig
          | DefFunc of iFunc
          | DefParameter of iFunc
 
-  datatype t = 
+  datatype t =
            P of {
            includes : Mil.includeFile Vector.t,
            externs  : Mil.externGroup Vector.t,
@@ -179,10 +179,10 @@ sig
            entry    : Mil.variable,
            iGlobals : iGlobal IVD.t,
            defs     : def IVD.t,
-           uses     : use DList.t IVD.t,  
+           uses     : use DList.t IVD.t,
            iFuncs   : iFunc IVD.t
   }
-                
+
   datatype item = ItemInstr of iInstr
                 | ItemGlobal of iGlobal
                 | ItemFunc of iFunc
@@ -204,7 +204,7 @@ sig
   val iFuncSetRecursive : iFunc * bool -> unit
   val iFuncGetRecursive : iFunc -> bool
   val iFuncSetConv : iFunc * Mil.variable Mil.callConv -> unit
-  val iFuncGetConv : iFunc -> Mil.variable Mil.callConv 
+  val iFuncGetConv : iFunc -> Mil.variable Mil.callConv
   val iFuncSetArgs : iFunc * Mil.variable Vector.t -> unit
   val iFuncGetArgs : iFunc -> Mil.variable Vector.t
   val iFuncSetRtyps : iFunc * Mil.typ Vector.t -> unit
@@ -232,14 +232,14 @@ sig
   val iBlockSetTrans : iBlock * iInstr -> unit
   val iBlockGetTrans : iBlock -> iInstr
   val iBlockSetIFunc : iBlock * iFunc -> unit
-  val iBlockGetIFunc : iBlock -> iFunc 
+  val iBlockGetIFunc : iBlock -> iFunc
   val iBlockSetNode : iBlock * node -> unit
   val iBlockGetNode : iBlock -> node
 
   val iInstrGetIInstr' : iInstr -> iInstr'
   val iInstrSetIInstr' : iInstr * iInstr' -> unit
 
-  val iInstrSetId : iInstr * int -> unit 
+  val iInstrSetId : iInstr * int -> unit
   val iInstrGetId : iInstr -> int
   val iInstrSetMil : iInstr * mInstr -> unit
   val iInstrGetMil : iInstr -> mInstr
@@ -330,7 +330,7 @@ sig
   val defToIFunc          : def -> iFunc option
 end
 
-structure IMilTypes :> IMIL_TYPES = 
+structure IMilTypes :> IMIL_TYPES =
 struct
 
   structure Graph = ImpPolyLabeledGraph
@@ -341,20 +341,20 @@ struct
   structure IVD = Identifier.ImpVariableDict
   structure ILD = Identifier.ImpLabelDict
 
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("types.sml", f, s)
 
   type variable = Mil.variable
   type label = Mil.label
 
-  datatype mInstr = 
+  datatype mInstr =
            MInstr of Mil.instruction
          | MTransfer of Mil.transfer
          | MLabel of Mil.label * Mil.variable Vector.t
          | MDead
 
 
-  datatype mGlobal = 
+  datatype mGlobal =
            GGlobal of Mil.variable * Mil.global
          | GDead
 
@@ -369,7 +369,7 @@ struct
            args        : Mil.variable Vector.t,
            rtyps       : Mil.typ Vector.t,
            start       : Mil.label,
-           iBlocks     : iBlock ILD.t, 
+           iBlocks     : iBlock ILD.t,
            entry       : (iBlock option, unit) Graph.node,
            exit        : (iBlock option, unit) Graph.node,
            cfg         : (iBlock option, unit) Graph.t}
@@ -382,7 +382,7 @@ struct
                             node  : (iBlock option, unit) Graph.node}
 
        and iInstr'  = I of {id     : int,
-                            mil    : mInstr, 
+                            mil    : mInstr,
                             vars   : use DList.cursor IVD.t,
                             loc    : iInstr DList.cursor option,
                             iBlock : iBlock}
@@ -390,7 +390,7 @@ struct
        and iGlobal' = G of {id    : int,
                             mil   : mGlobal,
                             vars  : use DList.cursor IVD.t}
-       and use = 
+       and use =
            Used
          | UseInstr  of iInstr
          | UseGlobal of iGlobal
@@ -405,7 +405,7 @@ struct
   type graph = (iBlock option, unit) Graph.t
 
 
-  datatype def = 
+  datatype def =
            DefUnk
          | DefExtern
          | DefInstr of iInstr
@@ -413,7 +413,7 @@ struct
          | DefFunc of iFunc
          | DefParameter of iFunc
 
-  datatype t = 
+  datatype t =
            P of {
            includes : Mil.includeFile Vector.t,
            externs  : Mil.externGroup Vector.t,
@@ -423,7 +423,7 @@ struct
            entry    : Mil.variable,
            iGlobals : iGlobal IVD.t,
            defs     : def IVD.t,
-           uses     : use DList.t IVD.t,  
+           uses     : use DList.t IVD.t,
            iFuncs   : iFunc IVD.t
   }
 
@@ -434,23 +434,23 @@ struct
 
 
 
-  val (iFuncSetGetId, iFuncSetGetFName, iFuncSetGetSize, iFuncSetGetEffects, iFuncSetGetEscapes, iFuncSetGetRecursive, 
-       iFuncSetGetConv, iFuncSetGetArgs, iFuncSetGetRtyps, iFuncSetGetStart, iFuncSetGetIBlocks, iFuncSetGetEntry, 
-       iFuncSetGetExit, iFuncSetGetCfg) = 
+  val (iFuncSetGetId, iFuncSetGetFName, iFuncSetGetSize, iFuncSetGetEffects, iFuncSetGetEscapes, iFuncSetGetRecursive,
+       iFuncSetGetConv, iFuncSetGetArgs, iFuncSetGetRtyps, iFuncSetGetStart, iFuncSetGetIBlocks, iFuncSetGetEntry,
+       iFuncSetGetExit, iFuncSetGetCfg) =
       let
-        val r2t = 
+        val r2t =
          fn (F {id, fname, size, effects, escapes, recursive, conv, args, rtyps, start, iBlocks, entry, exit, cfg}) =>
             (id, fname, size, effects, escapes, recursive, conv, args, rtyps, start, iBlocks, entry, exit, cfg)
-        val t2r = 
+        val t2r =
          fn (id, fname, size, effects, escapes, recursive, conv, args, rtyps, start, iBlocks, entry, exit, cfg) =>
-             F {id = id, fname = fname, size = size, effects = effects, 
-                escapes = escapes, recursive = recursive, 
-                conv = conv, args = args, rtyps = rtyps, start = start, 
+             F {id = id, fname = fname, size = size, effects = effects,
+                escapes = escapes, recursive = recursive,
+                conv = conv, args = args, rtyps = rtyps, start = start,
                 iBlocks = iBlocks, entry = entry, exit = exit, cfg = cfg}
       in FunctionalUpdate.mk14 (r2t, t2r)
       end
 
-  val iFuncGetIFunc' = 
+  val iFuncGetIFunc' =
    fn iFunc =>
       case !iFunc
        of SOME r => r
@@ -472,9 +472,9 @@ struct
        (iFuncSetIBlocks,   iFuncGetIBlocks),
        (iFuncSetEntry,     iFuncGetEntry),
        (iFuncSetExit,      iFuncGetExit),
-       (iFuncSetCfg,       iFuncGetCfg)) = 
+       (iFuncSetCfg,       iFuncGetCfg)) =
       let
-        val iFuncLiftSetGet = 
+        val iFuncLiftSetGet =
          fn (set, get) => (fn (r, a) => iFuncSetIFunc' (r, set (iFuncGetIFunc' r, a)),
                            get o iFuncGetIFunc')
       in
@@ -494,7 +494,7 @@ struct
          iFuncLiftSetGet iFuncSetGetCfg)
       end
 
-  val iBlockGetIBlock' = 
+  val iBlockGetIBlock' =
    fn iBlock =>
       case !iBlock
        of SOME r => r
@@ -509,13 +509,13 @@ struct
        iBlockSetGetCode,
        iBlockSetGetTrans,
        iBlockSetGetIFunc,
-       iBlockSetGetNode) = 
+       iBlockSetGetNode) =
       let
-        val r2t = 
-            fn (B {id, label, code, trans, iFunc, node}) => 
+        val r2t =
+            fn (B {id, label, code, trans, iFunc, node}) =>
                (id, label, code, trans, iFunc, node)
-        val t2r = 
-         fn (id, label, code, trans, iFunc, node) => 
+        val t2r =
+         fn (id, label, code, trans, iFunc, node) =>
             B {id = id, label = label, code = code, trans = trans, iFunc = iFunc, node = node}
       in
         FunctionalUpdate.mk6 (r2t, t2r)
@@ -526,9 +526,9 @@ struct
        (iBlockSetCode,  iBlockGetCode),
        (iBlockSetTrans, iBlockGetTrans),
        (iBlockSetIFunc, iBlockGetIFunc),
-       (iBlockSetNode,  iBlockGetNode)) = 
+       (iBlockSetNode,  iBlockGetNode)) =
       let
-        val iBlockLiftSetGet = 
+        val iBlockLiftSetGet =
          fn (set, get) => (fn (r, a) => iBlockSetIBlock' (r, set (iBlockGetIBlock' r, a)),
                            get o iBlockGetIBlock')
       in
@@ -540,7 +540,7 @@ struct
          iBlockLiftSetGet iBlockSetGetNode)
       end
 
-  val iInstrGetIInstr' = 
+  val iInstrGetIInstr' =
    fn iInstr => !iInstr
   val iInstrSetIInstr' =
    fn (iInstr, iInstr') => iInstr := iInstr'
@@ -549,13 +549,13 @@ struct
        iInstrSetGetMil,
        iInstrSetGetVars,
        iInstrSetGetLoc,
-       iInstrSetGetIBlock) = 
+       iInstrSetGetIBlock) =
       let
-        val r2t = 
-         fn (I {id, mil, vars, loc, iBlock}) => 
+        val r2t =
+         fn (I {id, mil, vars, loc, iBlock}) =>
             (id, mil, vars, loc, iBlock)
-        val t2r = 
-         fn (id, mil, vars, loc, iBlock) => 
+        val t2r =
+         fn (id, mil, vars, loc, iBlock) =>
             I {id = id, mil = mil, vars = vars, loc = loc, iBlock = iBlock}
       in
         FunctionalUpdate.mk5 (r2t, t2r)
@@ -565,9 +565,9 @@ struct
        (iInstrSetMil, iInstrGetMil),
        (iInstrSetVars, iInstrGetVars),
        (iInstrSetLoc, iInstrGetLoc),
-       (iInstrSetIBlock, iInstrGetIBlock)) = 
+       (iInstrSetIBlock, iInstrGetIBlock)) =
       let
-        val iInstrLiftSetGet = 
+        val iInstrLiftSetGet =
          fn (set, get) => (fn (r, a) => iInstrSetIInstr' (r, set (iInstrGetIInstr' r, a)),
                            get o iInstrGetIInstr')
       in
@@ -578,20 +578,20 @@ struct
          iInstrLiftSetGet iInstrSetGetIBlock)
       end
 
-  val iGlobalGetIGlobal' = 
+  val iGlobalGetIGlobal' =
    fn iGlobal => !iGlobal
   val iGlobalSetIGlobal' =
    fn (iGlobal, iGlobal') => iGlobal := iGlobal'
 
   val (iGlobalSetGetId,
        iGlobalSetGetMil,
-       iGlobalSetGetVars) = 
+       iGlobalSetGetVars) =
       let
-        val r2t = 
-         fn (G {id, mil, vars}) => 
+        val r2t =
+         fn (G {id, mil, vars}) =>
             (id, mil, vars)
-        val t2r = 
-         fn (id, mil, vars) => 
+        val t2r =
+         fn (id, mil, vars) =>
             G {id = id, mil = mil, vars = vars}
       in
         FunctionalUpdate.mk3 (r2t, t2r)
@@ -601,7 +601,7 @@ struct
        (iGlobalSetMil,  iGlobalGetMil),
        (iGlobalSetVars, iGlobalGetVars)) =
       let
-        val iGlobalLiftSetGet = 
+        val iGlobalLiftSetGet =
          fn (set, get) => (fn (r, a) => iGlobalSetIGlobal' (r, set (iGlobalGetIGlobal' r, a)),
                            get o iGlobalGetIGlobal')
       in
@@ -620,21 +620,21 @@ struct
        (tSetIGlobals, tGetIGlobals),
        (tSetDefs,     tGetDefs),
        (tSetUses,     tGetUses),
-       (tSetIFuncs,   tGetIFuncs)) = 
+       (tSetIFuncs,   tGetIFuncs)) =
       let
-        val r2t = 
-         fn (P {includes, externs, nextId, config, stm, entry, iGlobals, defs, uses, iFuncs}) => 
+        val r2t =
+         fn (P {includes, externs, nextId, config, stm, entry, iGlobals, defs, uses, iFuncs}) =>
             (includes, externs, nextId, config, stm, entry, iGlobals, defs, uses, iFuncs)
-        val t2r = 
-         fn (is, evs, nextId, config, stm, entry, iGlobals, defs, uses, iFuncs) => 
-            P {includes = is, externs = evs, nextId = nextId, config = config, stm = stm, entry = entry, 
+        val t2r =
+         fn (is, evs, nextId, config, stm, entry, iGlobals, defs, uses, iFuncs) =>
+            P {includes = is, externs = evs, nextId = nextId, config = config, stm = stm, entry = entry,
                iGlobals = iGlobals, defs = defs, uses = uses, iFuncs = iFuncs}
       in FunctionalUpdate.mk10 (r2t, t2r)
       end
 
 
-  val nextId = 
-   fn p => 
+  val nextId =
+   fn p =>
       let
         val counter = tGetNextId p
         val id = !counter
@@ -648,34 +648,34 @@ struct
       fn () => ref NONE
   val iFuncIsInitialized =
       fn iFunc => Option.isSome (!iFunc)
-  val iBlockNew : iBlock' -> iBlock  = 
+  val iBlockNew : iBlock' -> iBlock  =
    fn b => ref (SOME b)
-  val iBlockNewUninitialized : unit -> iBlock = 
+  val iBlockNewUninitialized : unit -> iBlock =
    fn () => ref NONE
   val iBlockIsInitialized =
       fn iBlock => Option.isSome (!iBlock)
-  val iInstrNew : iInstr' -> iInstr = 
+  val iInstrNew : iInstr' -> iInstr =
    fn i => ref i
-  val iGlobalNew : iGlobal' -> iGlobal = 
+  val iGlobalNew : iGlobal' -> iGlobal =
    fn g => ref g
 
-  val tGetSi : t -> Mil.symbolInfo = 
+  val tGetSi : t -> Mil.symbolInfo =
       fn t => Identifier.SymbolInfo.SiManager (tGetStm t)
 
-  val iFuncAddToSize = 
+  val iFuncAddToSize =
    fn (iFunc, i) =>
       let
         val sr = iFuncGetSize iFunc
         val () = sr := !sr + i
       in ()
       end
-  val iFuncIncSize  = 
+  val iFuncIncSize  =
    fn iFunc => iFuncAddToSize (iFunc, 1)
   val iFuncDecSize =
    fn iFunc => iFuncAddToSize (iFunc, ~1)
 
   val nodeEdgeToIBlockEdge =
-   fn e => 
+   fn e =>
       let
         val n1 = Graph.Edge.from (e)
         val n2 = Graph.Edge.to (e)
@@ -684,21 +684,21 @@ struct
           of (SOME b1, SOME b2) => SOME (b1, b2)
            | _ => NONE)
       end
-      
+
   val nodeEdgesToIBlockEdges =
-   fn (es : edge list) => 
+   fn (es : edge list) =>
       List.keepAllMap (es, nodeEdgeToIBlockEdge)
 
   val nodeGetIBlockOutEdges =
-   fn (n : node) => 
+   fn (n : node) =>
       nodeEdgesToIBlockEdges (Graph.Node.outEdges (n))
 
   val nodeGetIBlockInEdges =
-   fn (n : node) => 
+   fn (n : node) =>
       nodeEdgesToIBlockEdges (Graph.Node.inEdges (n))
 
   val iBlockGetNodeOutEdges =
-   fn (b : iBlock) => 
+   fn (b : iBlock) =>
       let
         val graph = iFuncGetCfg (iBlockGetIFunc b)
         val n = iBlockGetNode b
@@ -707,7 +707,7 @@ struct
       end
 
   val iBlockGetNodeInEdges =
-   fn (b : iBlock) => 
+   fn (b : iBlock) =>
       let
         val graph = iFuncGetCfg (iBlockGetIFunc b)
         val n = iBlockGetNode b
@@ -716,7 +716,7 @@ struct
       end
 
   val iBlockGetIBlockOutEdges =
-   fn (b : iBlock) => 
+   fn (b : iBlock) =>
       let
         val graph = iFuncGetCfg (iBlockGetIFunc b)
         val n = iBlockGetNode b
@@ -726,7 +726,7 @@ struct
       end
 
   val iBlockGetIBlockInEdges =
-   fn (b : iBlock) => 
+   fn (b : iBlock) =>
       let
         val graph = iFuncGetCfg (iBlockGetIFunc b)
         val n = iBlockGetNode b
@@ -740,17 +740,17 @@ struct
    fn (n : (iBlock option, unit) Graph.node) => Graph.Node.succs (n)
 
   val nodeGetSuccIBlocks =
-   fn (n : (iBlock option, unit) Graph.node) => 
+   fn (n : (iBlock option, unit) Graph.node) =>
       let
         val succs = nodeGetSuccNodes (n)
-        val help = 
+        val help =
          fn n => Graph.Node.getLabel (n)
         val blocks = List.keepAllMap (succs, help)
       in blocks
       end
 
   val iBlockGetSuccNodes =
-   fn (b : iBlock) => 
+   fn (b : iBlock) =>
       let
         val graph = iFuncGetCfg (iBlockGetIFunc b)
         val n = iBlockGetNode b
@@ -762,11 +762,11 @@ struct
    fn (b : iBlock) => nodeGetSuccIBlocks (iBlockGetNode b)
 
   val nodeGetPredNodes =
-   fn (n : (iBlock option, unit) Graph.node) => 
+   fn (n : (iBlock option, unit) Graph.node) =>
       Graph.Node.preds (n)
 
   val nodeGetPredIBlocks =
-   fn (n : (iBlock option, unit) Graph.node) => 
+   fn (n : (iBlock option, unit) Graph.node) =>
       let
         val preds = nodeGetPredNodes (n)
         val help = fn n => Graph.Node.getLabel (n)
@@ -779,52 +779,52 @@ struct
 
 
   val iFuncGetIBlockByLabel =
-   fn (iFunc, l) => 
+   fn (iFunc, l) =>
       case ILD.lookup (iFuncGetIBlocks iFunc, l)
        of SOME b => b
-        | NONE => 
+        | NONE =>
           let
             val s = (Layout.toString o Identifier.layoutLabel) l
           in
-            fail ("getBlockForLabel", 
+            fail ("getBlockForLabel",
                   "Unknown block label: "^s)
-          end  
+          end
 
   val iFuncGetNodeByLabel =
    fn (iFunc, l) => iBlockGetNode (iFuncGetIBlockByLabel (iFunc, l))
 
-  val iInstrToInstruction = 
-   fn i => 
+  val iInstrToInstruction =
+   fn i =>
       (case iInstrGetMil i
         of MInstr i => SOME i
          | _    => NONE)
 
-  val iInstrToRhs = 
-   fn i => 
+  val iInstrToRhs =
+   fn i =>
       (case iInstrGetMil i
         of MInstr (Mil.I {rhs, ...}) => SOME rhs
          | _    => NONE)
 
-  val iInstrToTransfer = 
-   fn i => 
+  val iInstrToTransfer =
+   fn i =>
       (case iInstrGetMil i
         of MTransfer t => SOME t
          | _   => NONE)
 
-  val iInstrToLabel = 
-   fn i => 
+  val iInstrToLabel =
+   fn i =>
       (case iInstrGetMil i
         of MLabel l => SOME l
          | _    => NONE)
-      
-  val useToIInstr = 
+
+  val useToIInstr =
    fn u =>
       (case u
         of UseInstr i => SOME i
          | _ => NONE)
 
-  val useToIGlobal = 
-   fn u => 
+  val useToIGlobal =
+   fn u =>
       (case u
         of UseGlobal g => SOME g
          | _ => NONE)
@@ -874,11 +874,11 @@ struct
 
 end
 
-(* This signature is included in the IMil sub-structure signatures 
- * to allow the appropriate coherence properties to be introduced after 
- * the fact via the sharing specifications in IMIL 
+(* This signature is included in the IMil sub-structure signatures
+ * to allow the appropriate coherence properties to be introduced after
+ * the fact via the sharing specifications in IMIL
  *)
-signature IMIL_PUBLIC_TYPES = 
+signature IMIL_PUBLIC_TYPES =
 sig
   type t
 

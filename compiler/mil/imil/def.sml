@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,12 +16,12 @@
  *)
 
 
-signature IMIL_DEF = 
+signature IMIL_DEF =
 sig
   include IMIL_PUBLIC_TYPES
 
-  val add         : t * variable * def -> unit 
-  val get         : t * variable -> def 
+  val add         : t * variable * def -> unit
+  val get         : t * variable -> def
   val delete      : t * variable -> unit
   val toItem      : t * def -> item option
   val defsToItems : t * def Vector.t -> item Vector.t
@@ -38,11 +38,11 @@ sig
   val layout        : t * def -> Layout.t
 
 end
-structure IMilDef : 
-sig 
+structure IMilDef :
+sig
   include IMIL_DEF
 end
-  = 
+  =
 struct
   open IMilPublicTypes
 
@@ -52,17 +52,17 @@ struct
   structure MU = MilUtils
   structure Chat = IMC.Chat
 
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("def.sml", f, s)
 
-  val get = 
+  val get =
    fn (p, v) =>
       let
         val defs = IMT.tGetDefs p
-        val d = 
+        val d =
             case IVD.lookup (defs, v)
              of SOME d => d
-              | NONE => 
+              | NONE =>
                 let
                   val s = (Layout.toString o IMilLayout.var) (p, v)
                   val () = Chat.warn1 (p, "Def.getDef: " ^  "Unknown variable: "^s)
@@ -97,7 +97,7 @@ struct
   val toLabel       = Utils.Option.compose (IMT.iInstrToLabel, toIInstr)
   val toGlobal      = Utils.Option.compose (IMT.iGlobalToGlobal, toIGlobal)
 
-  val toItem = 
+  val toItem =
    fn (p, def) =>
       (case def
         of IMT.DefUnk => NONE
@@ -107,17 +107,17 @@ struct
          | IMT.DefFunc c => SOME (IMT.ItemFunc c)
          | IMT.DefParameter c => SOME (IMT.ItemFunc c))
 
-  val defsToItems = 
+  val defsToItems =
       fn (p, defs) => Vector.keepAllMap (defs, fn d => toItem (p, d))
 
-  val toMilDef = 
-   fn def => 
+  val toMilDef =
+   fn def =>
       (case def
         of IMT.DefGlobal g =>
            (case IMT.iGlobalGetMil g
              of IMT.GGlobal (v, mg) => SOME (MU.Def.DefGlobal mg)
               | _ => NONE)
-          | IMT.DefInstr i => 
+          | IMT.DefInstr i =>
             (case IMT.iInstrGetMil i
               of IMT.MInstr (Mil.I {dests, n, rhs})  => SOME (MU.Def.DefRhs rhs)
                | _ => NONE)

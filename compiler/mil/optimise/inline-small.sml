@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -20,8 +20,8 @@ signature MIL_INLINE_SMALL =
 sig
   val pass : (BothMil.t, BothMil.t) Pass.t
 end
-                             
-structure MilInlineSmall :> MIL_INLINE_SMALL = 
+
+structure MilInlineSmall :> MIL_INLINE_SMALL =
 struct
 
   val passname = "MilInlineSmall"
@@ -35,14 +35,14 @@ struct
   structure MU = MilUtils
   structure WS = IMil.WorkSet
   structure MS = MilSimplify
-  structure VS = M.VS 
+  structure VS = M.VS
 
   structure Chat = ChatF(struct type env = PD.t
                          val extract = PD.getConfig
                          val name = passname
                          val indent = 0
                          end)
-                   
+
   val <@ = Try.<@
 
   val inlineSmallLimit = 5
@@ -53,24 +53,24 @@ struct
       Config.Debug.mk (passname, "debug the Mil inline small pass")
 
   (* Ensure that the function is not directly self recursive - that is, that it
-   * it does not contain a direct self call.  It may still contain an unknown call 
+   * it does not contain a direct self call.  It may still contain an unknown call
    * that resolves dynamically to itself.  *)
-  val notSelfRecursive = 
-   fn (d, imil, f) => 
+  val notSelfRecursive =
+   fn (d, imil, f) =>
       let
         val fname = IFunc.getFName (imil, f)
         val recursive = IMil.IFunc.getRecursive (imil, f)
-        val selfCall = 
-         fn u => 
+        val selfCall =
+         fn u =>
             Try.try
-              (fn () => 
+              (fn () =>
                   let
                     val t = <@ IMil.Use.toTransfer u
                     val {callee, ...} = <@ MU.Transfer.Dec.tInterProc t
                     val {call, ...} = <@ MU.InterProc.Dec.ipCall callee
-                    val checkCodes = 
+                    val checkCodes =
                      fn code => VS.member (MU.Codes.possible code, fname)
-                    val () = 
+                    val () =
                         (case call
                           of M.CCode {ptr, code}          => Try.require (ptr = fname orelse checkCodes code)
                            | M.CDirectClosure {cls, code} => Try.require (code = fname)
@@ -81,19 +81,19 @@ struct
                   end)
       in not (recursive andalso (Vector.exists (IMil.IFunc.getUses (imil, f), isSome o selfCall)))
       end
-        
-  val inlineOne = 
+
+  val inlineOne =
    fn (d, imil, f) =>
       let
         val fname = IFunc.getFName (imil, f)
-        fun getCandidateCall u = 
+        fun getCandidateCall u =
             Try.try
-              (fn () => 
+              (fn () =>
                   let
                     val t = <@ Use.toTransfer u
                     val {callee, ...} = <@ MU.Transfer.Dec.tInterProc t
                     val {call, ...} = <@ MU.InterProc.Dec.ipCall callee
-                    val () = 
+                    val () =
                         (case call
                           of M.CCode {ptr, code} => Try.require (ptr = fname)
                            | M.CDirectClosure {cls, code} => Try.require (code = fname)
@@ -108,7 +108,7 @@ struct
       end
 
   val inlineAll =
-   fn (d, imil) => 
+   fn (d, imil) =>
       let
         val funcs = IMil.Enumerate.T.funcs imil
         val nonrec = List.keepAll (funcs, fn f => notSelfRecursive (d, imil, f))
@@ -117,11 +117,11 @@ struct
       in calls
       end
 
-  val chooseCalls : unit * PassData.t * IMil.t -> IMil.iInstr list = 
+  val chooseCalls : unit * PassData.t * IMil.t -> IMil.iInstr list =
    fn ((), pd, imil) => inlineAll (pd, imil)
 
-  val optimize = 
-   fn ((), pd, imil, il) => 
+  val optimize =
+   fn ((), pd, imil, il) =>
       let
         val ws = WS.new ()
         val () = List.foreach (il, fn i => WS.addInstr (ws, i))
@@ -140,10 +140,10 @@ struct
     val policy = chooseCalls
     val optimizer = SOME optimize
   end
-    
+
   structure Inliner = MilInlineRewriterF(RewriterClient)
 
-  fun program (imil, d) = 
+  fun program (imil, d) =
       let
         val () = Inliner.program (d, imil, SOME rounds)
         val () = PD.report (d, passname)

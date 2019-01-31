@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -1630,10 +1630,10 @@ struct
      fn p =>
         let
           val res = case p
-		     of (Mil.TbScalar   , Mil.TbScalar   ) => EQUAL
-		      | (Mil.TbScalar   , _              ) => LESS
-		      | (_              , Mil.TbScalar   ) => GREATER
-		      | (Mil.TbVector   , Mil.TbVector   ) => EQUAL
+                     of (Mil.TbScalar   , Mil.TbScalar   ) => EQUAL
+                      | (Mil.TbScalar   , _              ) => LESS
+                      | (_              , Mil.TbScalar   ) => GREATER
+                      | (Mil.TbVector   , Mil.TbVector   ) => EQUAL
         in
           res
         end
@@ -1643,10 +1643,10 @@ struct
         let
           val kStrided = Int.compare
           val res = case p
-		     of (Mil.VikStrided x1, Mil.VikStrided x2) => kStrided (x1, x2)
-		      | (Mil.VikStrided _ , _                ) => LESS
-		      | (_                , Mil.VikStrided _ ) => GREATER
-		      | (Mil.VikVector    , Mil.VikVector    ) => EQUAL
+                     of (Mil.VikStrided x1, Mil.VikStrided x2) => kStrided (x1, x2)
+                      | (Mil.VikStrided _ , _                ) => LESS
+                      | (_                , Mil.VikStrided _ ) => GREATER
+                      | (Mil.VikVector    , Mil.VikVector    ) => EQUAL
         in
           res
         end
@@ -1666,16 +1666,16 @@ struct
                                        #kind, vectorIndexKind)
           val res =
               case p
-	       of (Mil.FiFixed x1         , Mil.FiFixed x2         ) => fixed (x1, x2)
-		| (Mil.FiFixed _          , _                      ) => LESS
-		| (_                      , Mil.FiFixed _          ) => GREATER
-		| (Mil.FiVariable x1      , Mil.FiVariable x2      ) => variable (x1, x2)
-		| (Mil.FiVariable _       , _                      ) => LESS
-		| (_                      , Mil.FiVariable _       ) => GREATER
-		| (Mil.FiVectorFixed x1   , Mil.FiVectorFixed x2   ) => vectorFixed (x1, x2)
-		| (Mil.FiVectorFixed _    , _                      ) => LESS
-		| (_                      , Mil.FiVectorFixed _    ) => GREATER
-		| (Mil.FiVectorVariable x1, Mil.FiVectorVariable x2) => vectorVariable (x1, x2)
+               of (Mil.FiFixed x1         , Mil.FiFixed x2         ) => fixed (x1, x2)
+                | (Mil.FiFixed _          , _                      ) => LESS
+                | (_                      , Mil.FiFixed _          ) => GREATER
+                | (Mil.FiVariable x1      , Mil.FiVariable x2      ) => variable (x1, x2)
+                | (Mil.FiVariable _       , _                      ) => LESS
+                | (_                      , Mil.FiVariable _       ) => GREATER
+                | (Mil.FiVectorFixed x1   , Mil.FiVectorFixed x2   ) => vectorFixed (x1, x2)
+                | (Mil.FiVectorFixed _    , _                      ) => LESS
+                | (_                      , Mil.FiVectorFixed _    ) => GREATER
+                | (Mil.FiVectorVariable x1, Mil.FiVectorVariable x2) => vectorVariable (x1, x2)
         in
           res
         end

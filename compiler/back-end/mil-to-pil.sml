@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -892,48 +892,48 @@ struct
      * this code translates them into something useable.
      *)
     val map = CharDict.fromList[
-	      (#"_",  "__"),  (* Avoids conflicts with the other expansions *)
-	      (#"&",  "_AND"),
-	      (#"`",  "_ANTIQUOTE"),
-	      (#"*",  "_AST"),
-	      (#"@",  "_AT"),
-	      (#"!",  "_BANG"),
-	      (#"|",  "_BAR"),
-	      (#"\\", "_BSLASH"),
-	      (#"$",  "_DOLLAR"),
-	      (#":",  "_COLON"),
+              (#"_",  "__"),  (* Avoids conflicts with the other expansions *)
+              (#"&",  "_AND"),
+              (#"`",  "_ANTIQUOTE"),
+              (#"*",  "_AST"),
+              (#"@",  "_AT"),
+              (#"!",  "_BANG"),
+              (#"|",  "_BAR"),
+              (#"\\", "_BSLASH"),
+              (#"$",  "_DOLLAR"),
+              (#":",  "_COLON"),
               (#",",  "_COMMA"),
-	      (#".",  "_DOT"),
-	      (#"=",  "_EQ"),
-	      (#"^",  "_EXP"),
-	      (#"/",  "_FSLASH"),
-	      (#">",  "_GT"),
-	      (#"[",  "_LBRACKET"),
-	      (#"]",  "_RBRACKET"),
-	      (#"{",  "_LBRACE"),
-	      (#"}",  "_RBRACE"),
-	      (#"(",  "_LPAREN"),
-	      (#")",  "_RPAREN"),
-	      (#"<",  "_LT"),
-	      (#"-",  "_MINUS"),
-	      (#"%",  "_PERCENT"),
-	      (#"+",  "_PLUS"),
-	      (#"#",  "_POUND"),
-	      (#"'",  "_PRIME"),
-	      (#"?",  "_QM"),
-	      (#"~",  "_TWIDDLE")
-	      ]
+              (#".",  "_DOT"),
+              (#"=",  "_EQ"),
+              (#"^",  "_EXP"),
+              (#"/",  "_FSLASH"),
+              (#">",  "_GT"),
+              (#"[",  "_LBRACKET"),
+              (#"]",  "_RBRACKET"),
+              (#"{",  "_LBRACE"),
+              (#"}",  "_RBRACE"),
+              (#"(",  "_LPAREN"),
+              (#")",  "_RPAREN"),
+              (#"<",  "_LT"),
+              (#"-",  "_MINUS"),
+              (#"%",  "_PERCENT"),
+              (#"+",  "_PLUS"),
+              (#"#",  "_POUND"),
+              (#"'",  "_PRIME"),
+              (#"?",  "_QM"),
+              (#"~",  "_TWIDDLE")
+              ]
     fun expand c =
-	case CharDict.lookup (map, c)
-	 of SOME s => s
-	  | NONE => String.fromChar c
+        case CharDict.lookup (map, c)
+         of SOME s => s
+          | NONE => String.fromChar c
     fun oldEncoding s = String.translate (s, expand)
     fun newEncoding s = ZCoding.encodeExceptUnderscore s
   in
   fun stringOfVar (state, env, v) =
       let
-	val s = IM.variableString (getStm state, v)
-	val s = (if oldVarEncoding (getConfig env) then oldEncoding else newEncoding) s
+        val s = IM.variableString (getStm state, v)
+        val s = (if oldVarEncoding (getConfig env) then oldEncoding else newEncoding) s
       in s
       end
   end

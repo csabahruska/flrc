@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -22,9 +22,9 @@ signature MIL_LOOP =
 sig
 
   type blocks = Mil.block Identifier.LabelDict.t
-  
+
   (* The blocks field contains the set of blocks in the loop which are
-   * not contained in any sub-loop of the loop.  
+   * not contained in any sub-loop of the loop.
    * The header field is the label of the block in blocks which is the
    * header for this loop
    *)
@@ -57,7 +57,7 @@ sig
   val getBlocksNotInLoops : t -> blocks
 
   (* Generate a mapping from a loop header to all of the blocks in the loop
-   * including sub-loops. 
+   * including sub-loops.
    *)
   val genAllNodes : t -> t
   val getAllNodes : t * Mil.label -> blocks
@@ -81,13 +81,13 @@ sig
    *   BIV {variable, init, step} means that variable is always
    *    defined on the in edge to the loop header
    *    step*# + init
-   *   DIV {variable=vd, base = {variable=vb, init, step}, scale, offset} means that 
+   *   DIV {variable=vd, base = {variable=vb, init, step}, scale, offset} means that
    *    vd is always scale*vb + offset
    *    vb is always step*# + init
    *    vd is therefore always scale*step*# + scale*init + offset
    *)
-  datatype inductionVariable = 
-           BIV of { 
+  datatype inductionVariable =
+           BIV of {
            variable : Mil.variable,
            init     : Mil.operand,
            step     : Rat.t
@@ -109,7 +109,7 @@ sig
   val canonizeInductionVariable : inductionVariable -> {variable : Mil.variable,
                                                         init     : Rat.t * Mil.operand * Rat.t,
                                                         step     : Rat.t}
-                                                       
+
   val genInductionVariables : t * FMil.t * MilCfg.t -> t (* pre: requires all nodes *)
 
   val getInductionVariables : t * Mil.label -> inductionVariable list
@@ -147,15 +147,15 @@ sig
 
   val getTripCount : t * Mil.label -> tripCount option
   val allTripCounts : t -> tripCount Identifier.LabelDict.t
- 
+
   (* Generate location inform on bindings, essentially
      what is header of the loop that defines variable v *)
 
-  (* getBinderLocations returns a map from variables to the 
-    label of the header of the (inner most) 
+  (* getBinderLocations returns a map from variables to the
+    label of the header of the (inner most)
     loop in which the variable is defined
    This information is used to calculate whether a variable is
-   a loop invariant in the current loop i.e. if it has a different 
+   a loop invariant in the current loop i.e. if it has a different
    header than the current loop then it is invariant in the current loop
 
         example: consider a loop L1, L2, L3, where L2 is a nested loop.
@@ -223,8 +223,8 @@ struct
   type loopTree = loop Tree.t
   type loopForest = loopTree Vector.t
 
-  datatype inductionVariable = 
-           BIV of { 
+  datatype inductionVariable =
+           BIV of {
            variable : Mil.variable,
            init     : Mil.operand,
            step     : Rat.t
@@ -405,7 +405,7 @@ struct
       in ()
       end
 
-  fun fromLoops (c, si, {entry, loops, blocksNotInLoops}) = 
+  fun fromLoops (c, si, {entry, loops, blocksNotInLoops}) =
       LS {config = c, si = si, entry = entry, loops = loops, blocksNotInLoops = blocksNotInLoops, allNodes = NONE,
           exits = NONE, preheaders = NONE, inductionVars = NONE, tripCounts = NONE, binderLocations = VD.empty}
 
@@ -467,7 +467,7 @@ struct
       in r
       end
 
-  fun allNodes (LS {allNodes, ...}) = 
+  fun allNodes (LS {allNodes, ...}) =
       (case allNodes
         of SOME an => an
          | NONE => fail ("allNodes", "all nodes have not been generated"))
@@ -482,7 +482,7 @@ struct
 
   fun genExits ls =
       let
-        val LS {config, si, entry, loops, blocksNotInLoops, allNodes, exits, preheaders, inductionVars, tripCounts, 
+        val LS {config, si, entry, loops, blocksNotInLoops, allNodes, exits, preheaders, inductionVars, tripCounts,
                binderLocations} =
             ls
         val exits = ref LD.empty
@@ -511,7 +511,7 @@ struct
       in r
       end
 
-  fun allExits (LS {exits, ...}) = 
+  fun allExits (LS {exits, ...}) =
       (case exits
         of SOME e => e
          | NONE => fail ("allExits", "exits have not been generated"))
@@ -639,7 +639,7 @@ struct
       in ls
       end
 
-  fun getPreheaders (LS {preheaders, ...}) = 
+  fun getPreheaders (LS {preheaders, ...}) =
       (case preheaders
         of SOME ph => ph
          | NONE => fail ("getPreheaders", "preheaders have not been generated"))
@@ -650,12 +650,12 @@ struct
 
   fun canonizeInductionVariable (iv : inductionVariable) : {variable : Mil.variable,
                                                             init     : Rat.t * Mil.operand * Rat.t,
-                                                            step     : Rat.t} = 
+                                                            step     : Rat.t} =
       (case iv
-        of BIV {variable, init, step} => {variable = variable, 
+        of BIV {variable, init, step} => {variable = variable,
                                           init = (Rat.one, init, Rat.zero),
                                           step = step}
-         | DIV {variable = vd, 
+         | DIV {variable = vd,
                 base     = {variable = vb, init, step},
                 scale,
                 offset}               => {variable = vd,
@@ -688,7 +688,7 @@ struct
    * variable.  To do this we want to find out that a variable is ultimately
    * either a constant or a linear function.
    * Note that if the variable in the linear function is also known to be
-   * a constant or linear function of another variable, then we want to 
+   * a constant or linear function of another variable, then we want to
    * collapse that into the value of the outer variable.
    *)
   datatype value =
@@ -1016,7 +1016,7 @@ struct
              of VLf {var, m, c} =>
                 (case getBasicInductionVariable (state, var)
                   of NONE => ()
-                   | SOME {hdr, init, step} => 
+                   | SOME {hdr, init, step} =>
                      let
                        val iv = DIV {variable = v,
                                      base = {variable = var,
@@ -1045,15 +1045,15 @@ struct
         val r =
             LS {config = #config x, si = #si x, entry = #entry x, loops = #loops x,
                 blocksNotInLoops = #blocksNotInLoops x, allNodes = #allNodes x, exits = #exits x,
-                preheaders = #preheaders x, inductionVars = SOME ivs, tripCounts = #tripCounts x, 
+                preheaders = #preheaders x, inductionVars = SOME ivs, tripCounts = #tripCounts x,
                 binderLocations = #binderLocations x}
       in r
       end
- 
+
   fun genInductionVariables' (fmil, cfg) ls =
       genInductionVariables (ls, fmil,cfg)
 
-  fun inductionVars (LS {inductionVars, ...})= 
+  fun inductionVars (LS {inductionVars, ...})=
       (case inductionVars
         of SOME ivs => ivs
          | NONE => fail ("inductionVars", "induction variables have not been generated"))
@@ -1118,13 +1118,13 @@ struct
       case opnd
        of M.SVariable v =>
           let
-            fun pred iv = 
+            fun pred iv =
                 (case iv
                   of BIV {variable, ...} => v = variable
                    | DIV {variable, ...} => v = variable)
-            val al = 
+            val al =
                 (case List.peek (myIvs, pred)
-                  of SOME iv => 
+                  of SOME iv =>
                      let
                        val {init, step, ...} = canonizeInductionVariable iv
                      in AInductionVariable (init, step)
@@ -1225,7 +1225,7 @@ struct
   fun genTripCounts' (fmil, cfg, dt) ls =
       genTripCounts (ls, fmil, cfg, dt)
 
-  fun allTripCounts (LS {tripCounts, ...}) = 
+  fun allTripCounts (LS {tripCounts, ...}) =
       (case tripCounts
         of SOME tc => tc
          | NONE => fail ("allTripCounts", "trip counts have not been generated"))
@@ -1234,7 +1234,7 @@ struct
 
   (*** Invariant/binder locations calculation *)
 
-  val genBinderLocations : t -> t = 
+  val genBinderLocations : t -> t =
       fn ls =>
        let
          (* /appInstr/ - For a given loop header, tag all the variables defined
@@ -1258,8 +1258,8 @@ struct
                   val dict'' = foldl (appInstr header) dict' (Vector.toList instructions)
               in dict''
               end
-  
-         (* /appLoop/ - Tag all the variables defined in a loop to be 
+
+         (* /appLoop/ - Tag all the variables defined in a loop to be
                         by the loop's header *)
          val appLoop : loop * (M.label VD.t) -> (M.label VD.t) =
            fn (loop, dict) =>
@@ -1282,46 +1282,46 @@ struct
                   let
                     val dict' = appLoop (node, dict)
                     val dict'' = Vector.fold (children, dict', appTree)
-                  in 
+                  in
                     dict''
                   end
-               end         
+               end
 
          val LS {config, si, entry, loops, blocksNotInLoops,
                  allNodes, exits, preheaders, inductionVars,
-                 tripCounts, ...} = ls             
+                 tripCounts, ...} = ls
 
          val dict = VD.empty
          (* for each loop tree, calculate the binding info *)
          val dict' = Vector.fold (loops, dict, appTree)
-                     
+
        in
         LS {config = config, si = si, entry = entry, loops = loops,
             blocksNotInLoops = blocksNotInLoops, allNodes = allNodes,
             exits = exits, preheaders = preheaders, inductionVars = inductionVars,
             tripCounts = tripCounts, binderLocations = dict'}
-       end             
-  
+       end
+
   val getBinderLocations : t -> (Mil.label Identifier.VariableDict.t) =
      fn (LS {binderLocations, ...}) => binderLocations
 
   (*** Layout ***)
 
-  fun layoutInductionVariable (c, si, iv) = 
+  fun layoutInductionVariable (c, si, iv) =
       let
-        val layoutBase = 
-         fn {variable, init, step} => 
+        val layoutBase =
+         fn {variable, init, step} =>
             L.seq [MilLayout.layoutVariable (c, si, variable), L.str " = ",
                    Rat.layout step, L.str "*# + ", MilLayout.layoutOperand (c, si, init)]
-        val i = 
+        val i =
             (case iv
               of BIV base => layoutBase base
-               | DIV {variable, base, scale, offset} => 
+               | DIV {variable, base, scale, offset} =>
                  let
                    val vb = MilLayout.layoutVariable (c, si, #variable base)
                    val vd = MilLayout.layoutVariable (c, si, variable)
                    val base = layoutBase base
-                   val dvd = 
+                   val dvd =
                        L.seq [Rat.layout scale, L.str "*", vb, L.str " + ", Rat.layout offset]
                    val l = L.seq [vd, L.str " = ", dvd, L.str " where ", base]
                  in l
@@ -1329,10 +1329,10 @@ struct
       in i
       end
 
-  fun layoutTripCount (cg, si, tc) = 
+  fun layoutTripCount (cg, si, tc) =
       let
         val TC {block, cond, flip1, comparison, flip2, init=(m, i, c), step, bound} = tc
-        val iv = L.seq [Rat.layout step, L.str "*# + ", 
+        val iv = L.seq [Rat.layout step, L.str "*# + ",
                         Rat.layout m, L.str "*", MilLayout.layoutOperand (cg, si, i), L.str " + ",
                         Rat.layout c]
         val bound = MilLayout.layoutOperand (cg, si, bound)
@@ -1344,31 +1344,31 @@ struct
       in i
       end
 
-  fun layoutLoopPreheader (c, si, pres, header) = 
+  fun layoutLoopPreheader (c, si, pres, header) =
       let
-        val l = 
+        val l =
             (case LD.lookup (pres, header)
               of SOME blk => L.seq [L.str "Pre-header: ", I.layoutLabel blk]
                | NONE     => L.str "Pre-header could not be generated.")
       in l
       end
 
-  fun layoutLoopInductionVars (c, si, ivs, header) = 
+  fun layoutLoopInductionVars (c, si, ivs, header) =
       let
-        val ivs = 
+        val ivs =
             (case LD.lookup (ivs, header)
               of SOME ivs => ivs
                | NONE     => [])
         fun doOne iv = layoutInductionVariable (c, si, iv)
         val l = L.align (List.map (ivs, doOne))
-        val l = L.align [L.str "Induction variables: ", 
+        val l = L.align [L.str "Induction variables: ",
                          LU.indent l]
       in l
       end
 
   fun layoutLoopTripCount (c, si, tcs, header) =
       let
-        val l = 
+        val l =
             (case LD.lookup (tcs, header)
               of SOME tc => L.seq [L.str "Trip count: ", layoutTripCount (c, si, tc)]
                | NONE    => L.str "No trip count for loop.")
@@ -1383,9 +1383,9 @@ struct
       in l
       end
 
-  fun layoutLoopExits (c, si, exits, header) = 
+  fun layoutLoopExits (c, si, exits, header) =
       let
-        val exits = 
+        val exits =
             (case LD.lookup (exits, header)
               of SOME exits => exits
                | NONE       => LS.empty)
@@ -1396,24 +1396,24 @@ struct
 
   fun layoutLoops (c, si, exits, preheaders, inductionVars, tripCounts, ls) =
       let
-        val doPre = 
+        val doPre =
             (case preheaders
               of SOME pres => (fn header => SOME (layoutLoopPreheader (c, si, pres, header)))
                | NONE      => (fn header => NONE))
-        val doIvs = 
+        val doIvs =
             (case inductionVars
               of SOME ivs => (fn header => SOME (layoutLoopInductionVars (c, si, ivs, header)))
                | NONE     => (fn header => NONE))
-        val doTcs = 
+        val doTcs =
             (case tripCounts
               of SOME tcs => (fn header => SOME (layoutLoopTripCount (c, si, tcs, header)))
                | NONE     => (fn header => NONE))
-        val doExits = 
+        val doExits =
             (case exits
               of SOME exits => (fn header => SOME (layoutLoopExits (c, si, exits, header)))
                | NONE       => (fn header => NONE))
 
-        fun layout ls = 
+        fun layout ls =
             let
               val Tree.T (L {header, blocks, ...}, children) = ls
               val l0 = SOME (L.seq [L.str "Header: ", I.layoutLabel header])
@@ -1421,20 +1421,20 @@ struct
               val l2 = doIvs header
               val l3 = doTcs header
               val l4 = doExits header
-              val l5 = 
+              val l5 =
                   let
                     val l5 = layoutBlocks (c, si, blocks)
                     val l5 =L.mayAlign [L.str "Blocks:", LU.indent l5]
                   in SOME l5
                   end
-              val l6 = 
+              val l6 =
                   if Vector.length children > 0 then
                     let
                       val l6 = Vector.toListMap (children, layout)
                       val l6 = L.align [L.str "Loops:", LU.indent (L.align l6)]
                     in SOME l6
                     end
-                  else 
+                  else
                     NONE
               val ll = Utils.List.concatOption [l0, l1, l2, l3, l4, l5, l6]
               val l = L.align ll

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -678,13 +678,13 @@ struct
       fn (c, p) =>
          let
            val res =
-	       case p
-	        of MP.SAllocate      => mk11 (tUintp c, tCString)
-	         | MP.SDeallocate    => mk10 tCString
-	         | MP.SGetLen        => mk11 (tCString, tUintp c)
-	         | MP.SGetChar       => mk21 (tCString, tUintp c, tUint8)
-	         | MP.SSetChar       => mk30 (tCString, tUintp c, tUint8)
-	         | MP.SEqual         => mk21 (tCString, tCString, tBoolean)
+               case p
+                of MP.SAllocate      => mk11 (tUintp c, tCString)
+                 | MP.SDeallocate    => mk10 tCString
+                 | MP.SGetLen        => mk11 (tCString, tUintp c)
+                 | MP.SGetChar       => mk21 (tCString, tUintp c, tUint8)
+                 | MP.SSetChar       => mk30 (tCString, tUintp c, tUint8)
+                 | MP.SEqual         => mk21 (tCString, tCString, tBoolean)
          in
            res
          end
@@ -709,8 +709,8 @@ struct
       fn (c, p) =>
          let
            val res =
-	       case p
-	        of MP.PNumArith r1   =>
+               case p
+                of MP.PNumArith r1   =>
                    let
                      val t = M.TNumeric (#typ r1)
                      val res =
@@ -724,7 +724,7 @@ struct
                                 | _             => fail ("prim", "Unexpected arithOp arity"))
                    in res
                    end
-	         | MP.PFloatOp r1    =>
+                 | MP.PFloatOp r1    =>
                    let
                      val t = M.TNumeric (MP.NtFloat (#typ r1))
                      val res =
@@ -734,16 +734,16 @@ struct
                            | _                  => fail ("prim", "Unexpected floatOp arity")
                    in res
                    end
-	         | MP.PNumCompare r1 =>
+                 | MP.PNumCompare r1 =>
                    let
                      val t1 = M.TNumeric (#typ r1)
                      val t2 = M.TBoolean
                      val t = mk21 (t1, t1, t2)
                    in t
                    end
-	         | MP.PNumConvert r1 => mk11 (M.TNumeric (#from r1), M.TNumeric (#to r1))
-	         | MP.PNumCast r1 => mk11 (M.TNumeric (#from r1), M.TNumeric (#to r1))
-	         | MP.PBitwise r1    =>
+                 | MP.PNumConvert r1 => mk11 (M.TNumeric (#from r1), M.TNumeric (#to r1))
+                 | MP.PNumCast r1 => mk11 (M.TNumeric (#from r1), M.TNumeric (#to r1))
+                 | MP.PBitwise r1    =>
                    let
                      val t1 = M.TNumeric (MP.NtInteger (#typ r1))
                      val doRotShift =
@@ -762,9 +762,9 @@ struct
                                 | _          => fail ("prim", "Unexpected bitwiseOp arity"))
                    in res
                    end
-	         | MP.PBoolean r1    => logicOp (c, r1, M.TBoolean)
+                 | MP.PBoolean r1    => logicOp (c, r1, M.TBoolean)
                  | MP.PName r1       => nameOp (c, r1)
-	         | MP.PCString r1    => stringOp (c, r1)
+                 | MP.PCString r1    => stringOp (c, r1)
                  | MP.PPtrEq => mk21 (M.TRef, M.TRef, M.TBoolean)
                  | MP.PCondMov => mk31 (M.TBoolean, M.TAny, M.TAny, M.TAny)
          in
@@ -781,17 +781,17 @@ struct
            val size = PU.VectorDescriptor.vectorSize desc
            val tv = tVector (size, t)
            val res =
-	       case p
-	        of MP.DBroadcast    => mk11 (t, tv)
-	         | MP.DVector       =>
+               case p
+                of MP.DBroadcast    => mk11 (t, tv)
+                 | MP.DVector       =>
                    let
                      val n = PU.VectorDescriptor.elementCount desc
                    in (Vector.new (n, t), unary tv)
                    end
-	         | MP.DSub r1       => mk11 (tv, t)
-	         | MP.DPermute r1   => mk11 (tv, tv)
-	         | MP.DBlend        => mk31 (tMask desc, tv, tv, tv)
-	         | MP.DSplit        =>
+                 | MP.DSub r1       => mk11 (tv, t)
+                 | MP.DPermute r1   => mk11 (tv, tv)
+                 | MP.DBlend        => mk31 (tMask desc, tv, tv, tv)
+                 | MP.DSplit        =>
                    let
                      val size2 =
                          (case PU.VectorSize.halfSize size
@@ -800,7 +800,7 @@ struct
                      val tv2 = tVector (size, t)
                    in mk12 (tv, tv2, tv2)
                    end
-	         | MP.DConcat       =>
+                 | MP.DConcat       =>
                    let
                      val size2 =
                          (case PU.VectorSize.doubleSize size
@@ -829,8 +829,8 @@ struct
                   | _ => fail ("vector", "Not a unary operator"))
 
            val res =
-	       case p
-	        of MP.ViPointwise r1   =>
+               case p
+                of MP.ViPointwise r1   =>
                    let
                      val (ats, rts) = prim (c, #operator r1)
                      val size = PU.VectorDescriptor.vectorSize (#descriptor r1)
@@ -843,7 +843,7 @@ struct
                            ats
                    in (ats, rts)
                    end
-	         | MP.ViConvert r1     =>
+                 | MP.ViConvert r1     =>
                    let
                      val {to, from} = r1
                      val p = MP.PNumConvert {to = #typ to, from = #typ from}
@@ -855,7 +855,7 @@ struct
                      val t = mk11 (t1, t2)
                    in t
                    end
-	         | MP.ViCast r1     =>
+                 | MP.ViCast r1     =>
                    let
                      val {to, from} = r1
                      val p = MP.PNumCast {to = #typ to, from = #typ from}
@@ -867,7 +867,7 @@ struct
                      val t = mk11 (t1, t2)
                    in t
                    end
-	         | MP.ViCompare r1     =>
+                 | MP.ViCompare r1     =>
                    let
                      val t1 = M.TNumeric (#typ r1)
                      val size = PU.VectorDescriptor.vectorSize (#descriptor r1)
@@ -876,7 +876,7 @@ struct
                      val t = mk21 (t1, t1, t2)
                    in t
                    end
-	         | MP.ViReduction r1   =>
+                 | MP.ViReduction r1   =>
                    let
                      val (t1, _, _) = unBin (prim (c, #operator r1))
                      val size = PU.VectorDescriptor.vectorSize (#descriptor r1)
@@ -884,10 +884,10 @@ struct
                      val t = mk21 (t1, t2, t1)
                    in t
                    end
-	         | MP.ViData r1        => dataOp (c, #operator r1, #descriptor r1, targs)
-	         | MP.ViMaskData r1    => dataOp (c, #operator r1, #descriptor r1, targs)
-	         | MP.ViMaskBoolean r1 => logicOp (c, #operator r1, tMask (#descriptor r1))
-	         | MP.ViMaskConvert r1 => mk11 (tMask (#from r1), tMask (#to r1))
+                 | MP.ViData r1        => dataOp (c, #operator r1, #descriptor r1, targs)
+                 | MP.ViMaskData r1    => dataOp (c, #operator r1, #descriptor r1, targs)
+                 | MP.ViMaskBoolean r1 => logicOp (c, #operator r1, tMask (#descriptor r1))
+                 | MP.ViMaskConvert r1 => mk11 (tMask (#from r1), tMask (#to r1))
          in
            res
          end
@@ -896,42 +896,42 @@ struct
       fn (c, si, p) =>
          let
            val res =
-	       case p
-	        of MP.RtFloatMk              => mk21 (tRat, tRat, tFloat)
-	         | MP.RtWriteln              => mk10 tPAny
-	         | MP.RtReadln               => mk01 (tString (c, si))
-	         | MP.RtAssert               => mk11 (tSet tPAny, tPAny)
-	         | MP.RtError                => mk11 (tPAny, tPAny)
-	         | MP.RtDebug                => mk10 tPAny
-	         | MP.RtOpenOut              => mk11 ((tString (c, si)), tRat)
-	         | MP.RtGetStdout            => mk01 tRat
-	         | MP.RtOutputByte           => mk20 (tRat, tRat)
-	         | MP.RtCloseOut             => mk10 tRat
-	         | MP.RtOpenIn               => mk11 ((tString (c, si)), tRat)
-	         | MP.RtGetStdin             => mk01 tRat
-	         | MP.RtInputByte            => mk11 (tRat, tRat)
-	         | MP.RtInputString          => mk21 (tRat, (tString (c, si)), (tString (c, si)))
-	         | MP.RtInputAll             => mk11 (tRat, (tString (c, si)))
-	         | MP.RtIsEOF                => mk11 (tRat, tBoolean)
-	         | MP.RtCloseIn              => mk10 tRat
-	         | MP.RtCommandLine          => mk01 tPAny
-	         | MP.RtStringToNat          => mk11 ((tString (c, si)), tRat)
-	         | MP.RtStringToFloat        => mk11 ((tString (c, si)), tFloat)
-	         | MP.RtFloatToString        => mk21 (tFloat, tRat, (tString (c, si)))
-	         | MP.RtFloatToStringI       => mk21 (tFloat, tSintp c, (tString (c, si)))
-	         | MP.RtRatNumerator         => mk11 (tRat, tRat)
-	         | MP.RtRatDenominator       => mk11 (tRat, tRat)
-	         | MP.RtEqual                => mk21 (tRat, tRat, tBoolean)
-	         | MP.RtDom                  => mk11 (tArrayV (c, tPAny), tSet tPAny)
-	         | MP.RtNub                  => mk11 (tSet tPAny, tRat)
-	         | MP.RtRatToUIntpChecked    => mk11 (tRat, tUintp c)
-	         | MP.RtRatToString          => mk11 (tRat, (tString (c, si)))
-	         | MP.RtStringToRat          => mk11 ((tString (c, si)), tRat)
-	         | MP.RtResetTimer           => mk10 tRat
-	         | MP.RtGetTimer             => mk11 (tRat, tFloat)
-	         | MP.RtVtuneAttach          => mk00 ()
-	         | MP.RtVtuneDetach          => mk00 ()
-	         | MP.RtArrayEval            => mk10 (tArrayV (c, tPAny))
+               case p
+                of MP.RtFloatMk              => mk21 (tRat, tRat, tFloat)
+                 | MP.RtWriteln              => mk10 tPAny
+                 | MP.RtReadln               => mk01 (tString (c, si))
+                 | MP.RtAssert               => mk11 (tSet tPAny, tPAny)
+                 | MP.RtError                => mk11 (tPAny, tPAny)
+                 | MP.RtDebug                => mk10 tPAny
+                 | MP.RtOpenOut              => mk11 ((tString (c, si)), tRat)
+                 | MP.RtGetStdout            => mk01 tRat
+                 | MP.RtOutputByte           => mk20 (tRat, tRat)
+                 | MP.RtCloseOut             => mk10 tRat
+                 | MP.RtOpenIn               => mk11 ((tString (c, si)), tRat)
+                 | MP.RtGetStdin             => mk01 tRat
+                 | MP.RtInputByte            => mk11 (tRat, tRat)
+                 | MP.RtInputString          => mk21 (tRat, (tString (c, si)), (tString (c, si)))
+                 | MP.RtInputAll             => mk11 (tRat, (tString (c, si)))
+                 | MP.RtIsEOF                => mk11 (tRat, tBoolean)
+                 | MP.RtCloseIn              => mk10 tRat
+                 | MP.RtCommandLine          => mk01 tPAny
+                 | MP.RtStringToNat          => mk11 ((tString (c, si)), tRat)
+                 | MP.RtStringToFloat        => mk11 ((tString (c, si)), tFloat)
+                 | MP.RtFloatToString        => mk21 (tFloat, tRat, (tString (c, si)))
+                 | MP.RtFloatToStringI       => mk21 (tFloat, tSintp c, (tString (c, si)))
+                 | MP.RtRatNumerator         => mk11 (tRat, tRat)
+                 | MP.RtRatDenominator       => mk11 (tRat, tRat)
+                 | MP.RtEqual                => mk21 (tRat, tRat, tBoolean)
+                 | MP.RtDom                  => mk11 (tArrayV (c, tPAny), tSet tPAny)
+                 | MP.RtNub                  => mk11 (tSet tPAny, tRat)
+                 | MP.RtRatToUIntpChecked    => mk11 (tRat, tUintp c)
+                 | MP.RtRatToString          => mk11 (tRat, (tString (c, si)))
+                 | MP.RtStringToRat          => mk11 ((tString (c, si)), tRat)
+                 | MP.RtResetTimer           => mk10 tRat
+                 | MP.RtGetTimer             => mk11 (tRat, tFloat)
+                 | MP.RtVtuneAttach          => mk00 ()
+                 | MP.RtVtuneDetach          => mk00 ()
+                 | MP.RtArrayEval            => mk10 (tArrayV (c, tPAny))
                  | MP.RtIntegerHash          => mk11 (tInt, tUintp c)
          in
            res
@@ -941,10 +941,10 @@ struct
       fn (c, si, p, targs) =>
          let
            val res =
-	       case p
-	        of MP.Prim r1    => prim (c, r1)
-	         | MP.Runtime r1 => runtime (c, si, r1)
-	         | MP.Vector r1  => vector (c, r1, targs)
+               case p
+                of MP.Prim r1    => prim (c, r1)
+                 | MP.Runtime r1 => runtime (c, si, r1)
+                 | MP.Vector r1  => vector (c, r1, targs)
          in
            res
          end

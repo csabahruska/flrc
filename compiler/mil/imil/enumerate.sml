@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -18,13 +18,13 @@
 
 (* Enumeration routines.
  * blocks enumerates live blocks (those that have not been deleted)
- * instructions enumerates all non-deleted instructions 
- * labels enumerates all non-deleted block label instructions 
- * transfers enumerates all non-deleted block transfer instructions 
+ * instructions enumerates all non-deleted instructions
+ * labels enumerates all non-deleted block label instructions
+ * transfers enumerates all non-deleted block transfer instructions
  * operations enumerates all non-deleted intra-block instructions
  *)
 
-signature IMIL_ENUMERATE = 
+signature IMIL_ENUMERATE =
 sig
   include IMIL_PUBLIC_TYPES
 
@@ -57,28 +57,28 @@ sig
             end
 end
 
-structure IMilEnumerate : IMIL_ENUMERATE = 
+structure IMilEnumerate : IMIL_ENUMERATE =
 struct
   open IMilPublicTypes
   structure IMT = IMilTypes
   structure ILD = IMT.ILD
   structure IVD = IMT.IVD
 
-  structure IInstr = 
+  structure IInstr =
   struct
-    val dead = 
-     fn i => 
+    val dead =
+     fn i =>
         (case IMT.iInstrGetMil i
           of IMT.MDead => true
            | _ => false)
   end
 
-  structure IBlock = 
+  structure IBlock =
   struct
-    val dead = 
+    val dead =
      fn b => IInstr.dead (IMT.iBlockGetLabel b)
 
-    val instructions' : IMT.t * IMT.iBlock -> IMT.iInstr list = 
+    val instructions' : IMT.t * IMT.iBlock -> IMT.iInstr list =
      fn (p, b) =>
         let
           val label = IMT.iBlockGetLabel b
@@ -89,21 +89,21 @@ struct
         in code
         end
 
-    val labels' : IMT.t * IMT.iBlock -> IMT.iInstr list = 
+    val labels' : IMT.t * IMT.iBlock -> IMT.iInstr list =
      fn (p, b) =>
         let
           val label = IMT.iBlockGetLabel b
         in [label]
         end
 
-    val transfers' : IMT.t * IMT.iBlock -> IMT.iInstr list = 
+    val transfers' : IMT.t * IMT.iBlock -> IMT.iInstr list =
      fn (p, b)=>
         let
           val trans = IMT.iBlockGetTrans b
         in [trans]
         end
 
-    val operations' : IMT.t * IMT.iBlock -> IMT.iInstr list = 
+    val operations' : IMT.t * IMT.iBlock -> IMT.iInstr list =
      fn (p, b) =>
         let
           val code = IMT.iBlockGetCode b
@@ -111,13 +111,13 @@ struct
         in code
         end
 
-    val instructions_ = 
-     fn (instructions) => 
-        (fn (p : IMT.t, b : IMT.iBlock) => 
-            if dead b then 
+    val instructions_ =
+     fn (instructions) =>
+        (fn (p : IMT.t, b : IMT.iBlock) =>
+            if dead b then
               []
             else
-              List.keepAll (instructions (p, b), 
+              List.keepAll (instructions (p, b),
                             not o IInstr.dead))
 
     val instructions = instructions_ instructions'
@@ -127,21 +127,21 @@ struct
 
   end
 
-  structure IFunc = 
+  structure IFunc =
   struct
 
     val blocks =
-     fn (p : IMT.t, iFunc : IMT.iFunc) => 
-        ILD.fold (IMT.iFuncGetIBlocks iFunc, [], 
-               fn (l, b, bs) => if IBlock.dead b then 
+     fn (p : IMT.t, iFunc : IMT.iFunc) =>
+        ILD.fold (IMT.iFuncGetIBlocks iFunc, [],
+               fn (l, b, bs) => if IBlock.dead b then
                                   bs
                                 else
                                   b :: bs)
 
-    val instructions_ = 
+    val instructions_ =
      fn (instructions) =>
         (fn (p : IMT.t, iFunc : IMT.iFunc) =>
-            ILD.fold (IMT.iFuncGetIBlocks iFunc, [], 
+            ILD.fold (IMT.iFuncGetIBlocks iFunc, [],
                    fn (l, b, is) => (instructions (p, b)) @ is))
 
     val instructions  = instructions_ IBlock.instructions
@@ -151,40 +151,40 @@ struct
 
   end
 
-  structure IGlobal = 
+  structure IGlobal =
   struct
-    val dead = 
-     fn g => 
+    val dead =
+     fn g =>
         (case IMT.iGlobalGetMil g
           of IMT.GDead => true
            | _ => false)
   end
 
-  structure T = 
+  structure T =
   struct
-    val funcs = 
+    val funcs =
      fn (p : IMT.t) => IVD.fold (IMT.tGetIFuncs p, [], fn (_, c, cs) => c::cs)
 
-    val globals = 
-     fn p => 
-        IVD.fold (IMT.tGetIGlobals p, [], 
-               fn (v, g, gs) => 
-                  if IGlobal.dead g then 
+    val globals =
+     fn p =>
+        IVD.fold (IMT.tGetIGlobals p, [],
+               fn (v, g, gs) =>
+                  if IGlobal.dead g then
                     gs
                   else
                     g :: gs)
 
-    val blocks = 
-     fn (p : IMT.t) => 
-        IVD.fold (IMT.tGetIFuncs p, [], 
+    val blocks =
+     fn (p : IMT.t) =>
+        IVD.fold (IMT.tGetIFuncs p, [],
                fn (v, iFunc, bs) => (IFunc.blocks (p, iFunc)) @ bs)
 
-    val instructions_ = 
-     fn instructions => 
-        (fn (p : IMT.t) => 
-            IVD.fold (IMT.tGetIFuncs p, [], 
+    val instructions_ =
+     fn instructions =>
+        (fn (p : IMT.t) =>
+            IVD.fold (IMT.tGetIFuncs p, [],
                    fn (v, iFunc, is) => (instructions (p, iFunc)) @ is))
-        
+
     val instructions  = instructions_ IFunc.instructions
     val labels        = instructions_ IFunc.labels
     val transfers     = instructions_ IFunc.transfers

@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,12 +16,12 @@
  *)
 
 
-signature MIL_REP_PASS = 
+signature MIL_REP_PASS =
 sig
   val pass : (BothMil.t, BothMil.t) Pass.t
 end
 
-signature MIL_REP_OPTIMIZATION = 
+signature MIL_REP_OPTIMIZATION =
 sig
   val passname : string
   val description : string
@@ -33,14 +33,14 @@ sig
   val program : PassData.t * MilRepSummary.summary * Mil.t -> Mil.t
 end
 
-functor MilRepDriverF(structure Optimization : MIL_REP_OPTIMIZATION) :> MIL_REP_PASS = 
+functor MilRepDriverF(structure Optimization : MIL_REP_OPTIMIZATION) :> MIL_REP_PASS =
 struct
   val passname = Optimization.passname
 
   structure M = Mil
   structure PD = PassData
 
-  structure Chat = ChatF (struct 
+  structure Chat = ChatF (struct
                             type env = PD.t
                             val extract = PD.getConfig
                             val name = passname
@@ -49,10 +49,10 @@ struct
 
   val debugPass = Optimization.debugPass
 
-  val mkDebug = 
+  val mkDebug =
    fn (tag, description) => PD.mkDebug (passname^":"^tag, description)
 
-  val mkLevelDebug = 
+  val mkLevelDebug =
    fn (tag, description, level) => PD.mkLevelDebug (passname, passname^":"^tag, description, level, debugPass)
 
   val (checkPhasesD, checkPhases) =
@@ -75,24 +75,24 @@ struct
 
 
   val debugs = [annotateProgramD, checkPhasesD, showAnalysisD, showPhasesD, showReasonsD,
-                skipOptimizationD] 
+                skipOptimizationD]
                @ Optimization.debugs
 
-  val mkLogFeature = 
+  val mkLogFeature =
    fn (tag, description, level) => PD.mkLogFeature (passname, passname^":"^tag, description, level)
 
-  val (statPhasesF, statPhases) = 
+  val (statPhasesF, statPhases) =
       mkLogFeature ("stat-phases", "Show stats between each phase", 2)
 
-  val features = [statPhasesF] 
+  val features = [statPhasesF]
                  @ Optimization.features
                  @ MilRepAnalyze.features
 
   val stats = []
               @ Optimization.stats
 
-  val postPhase = 
-   fn (pd, p) => 
+  val postPhase =
+   fn (pd, p) =>
       let
         val config = PD.getConfig pd
         val () = if statPhases pd then Stats.report (PD.getStats pd) else ()
@@ -101,9 +101,9 @@ struct
       in ()
       end
 
-  val doPhase = 
+  val doPhase =
    fn (skip, f, name) =>
-   fn (pd, p) => 
+   fn (pd, p) =>
       if skip pd then
         let
           val () = Chat.log1 (pd, "Skipping "^name)
@@ -123,35 +123,35 @@ struct
 
   val preProcess = doPhase (fn _ => false, MilRepPrep.program, "Pre-processing")
 
-  val optimize = fn (pd, summary, p) => 
-                    doPhase (skipOptimization, 
+  val optimize = fn (pd, summary, p) =>
+                    doPhase (skipOptimization,
                           fn (pd, p) => Optimization.program (pd, summary, p),
                              "Optimization") (pd, p)
 
-  val reconstruct = fn (pd, summary, p) => 
-                       doPhase (fn _ => not Optimization.reconstructTypes, 
+  val reconstruct = fn (pd, summary, p) =>
+                       doPhase (fn _ => not Optimization.reconstructTypes,
                                 fn (pd, p) => MilRepReconstruct.program (pd, summary, false, p),
                                 "Reconstruction") (pd, p)
 
-  val annotate = fn (pd, summary, p) => 
+  val annotate = fn (pd, summary, p) =>
                     doPhase (fn pd => not (annotateProgram pd),
                              fn (pd, p) => MilRepShow.annotate (pd, summary, p),
                              "Annotation") (pd, p)
 
-  val analyze = 
-   fn (pd, p) => 
+  val analyze =
+   fn (pd, p) =>
       let
           val () = Chat.log1 (pd, "Doing analysis")
           val s = Time.now ()
           val summary = MilRepAnalyze.program (pd, p)
           val e = Time.toString (Time.- (Time.now (), s))
           val () = Chat.log1 (pd, "Done with analysis in "^e^"s")
-          val () = 
+          val () =
               if showAnalysis pd then
                 MilRepShow.printAnalysis (pd, summary, p)
               else
                 ()
-          val () = 
+          val () =
               if showReasons pd then
                 MilRepShow.printReasons (pd, summary, p)
               else
@@ -159,7 +159,7 @@ struct
       in summary
       end
 
-  val program = 
+  val program =
    fn (pd, p) =>
       let
         val p = preProcess (pd, p)

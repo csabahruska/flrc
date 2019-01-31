@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,20 +16,20 @@
  *)
 
 
-signature MIL_VECTORIZE = 
+signature MIL_VECTORIZE =
 sig
   val pass : (BothMil.t, BothMil.t) Pass.t
 end (* signature MIL_VECTORIZE *)
 
-structure MilVectorize :> MIL_VECTORIZE = 
+structure MilVectorize :> MIL_VECTORIZE =
 struct
- 
+
  structure I = Identifier
  structure IA = IntArb
  structure ID = IntDict
  structure L = Layout
  structure LD = Identifier.LabelDict
- structure LU = LayoutUtils      
+ structure LU = LayoutUtils
  structure M = Mil
  structure ML = MilLoop
  structure MR = MilRename
@@ -41,13 +41,13 @@ struct
  structure VS = Identifier.VariableSet
  structure VD = Identifier.VariableDict
 
- val passname = "MilVectorize" 
+ val passname = "MilVectorize"
 
  val (debugPassD, debugPass) = Config.Debug.mk (passname, "debug the Mil vectorize pass")
 
  val (whyFailD, whyFail) = Config.Debug.mk (passname ^ ":why-fail", "output reasons for failure to vectorize")
 
- val (allowReductionsF, allowReductions) = 
+ val (allowReductionsF, allowReductions) =
      Config.Feature.mk (passname^":float-reductions", "Vectorize floating point reductions")
 
  val allowReductions = fn config => allowReductions config orelse Config.sloppyFp config
@@ -59,7 +59,7 @@ struct
                                            val indent = 2
                                          end)
 
- (* env is the type of the environment passed through the 
+ (* env is the type of the environment passed through the
     vectorizer *)
  datatype env = E of {config : Config.t,
                       vectorConfig : PU.VectorConfig.t,
@@ -77,15 +77,15 @@ struct
       (setCode, getCode),
       (setCfg, getCfg),
       (setDomInfo, getDomInfo),
-      (setLoopInfo, getLoopInfo)) = 
+      (setLoopInfo, getLoopInfo)) =
      let
-       val r2t = 
+       val r2t =
         fn E {config, vectorConfig, program, fmil, code, cfg, domInfo, loopInfo} =>
            (config, vectorConfig, program, fmil, code, cfg, domInfo, loopInfo)
-       val t2r = 
+       val t2r =
         fn (config, vectorConfig, program, fmil, code, cfg, domInfo, loopInfo) =>
-           E {config = config, vectorConfig = vectorConfig, program = program, fmil = fmil, 
-              code = code, cfg = cfg, domInfo = domInfo, loopInfo = loopInfo} 
+           E {config = config, vectorConfig = vectorConfig, program = program, fmil = fmil,
+              code = code, cfg = cfg, domInfo = domInfo, loopInfo = loopInfo}
       in FunctionalUpdate.mk8 (r2t, t2r)
       end
 
@@ -97,36 +97,36 @@ struct
  val ((setDependencyInfo, getDependencyInfo),
       (setLoopHeader, getLoopHeader),
       (setLoopParams, getLoopParams),
-      (setVectorLength, getVectorLength)) = 
+      (setVectorLength, getVectorLength)) =
      let
-       val r2t = 
+       val r2t =
         fn LI {dependencyInfo, loopHeader, loopParams, vectorLength} =>
            (dependencyInfo, loopHeader, loopParams, vectorLength)
-       val t2r = 
+       val t2r =
         fn (dependencyInfo, loopHeader, loopParams, vectorLength) =>
-           LI {dependencyInfo = dependencyInfo, loopHeader = loopHeader, 
-               loopParams = loopParams, vectorLength = vectorLength} 
+           LI {dependencyInfo = dependencyInfo, loopHeader = loopHeader,
+               loopParams = loopParams, vectorLength = vectorLength}
       in FunctionalUpdate.mk4 (r2t, t2r)
       end
 
  val updateVectorLength : (info * int) -> info =
    fn (info, vectorLength) => setVectorLength (info, SOME vectorLength)
 
- val readVectorLength : info -> int = 
+ val readVectorLength : info -> int =
   fn info =>
      case getVectorLength info
       of SOME i => i
        | NONE   => Fail.fail ("Vectorize", "readVectorLength", "vectorLength not set")
 
- datatype state = S of {symTableM : MU.SymbolTableManager.t, 
+ datatype state = S of {symTableM : MU.SymbolTableManager.t,
                         globals : (M.variable * M.global) List.t ref}
 
- val ((_, stateGetSymTableM), 
-      (_, stateGetGlobals)) = 
+ val ((_, stateGetSymTableM),
+      (_, stateGetGlobals)) =
      let
-       val r2t = 
+       val r2t =
         fn (S {symTableM, globals}) => (symTableM, globals)
-       val t2r = 
+       val t2r =
         fn (symTableM, globals) => S {symTableM = symTableM, globals = globals}
      in FunctionalUpdate.mk2 (r2t, t2r)
      end
@@ -139,7 +139,7 @@ struct
  (* Bind short forms of useful combinators *)
  val <- = Try.<-
  val <@ = Try.<@
- val try = Try.try 
+ val try = Try.try
  val distribute = U.Option.distribute
  val distributeV = U.Option.distributeV
  val bool = isSome
@@ -148,12 +148,12 @@ struct
  val success = SOME
  val require = Try.require
 
- (* fail with reason *) 
+ (* fail with reason *)
  val <?- : 'a option -> (env * string list) -> 'a =
   fn x => fn (env, str) =>
    case x
     of NONE => (if (Config.debug andalso (whyFail (getConfig env))) then
-                  let val () = print "Vectorization failed because: " 
+                  let val () = print "Vectorization failed because: "
                       val () = print ((concat str) ^ "\n")
                   in fail()
                   end
@@ -161,7 +161,7 @@ struct
                   fail ())
      | SOME x' => x'
 
- (* fail with reason *) 
+ (* fail with reason *)
  val <?@ : ('a -> 'b option) -> 'a -> (env * string list) -> 'b =
   fn f => fn x => <?- (f x)
 
@@ -193,7 +193,7 @@ struct
 (* -------------------------------------------------------------------------- *)
 
  val mkVDescriptorFS : (env * info * Mil.fieldSize) -> Mil.Prims.vectorDescriptor option =
-   fn (env, info, fieldSize) => try (fn () => 
+   fn (env, info, fieldSize) => try (fn () =>
     let
       val E {config, ...} = env
       val vectorLength = readVectorLength info
@@ -207,7 +207,7 @@ struct
 
  (* /mkVDescriptor/ builds a vector descriptor for the current config and given mil typ *)
  val mkVDescriptor : (env * info * Mil.typ) -> Mil.Prims.vectorDescriptor option =
-   fn (env, info, typ) => try (fn () => 
+   fn (env, info, typ) => try (fn () =>
     let
       val E {config, ...} = env
       val vectorLength = readVectorLength info
@@ -223,7 +223,7 @@ struct
 
  (* /mkVectorType/ given a mil type, create the vector version of this type *)
  val mkVectorType : (env * info * Mil.typ) -> Mil.typ option =
-   fn (env, info, typ) => try (fn () => 
+   fn (env, info, typ) => try (fn () =>
       let
         val E {config, ...} = env
         val vectorLength = readVectorLength info
@@ -236,7 +236,7 @@ struct
 
  (* /mkVectorType/ given a mil type, create the vector version of this type *)
  val mkVectorMaskType : (env * info * Mil.typ) -> Mil.typ option =
-   fn (env, info, typ) => try (fn () => 
+   fn (env, info, typ) => try (fn () =>
       let
         val E {config, ...} = env
         val vectorLength = readVectorLength info
@@ -250,46 +250,46 @@ struct
   (* /variableType/ gets the type of a variable *)
   val variableType : (state * env * M.variable) -> Mil.typ =
     fn (state, env, var) =>
-      let 
+      let
         val E {config, ...} = env
         val symTableM = stateGetSymTableM state
         val si = I.SymbolInfo.SiManager symTableM
-      in 
+      in
         MilType.Typer.variable (config, si, var)
       end
 
   (* /operandType/ gets the type of an operand *)
   val operandType : (state * env * M.operand) -> Mil.typ =
     fn (state, env, operand) =>
-      let 
+      let
         val E {config, ...} = env
         val symTableM = stateGetSymTableM state
         val si = I.SymbolInfo.SiManager symTableM
-      in 
+      in
         MilType.Typer.operand (config, si, operand)
       end
- 
+
  fun xor x y = (x andalso (not y)) orelse ((not x) andalso y)
 
  (* /decBaseInductionVar/ - deconstruct an induction variable, looking for a base induction variable value *)
- val decBaseInductionVar = 
+ val decBaseInductionVar =
   fn x =>
-     case x 
+     case x
       of (ML.BIV iv) => SOME iv
        | _           => NONE
 
  (*  pointwiseConcat : 'a list list * 'a list list -> 'a list list *)
  val rec pointwiseConcat : 'a list list * 'a list list -> 'a list list =
-  fn (xs, ys) => 
-     (case (xs, ys) 
+  fn (xs, ys) =>
+     (case (xs, ys)
        of (xs   , []   ) => xs
         | ([]   , ys   ) => ys
         | (x::xs, y::ys) => (x @ y) :: (pointwiseConcat (xs, ys)))
-                                  
+
  (* unionR - Performs a union between two label dictionaries where the
              collision behaviour is that the right operand's value is chosen
              the right operand must have its type tagged as a "new" dictionary,
-             thus "new" values are preferred over "old" *)             
+             thus "new" values are preferred over "old" *)
  val unionR : (('a LD.t) * ('a LD.t) new) -> ('a LD.t) =
   fn (oldLD, New newLD) =>
      let val rightPrefer = fn (key, b1, b2) => b2
@@ -301,7 +301,7 @@ struct
      case prim
       of Mil.Prims.CEq => Mil.Prims.CNe
        | Mil.Prims.CNe => Mil.Prims.CEq
-       | Mil.Prims.CLt => Mil.Prims.CLe (* but with a swap of args *) 
+       | Mil.Prims.CLt => Mil.Prims.CLe (* but with a swap of args *)
        | Mil.Prims.CLe => Mil.Prims.CLt (* ditto *)
 
  (* ************************************************************************* *)
@@ -313,34 +313,34 @@ struct
                   preserves the original 'a structure. partiality is encoded using
                   the option type *)
  type ('a, 'b) bidirectional = 'a -> ('b * ('b -> 'a)) option
-                                     
+
  (* /hasTwoTargets/ - Takes a switch and if the switch has two targets
-                      returns a pair of targets, along with a 
+                      returns a pair of targets, along with a
                        bidirectional update to the parameter switch *)
 val hasTwoTargets : (({select  : M.selector,
-                       on      : M.operand, 
-                       cases   : (M.constant * M.target) Vector.t, 
+                       on      : M.operand,
+                       cases   : (M.constant * M.target) Vector.t,
                        default : M.target option}, M.target * M.target) bidirectional) =
   fn {select, on, cases, default} =>
      case (Vector.length cases, default)
       of (1, SOME d) =>
-         let 
+         let
            val (a, t) = Vector.sub (cases, 0)
            val targets = (d, t)
            val injection = (fn (d', t') =>
-                               {select = select, 
+                               {select = select,
                                 on = on,
                                 cases = Vector.new1 (a, t'),
                                 default = SOME d'})
          in SOME (targets, injection)
          end
-       | (2, NONE) => 
-         let 
+       | (2, NONE) =>
+         let
            val (a1, t1) = Vector.sub (cases, 0)
            val (a2, t2) = Vector.sub (cases, 1)
            val targets = (t1, t2)
            val injection = (fn (t1', t2') =>
-                               {select = select, 
+                               {select = select,
                                 on = on,
                                 cases = Vector.new2 ((a1, t1'),
                                                      (a2, t2')),
@@ -349,12 +349,12 @@ val hasTwoTargets : (({select  : M.selector,
          end
        | _ => NONE
 
- (* /identifyInPair - Given a test on the type 'a, identifyInPair builds a 
+ (* /identifyInPair - Given a test on the type 'a, identifyInPair builds a
                       bidirectional map from pairs of 'a to pairs of 'a, where
                       the element of the pair that passed the test is first.
                       Exactly one element must pass the test. If they both pass
                       or both fail then the result is NONE. *)
- val identifyInPair : ('a -> bool) -> (('a * 'a), ('a * 'a)) bidirectional = 
+ val identifyInPair : ('a -> bool) -> (('a * 'a), ('a * 'a)) bidirectional =
    fn test =>
     fn (x, y) =>
        (case (test x, test y)
@@ -363,14 +363,14 @@ val hasTwoTargets : (({select  : M.selector,
           | _             => NONE)
 
  (* /renameVariables/ renames all variables in a block to some fresh, related name *)
- val renameVariables : (state * env * info * M.block) -> (M.block * Rename.t) = 
+ val renameVariables : (state * env * info * M.block) -> (M.block * Rename.t) =
   fn (state, env, info, block) =>
      let
        val symTableM = stateGetSymTableM state
        val E {config, ...} = env
        val LI {loopHeader, ...} = info
 
-       val mkRenaming = 
+       val mkRenaming =
         fn (var, subst) => Rename.renameTo(subst, var, SymTableM.variableClone (symTableM, var))
 
         val boundVars = MilBoundVars.block (config, loopHeader, block)
@@ -381,18 +381,18 @@ val hasTwoTargets : (({select  : M.selector,
      end
 
  (* <t> approach subject to change, to allow vectorization of non-inner loops *)
- (* /isInvariantVar/ - Request whether a variable is a loop invariant of the current 
+ (* /isInvariantVar/ - Request whether a variable is a loop invariant of the current
                      loop, headed by the block labelled "header" (passed with the env) *)
- val isInvariantVar : (state * env * info * Mil.variable) -> bool = 
+ val isInvariantVar : (state * env * info * Mil.variable) -> bool =
    fn (state, env, info, var) =>
-     let 
+     let
        val E {loopInfo, ...} = env
        val LI {loopHeader, ...} = info
 
-       val binderInfo = ML.getBinderLocations loopInfo 
-     in                                          
+       val binderInfo = ML.getBinderLocations loopInfo
+     in
        case VD.lookup (binderInfo, var)
-                                 (* variable is invariant for an inner loop 
+                                 (* variable is invariant for an inner loop
                                   if the header of the loop
                                   that contains the binding of var, is not equal
                                   to the current loop header *)
@@ -401,19 +401,19 @@ val hasTwoTargets : (({select  : M.selector,
                             variable is not locally defined so must be invariant *)
      end
 
- (* /isInductionVariable/ ask if a variable is an induction variable (from the mil loop 
+ (* /isInductionVariable/ ask if a variable is an induction variable (from the mil loop
                            analysis, if so the induction variable info is returned *)
  val isInductionVariable : state * env * info * M.variable -> MilLoop.inductionVariable option =
     fn (state, env, info, var) =>
        let
          val E {loopInfo, ... } = env
          val LI {loopHeader, ...} = info
-                                    
-         val IVs = ML.getInductionVariables (loopInfo, loopHeader) 
-                                            
+
+         val IVs = ML.getInductionVariables (loopInfo, loopHeader)
+
         (* if the variable matches return the variable info *)
          val inductionVarInfo = List.peek (IVs,
-                                        fn iv => 
+                                        fn iv =>
                                            let val canonIV = ML.canonizeInductionVariable iv
                                            in I.variableEqual (#variable canonIV, var)
                                            end)
@@ -426,7 +426,7 @@ val hasTwoTargets : (({select  : M.selector,
   val getStridedIV : state * env * info * M.variable -> int option =
     fn (state, env, info, var) =>
        case isInductionVariable (state, env, info, var)
-        of SOME ivInfo => 
+        of SOME ivInfo =>
            let
              val step = #step (ML.canonizeInductionVariable ivInfo)
              val isUnitStride = Rat.toInt step
@@ -439,16 +439,16 @@ val hasTwoTargets : (({select  : M.selector,
  (*            in theory, be vectorized.                                       *)
  (* -------------------------------------------------------------------------- *)
 
- (* /mayVectorize/ - Determine whether a loop can be feasibly vectorized 
+ (* /mayVectorize/ - Determine whether a loop can be feasibly vectorized
                     (does not make use of any architecture specific info *)
- val mayVectorize : (state * env * info * ML.loop) -> unit option = 
+ val mayVectorize : (state * env * info * ML.loop) -> unit option =
   fn (state, env, info, loop) =>
      try (fn () =>
-     let 
+     let
        val E {config, program, fmil, code, cfg, domInfo, loopInfo, ...} = env
        val symTableM = stateGetSymTableM state
        val LI {dependencyInfo, ...} = info
-       val si = I.SymbolInfo.SiManager symTableM 
+       val si = I.SymbolInfo.SiManager symTableM
        val MilLoop.L {header, blocks} = loop
 
        (* **** Check just single block *)
@@ -469,8 +469,8 @@ val hasTwoTargets : (({select  : M.selector,
        val testVar = <?- (MU.Simple.Dec.sVariable on) (env, ["Test is a constant"])
         (* find definition of the test *)
        val testVarDef = FMil.getVariable (fmil, testVar)
-       val (_, rhs) = case testVarDef 
-                       of FMil.VdInstr x => x 
+       val (_, rhs) = case testVarDef
+                       of FMil.VdInstr x => x
                         | _              => Try.fail ()
 
         (* deconstruct the test *)
@@ -485,7 +485,7 @@ val hasTwoTargets : (({select  : M.selector,
 
         (* find if one of the arguments is an induction var *)
        val argIsInductionVar : M.operand -> bool =
-          fn arg => 
+          fn arg =>
              bool (try (fn () =>
                            let
                              val var = <@ MU.Simple.Dec.sVariable arg
@@ -493,10 +493,10 @@ val hasTwoTargets : (({select  : M.selector,
                            in
                              iv
                            end))
- 
+
        val identifyIVArg = identifyInPair argIsInductionVar
        (* the following will return NONE if neither of the params are IVs, or
-          if they both are (local this loop) *)                                                                          
+          if they both are (local this loop) *)
        val ((argIV, argB), _) = <@ identifyIVArg (arg1, arg2)
 
        (* **** Perform checks on each instruction *)
@@ -509,7 +509,7 @@ val hasTwoTargets : (({select  : M.selector,
                                                              " bound to more than one variable"])
 
                (* allow only certain RHS *)
-               val () = requireR (case rhs 
+               val () = requireR (case rhs
                                   of M.RhsSimple _ => true
                                    | M.RhsPrim _ => true
                                    | M.RhsTupleSet _ => true
@@ -524,14 +524,14 @@ val hasTwoTargets : (({select  : M.selector,
                val effects = MU.Instruction.fx (config, instr)
                val () = require (Effect.subset (effects, allowedEffects))
              in true
-             end))        
+             end))
        val () = require (Vector.forall (instructions, checkInstruction))
 
        (* **** Check dependencies *)
 
        (* check each dependency cycle *)
        val rec checkCycle =
-        fn xs => 
+        fn xs =>
            case xs
             of []      => ()
              | (x::xs) =>
@@ -543,20 +543,20 @@ val hasTwoTargets : (({select  : M.selector,
                                        (List.map (x, fn var => MilLayout.layoutVariable (config, si, var))))
                           else
                             ()
-                              
+
                               (* check if a dependency cycle contains a variable with tuple type *)
                  val varHasTupleType = fn var => case (variableType (state, env, var))
                                                   of (M.TTuple _) => true
                                                    | _            => false
-                 val containsTuple = List.fold (x, false, fn (var, res) => (varHasTupleType var) orelse res) 
+                 val containsTuple = List.fold (x, false, fn (var, res) => (varHasTupleType var) orelse res)
                  val () = requireR (not (containsTuple)) (env, ["dependency cycle involving a tuple or array"])
-                                   
+
                                    (*
                                     (* check that dependencies are only on induction variables *)
                  val isInductionVariable' =
                   fn (var, res) => (bool (isInductionVariable (state, env, var)) andalso res)
                  val onlyIVdeps = List.fold (x, true, isInductionVariable')
-                                  
+
                  val () = requireR (onlyIVdeps) (env, ["dependency cycle involving non induction variable"]) *)
                in checkCycle xs
                end
@@ -569,7 +569,7 @@ val hasTwoTargets : (({select  : M.selector,
  (*  Depth 3.0 : Tagging stage - process instructions and tag with vectorize   *)
  (*              demands                                                       *)
  (* -------------------------------------------------------------------------- *)
- 
+
  type tagEnv = {affineVars : VS.t,
                 tags : tag ID.t,  (* instruction id -> tag *)
                 minSize : int,
@@ -582,14 +582,14 @@ val hasTwoTargets : (({select  : M.selector,
  (* /calcMinMax/ - Given an int and pair of min and max values compute the new
                min/max pair *)
  val calcMinMax : (int option * (int * int)) -> (int * int) =
-   fn (x, (xmin, xmax)) => 
+   fn (x, (xmin, xmax)) =>
       case x
         of NONE => (xmin, xmax)
          | SOME x' => (Int.min (x', xmin), Int.max (x', xmax))
 
  (* /varBitSize/ - Get the bit size of the type of a list of variables *)
  val varBitSize : (state * env * Mil.variable vector) -> int option =
-   fn (state, env, dests) => 
+   fn (state, env, dests) =>
       if Vector.length dests = 1 then
         let
           val E {config, ...} = env
@@ -611,20 +611,20 @@ val hasTwoTargets : (({select  : M.selector,
    fn (state, env, affineVars, operand) =>
      case operand
        of Mil.SConstant _ => NONE
-        | Mil.SVariable var => 
+        | Mil.SVariable var =>
           if VS.member (affineVars, var) then
             SOME var
-          else 
+          else
             NONE
 
  (* /isInvariant/ - Request whether an operand is a loop invariant = either
                     a constant or a loop-invariant variables *)
- val isInvariant : (state * env * info * Mil.operand) -> bool = 
+ val isInvariant : (state * env * info * Mil.operand) -> bool =
    fn (state, env, info, operand) =>
       case operand
         of Mil.SConstant _   => true
          | Mil.SVariable var => isInvariantVar (state, env, info, var)
-                            
+
  (* /isNumericTyp/ - Is the given type a numeric type *)
  val isNumericTyp : M.typ -> bool =
   fn typ =>  isSome (MU.Typ.Dec.tNumeric typ)
@@ -637,34 +637,34 @@ val hasTwoTargets : (({select  : M.selector,
 
  (* /rhsIsAffine/ - Ascertain whether a right hand side expression is an
                     affine expression  *)
- val rhsIsAffine : (state * env * info * Mil.rhs * VS.t) -> Mil.variable option = 
-  fn (state, env, info, rhs, affineVars) => 
+ val rhsIsAffine : (state * env * info * Mil.rhs * VS.t) -> Mil.variable option =
+  fn (state, env, info, rhs, affineVars) =>
    try (fn () =>
     let
       val {prim, createThunks, typs, args} = <- (MU.Rhs.Dec.rhsPrim rhs)
       val prim' = <- (PU.T.Dec.prim prim)
       val {typ, operator} = <- (PU.Prim.Dec.pNumArith prim')
- 
+
       (* check we have an integer type- todo: could be relaxed to float if sloppyFp mode is on *)
       val integerTyp = require (isPreciseNumericTyp typ)
-                            
+
      (* Only allow +, -, * in affine bases computations *)
-      val () = require ((operator = Mil.Prims.APlus) orelse 
+      val () = require ((operator = Mil.Prims.APlus) orelse
                         (operator = Mil.Prims.ATimes) orelse
                         (operator = Mil.Prims.AMinus))
       val () = require (Vector.length args = 2)
-             
-      val x = Vector.sub (args, 0) 
+
+      val x = Vector.sub (args, 0)
       val y = Vector.sub (args, 1)
       val xIsAffineVar = isAffineVar (state, env, affineVars, x)
       val yIsAffineVar = isAffineVar (state, env, affineVars, y)
       val xIsInvariant = isInvariant (state, env, info, x)
       val yIsInvariant = isInvariant (state, env, info, y)
 
-     (* note that - is not commutative, we only - in the form i' = i - a, thus 
+     (* note that - is not commutative, we only - in the form i' = i - a, thus
         put a check in here *)
       val implies = fn (x, y) => ((not x) orelse y)
-      val () = 
+      val () =
           case operator
            of Mil.Prims.AMinus => require ((bool xIsAffineVar) andalso yIsInvariant)
             | _                => ()
@@ -685,11 +685,11 @@ val hasTwoTargets : (({select  : M.selector,
         val E {config, loopInfo, ...} = env
         val LI {loopHeader, dependencyInfo, ...} = info
         val inductionVars = ML.getInductionVariables (loopInfo, loopHeader)
-        val justBaseVars = fn x => case x 
+        val justBaseVars = fn x => case x
                                   of ML.BIV {variable, ...}
                                        => SOME variable
-                                   | _ => NONE 
-        val baseIVs = List.keepAllMap (inductionVars, justBaseVars)  
+                                   | _ => NONE
+        val baseIVs = List.keepAllMap (inductionVars, justBaseVars)
 
         (* check just one desintation *)
         val () = require (Vector.length dests = 1)
@@ -705,7 +705,7 @@ val hasTwoTargets : (({select  : M.selector,
         val () = require (Vector.length args = 2)
         val (arg1, arg2) = (Vector.sub(args, 0), Vector.sub(args, 1))
 
-        val varIsNotBIV = 
+        val varIsNotBIV =
          fn var => (not (List.exists (baseIVs, fn v => I.variableEqual(var, v))))
         (* Returns true if the operand is a parameter variable, else false *)
         val argIsParamVar : M.operand -> bool =
@@ -717,7 +717,7 @@ val hasTwoTargets : (({select  : M.selector,
                      in
                        var
                      end))
-             
+
         (* select the argument which is a parameter variable *)
         val identifyParamArg = identifyInPair argIsParamVar
         val ((argParam, _), _) = <- (identifyParamArg (arg1, arg2))
@@ -732,8 +732,8 @@ val hasTwoTargets : (({select  : M.selector,
            parameter that appears in the rhs of this instruction *)
         (* check each dependency cycle *)
         val rec checkCycle =
-         fn xs => 
-            (case xs 
+         fn xs =>
+            (case xs
               of []      => false
                | (x::xs) =>
                  let
@@ -747,27 +747,27 @@ val hasTwoTargets : (({select  : M.selector,
       in
         paramVar
       end)
-                          
- (* /tagInstructions/ - Tag each instruction with whether it should be 
+
+ (* /tagInstructions/ - Tag each instruction with whether it should be
                         vectorized, or if it is affine *)
- val tagInstructions : (state * env * info * Mil.instruction vector * Mil.variable vector * tagEnv) -> tagEnv = 
+ val tagInstructions : (state * env * info * Mil.instruction vector * Mil.variable vector * tagEnv) -> tagEnv =
    fn (state, env, info, instrs, parameters, tagEnv) =>
        let
          (* /tagInstruction/ *)
-         val tagInstruction = 
+         val tagInstruction =
           fn (instr, tagEnv) =>
-             let 
+             let
                val {affineVars, tags, minSize, maxSize} = tagEnv
                val Mil.I {dests, n, rhs} = instr
                val bitSize = varBitSize (state, env, dests)
-               val tag = 
+               val tag =
                    case (rhsIsAffine (state, env, info, rhs, affineVars))
                     of SOME var => TagAffine
-                     | NONE => 
+                     | NONE =>
                        (case (instrIsReduction (state, env, info, parameters, instr))
                          of SOME var => TagReduction
                           | NONE     => TagSimple)
-               val affineVars = 
+               val affineVars =
                    case tag
                     of TagAffine    => VS.insertList (affineVars, Vector.toList dests)
                      | TagReduction => affineVars
@@ -790,19 +790,19 @@ val hasTwoTargets : (({select  : M.selector,
 
  (* /tagBlocks/ tags a label dict of blocks returns a label dict of tagged
      instruction lists *)
- val tagBlocks : (state * env * info * (Mil.block LD.t)) -> tagEnv = 
+ val tagBlocks : (state * env * info * (Mil.block LD.t)) -> tagEnv =
    fn (state, env, info, blocks) =>
     let
       val E {loopInfo, ...} = env
 
       (* /justBaseVars/ is used by tagBlocks to filter induction vars to get just
                            the base induction vars *)
-      val justBaseVars = fn x => case x 
+      val justBaseVars = fn x => case x
                                   of ML.BIV {variable, ...}
                                        => SOME variable
-                                   | _ => NONE        
+                                   | _ => NONE
 
-      val tagBlock = 
+      val tagBlock =
        fn (label, block, tagEnv) =>
           let
             val Mil.B {parameters, instructions, transfer} = block
@@ -819,11 +819,11 @@ val hasTwoTargets : (({select  : M.selector,
 
       val tagEnv = {affineVars = VS.empty,
                     tags = ID.empty,
-                    minSize = MU.ValueSize.numBits MU.ValueSize.maxSize, 
+                    minSize = MU.ValueSize.numBits MU.ValueSize.maxSize,
                     maxSize = 0}
 
       val tagEnv = LD.fold (blocks, tagEnv, tagBlock)
-    in          
+    in
       tagEnv
     end
 
@@ -832,11 +832,11 @@ val hasTwoTargets : (({select  : M.selector,
      let
        val E {config, ...} = env
        val symTableM = stateGetSymTableM state
-       val si = I.SymbolInfo.SiManager symTableM 
-  
-       val printInstruction = 
+       val si = I.SymbolInfo.SiManager symTableM
+
+       val printInstruction =
         fn instr =>
-           let 
+           let
              val M.I {dests, n, rhs} = instr
              val instrL = MilLayout.layoutInstruction (config, si, instr)
              val tagL =
@@ -848,7 +848,7 @@ val hasTwoTargets : (({select  : M.selector,
          in
            LU.printLayout (L.seq [instrL, tagL])
          end
-           
+
        val printBlock = fn (label, block) =>
            let val () = print ((I.labelString (label))^ ":\n")
                val M.B {parameters, instructions, transfer} = block
@@ -856,8 +856,8 @@ val hasTwoTargets : (({select  : M.selector,
            in
                ()
            end
-       val _ = LD.map (blocks, printBlock)       
-     in                               
+       val _ = LD.map (blocks, printBlock)
+     in
        ()
      end
 
@@ -869,7 +869,7 @@ val hasTwoTargets : (({select  : M.selector,
      in
        LU.printLayout layout
      end
- 
+
  (* -------------------------------------------------------------------------- *)
  (*  Depth 3.1 : Actual vectorization stage. Here the vectorization demands    *)
  (*              generated at depth 3.0 are satisfied                          *)
@@ -899,8 +899,8 @@ val hasTwoTargets : (({select  : M.selector,
                           that is related to another, with some tag *)
   val mkRelatedVectorVar : (state * env * info * M.variable * string) -> M.variable option =
    fn (state, env, info, var, tag) =>
-      try (fn () => 
-              let 
+      try (fn () =>
+              let
                 val symTableM = stateGetSymTableM state
                 val M.VI {typ, kind} = SymTableM.variableInfo (symTableM, var)
                 val typ' = <@ mkVectorType (env, info, typ)
@@ -912,8 +912,8 @@ val hasTwoTargets : (({select  : M.selector,
 
   val mkRelatedVectorMaskVar : (state * env * info * M.variable * string) -> M.variable option =
    fn (state, env, info, var, tag) =>
-      try (fn () => 
-              let 
+      try (fn () =>
+              let
                 val symTableM = stateGetSymTableM state
                 val M.VI {typ, kind} = SymTableM.variableInfo (symTableM, var)
                 val typ' = <@ mkVectorMaskType (env, info, typ)
@@ -927,7 +927,7 @@ val hasTwoTargets : (({select  : M.selector,
                     note: with the type preserved *)
   val mkRelatedVar : (state * M.variable * string) -> M.variable =
      fn (state, var, tag) =>
-       let 
+       let
          val symTableM = stateGetSymTableM state
           val info = SymTableM.variableInfo (symTableM, var)
           val var' = SymTableM.variableRelated (symTableM, var, tag, info)
@@ -938,7 +938,7 @@ val hasTwoTargets : (({select  : M.selector,
   (* /mkFreshVar/ Create a fresh variable + tag *)
   val mkFreshVar : (state * string * M.variableKind * Mil.typ) -> M.variable =
      fn (state, tag, kind, typ) =>
-      let 
+      let
         val symTableM = stateGetSymTableM state
         val info = M.VI {typ = typ, kind = kind}
         val var = SymTableM.variableFresh (symTableM, tag, info)
@@ -947,47 +947,47 @@ val hasTwoTargets : (({select  : M.selector,
       end
 
   (* /mkFreshLocalVar/ Create a fresh local variable + tag *)
-  val mkFreshLocalVar : (state * string * Mil.typ) -> M.variable = 
+  val mkFreshLocalVar : (state * string * Mil.typ) -> M.variable =
      fn (state, tag, typ) => mkFreshVar (state, tag, M.VkLocal, typ)
 
   (* /mkFreshGlobalVar/ Create a fresh global variable + tag *)
-  val mkFreshGlobalVar : (state * string * Mil.typ) -> M.variable = 
+  val mkFreshGlobalVar : (state * string * Mil.typ) -> M.variable =
      fn (state, tag, typ) => mkFreshVar (state, tag, M.VkGlobal, typ)
 
-  val addGlobal : (state * M.variable * M.global) -> unit = 
-   fn (state, v, g) => 
+  val addGlobal : (state * M.variable * M.global) -> unit =
+   fn (state, v, g) =>
       let
         val globals = stateGetGlobals state
         val () = globals := (v, g) :: !globals
       in ()
       end
 
-  (* /ratToConstant/ takes a mlton rat, an numeric type, and produces 
+  (* /ratToConstant/ takes a mlton rat, an numeric type, and produces
       a mil operand representing the rat at the given type *)
   val ratToConstant : state * Rat.t * Mil.Prims.numericTyp -> Mil.operand option =
     fn (state, n, nt) =>
-       try (fn () => 
+       try (fn () =>
                (case nt
-                 of MP.NtRat => 
+                 of MP.NtRat =>
                     let
                       val v = mkFreshGlobalVar (state, "rat", M.TNumeric nt)
                       val g = M.GRat n
                       val () = addGlobal (state, v, g)
                     in M.SVariable v
                     end
-                  | MP.NtInteger MP.IpArbitrary => 
+                  | MP.NtInteger MP.IpArbitrary =>
                     let
                       val v = mkFreshGlobalVar (state, "int", M.TNumeric nt)
                       val g = M.GInteger (<@ Rat.toIntInf n)
                       val () = addGlobal (state, v, g)
                     in M.SVariable v
                     end
-                  | MP.NtInteger (MP.IpFixed arb) => 
+                  | MP.NtInteger (MP.IpFixed arb) =>
                     M.SConstant (Mil.CIntegral (IA.fromIntInf (arb, <@ Rat.toIntInf n)))
                   | MP.NtFloat _ => Try.fail ()))
-               
+
   val constantToRat : Mil.constant -> Rat.t option =
-   Try.lift (fn c => 
+   Try.lift (fn c =>
                 case c
                  of M.CRat r      => Rat.fromIntInf r
                   | M.CInteger i  => Rat.fromIntInf i
@@ -996,7 +996,7 @@ val hasTwoTargets : (({select  : M.selector,
 
   (* /liftSimple/ - takes a simple and makes a constant vector of the simple *)
   val liftSimple : (state * env * info * M.simple * M.variable option) ->
-                   (M.variable * M.instruction) option = 
+                   (M.variable * M.instruction) option =
    fn (state, env, info, simple, relatedVar) =>
     try (fn () =>
       let
@@ -1007,10 +1007,10 @@ val hasTwoTargets : (({select  : M.selector,
 
         val descriptor = <@ mkVDescriptor (env, info, typ)
         val typV = <@ mkVectorType (env, info, typ)
-                
-        val var = 
+
+        val var =
             case relatedVar
-             of SOME rVar => 
+             of SOME rVar =>
                 (case mkRelatedVectorVar (state, env, info, rVar, "vlift")
                   of SOME v => v
                    | NONE   => mkFreshLocalVar (state, "vlift", typV))
@@ -1031,7 +1031,7 @@ val hasTwoTargets : (({select  : M.selector,
       end)
 
   (* /vectorizeSimple'/ - Given a simple, and a possible variable, generate the instruction
-                          that binds its vectorization. An optional variable provides 
+                          that binds its vectorization. An optional variable provides
                           a variable for the new binder to be related to *)
   val vectorizeSimple' : (state * env * info * M.simple * M.variable option * vectorRenamings) ->
                          ((M.variable * instruction list) * vectorRenamings) option =
@@ -1052,17 +1052,17 @@ val hasTwoTargets : (({select  : M.selector,
                    of SOME varV =>
                       let
                         (* build the instruction with a related var if given, or fresh var *)
-                        val bindVarV = 
-                            case bindVar 
+                        val bindVarV =
+                            case bindVar
                              of SOME bindVar' => <@ mkRelatedVectorVar (state, env, info, bindVar', "vres")
                               | NONE          => mkFreshLocalVar (state, "vres", typV)
-                        val instrV = M.I {dests = Vector.new1 bindVarV, 
+                        val instrV = M.I {dests = Vector.new1 bindVarV,
                                           n = 0,
                                           rhs = M.RhsSimple (M.SVariable varV)}
                       in (bindVarV, instrV)
                       end
                         (* vectorized does not exist - if invariant then lift *)
-                    | NONE      => 
+                    | NONE      =>
                       if (isInvariantVar (state, env, info, var)) then
                         <@ liftSimple (state, env, info, simple, bindVar)
                       else
@@ -1071,11 +1071,11 @@ val hasTwoTargets : (({select  : M.selector,
                 | M.SConstant _    => <@ liftSimple (state, env, info, simple, bindVar)
 
           (* If vectorizing from a definition, update the vectorized versions map *)
-          val vectorDefs = 
-              case bindVar 
+          val vectorDefs =
+              case bindVar
                 of (SOME bindVar') => Rename.renameTo (vectorDefs, bindVar', bindVarV)
                  | NONE            => vectorDefs
-          val vectorRenamings = {vectorDefs = vectorDefs, 
+          val vectorRenamings = {vectorDefs = vectorDefs,
                                  affineBases = affineBases,
                                  reductionDefs = reductionDefs,
                                  reductionInfos = reductionInfos}
@@ -1095,17 +1095,17 @@ val hasTwoTargets : (({select  : M.selector,
 
        val bindVar = SOME (Vector.sub (dests, 0))
        val simple = <- (MU.Rhs.Dec.rhsSimple rhs)
- 
+
        val ((varV, instrsV), defs') = <@ vectorizeSimple' (state, env, info, simple, bindVar, defs)
       in
        (instrsV, defs')
-      end)  
+      end)
 
   (* /vectorizeSimpleAffine/ *)
   val vectorizeSimpleAffine : (state * env * info * instruction * vectorRenamings) ->
                               (instruction list * vectorRenamings) option =
    fn (state, env, info, instr, vectorRenamings) =>
-     try (fn () => 
+     try (fn () =>
         let
           val symTableM = stateGetSymTableM state
           (* Desctruct instruction *)
@@ -1148,7 +1148,7 @@ val hasTwoTargets : (({select  : M.selector,
   (* /canVectorizePrim/ - Predicate that tests is a prim can be vectorized-
      This may be developed further to adapt to a particular architectures
      available instructions *)
-  val canVectorizePrim : (state * env * Mil.Prims.prim) -> bool = 
+  val canVectorizePrim : (state * env * Mil.Prims.prim) -> bool =
     fn (state, env, prim) =>
       case prim
         (* todo: 11/5/10 vectorizing comparisons is tricky and needs more thought about how
@@ -1167,7 +1167,7 @@ val hasTwoTargets : (({select  : M.selector,
 
   (* /vectorizePrim/ - Performs simple vectorization of a prim instruction *)
   val vectorizePrim : (state * env * info * M.instruction * vectorRenamings)
-                      -> (Mil.instruction list * vectorRenamings) option = 
+                      -> (Mil.instruction list * vectorRenamings) option =
      fn (state, env, info, instr, defs) =>
        try (fn () =>
         let
@@ -1177,7 +1177,7 @@ val hasTwoTargets : (({select  : M.selector,
           (* Deconstruct instruction *)
           val M.I {dests, n, rhs} = instr
           val () = require ((Vector.length dests) = 1)
-          val bindVar = Vector.sub (dests, 0) 
+          val bindVar = Vector.sub (dests, 0)
 
           (* Deconstruct the prim *)
           val {prim, createThunks, typs, args} = <- (MU.Rhs.Dec.rhsPrim rhs)
@@ -1188,7 +1188,7 @@ val hasTwoTargets : (({select  : M.selector,
           val () = require (canVectorizePrim (state, env, primOp))
 
           (* Produce instructions for the vector version of each argument *)
-          val vectorizeArg = fn (arg, defs) =>   
+          val vectorizeArg = fn (arg, defs) =>
                                 case (vectorizeSimple' (state, env, info, arg, NONE, defs))
                                  of SOME (arg', defs') => (SOME arg', defs')
                                   | NONE               => (NONE, defs)
@@ -1205,7 +1205,7 @@ val hasTwoTargets : (({select  : M.selector,
           (* Build the vector primitive *)
           val typ = variableType (state, env, bindVar)
           val vDescriptor = <@ mkVDescriptor (env, info, typ)
-          val vPrimOp = 
+          val vPrimOp =
               case primOp
                of Mil.Prims.PNumArith _ =>
                   Mil.Prims.ViPointwise {descriptor = vDescriptor,
@@ -1240,25 +1240,25 @@ val hasTwoTargets : (({select  : M.selector,
                                               typ = from}}
                   end
                 | Mil.Prims.PBitwise _ =>
-                  Mil.Prims.ViPointwise {descriptor = vDescriptor, 
+                  Mil.Prims.ViPointwise {descriptor = vDescriptor,
                                          masked = false,
                                          operator = primOp}
                 | Mil.Prims.PBoolean _ =>
-                  Mil.Prims.ViPointwise {descriptor = vDescriptor, 
+                  Mil.Prims.ViPointwise {descriptor = vDescriptor,
                                          masked = false,
                                          operator = primOp}
                 | Mil.Prims.PCondMov =>
-                  Mil.Prims.ViData {descriptor = vDescriptor, 
+                  Mil.Prims.ViData {descriptor = vDescriptor,
                                     operator = Mil.Prims.DBlend }
                 | _ => Try.fail ()
-                           
+
           (* Build the new vectorized instruction *)
           (* val bindVarV = <@ mkRelatedVectorVar (state, env, info, bindVar, "vres") *)
-          val bindVarV = 
+          val bindVarV =
               case primOp
                of Mil.Prims.PNumCompare _ => <@ mkRelatedVectorMaskVar (state, env, info, bindVar, "vres")
                 | _ => <@ mkRelatedVectorVar (state, env, info, bindVar, "vres")
-          val typs = case vPrimOp 
+          val typs = case vPrimOp
                        of Mil.Prims.ViData _ => Vector.new1 typ
                         | _ => Vector.new0 ()
           val vRhs = M.RhsPrim {prim = Mil.Prims.Vector vPrimOp,
@@ -1272,10 +1272,10 @@ val hasTwoTargets : (({select  : M.selector,
           (* Update the mapping of bindings to their vectorized binding *)
           val {vectorDefs, affineBases, reductionDefs, reductionInfos} = defs
           val vectorDefs = Rename.renameTo (vectorDefs, bindVar, bindVarV)
-          val defs = {vectorDefs = vectorDefs, 
+          val defs = {vectorDefs = vectorDefs,
                       affineBases = affineBases,
                       reductionDefs = reductionDefs,
-                      reductionInfos = reductionInfos}                   
+                      reductionInfos = reductionInfos}
         in
           (vArgInstrs @ [vInstr], defs)
         end)
@@ -1289,7 +1289,7 @@ val hasTwoTargets : (({select  : M.selector,
 
   (* /vectorizePrimAffine/ - Performs vectorization of an affine prim instruction *)
   val vectorizePrimAffine : (state * env * info * M.instruction * vectorRenamings)
-                            -> (Mil.instruction list * vectorRenamings) option = 
+                            -> (Mil.instruction list * vectorRenamings) option =
    fn (state, env, info, instr, defs) =>
      try (fn () =>
        let
@@ -1308,7 +1308,7 @@ val hasTwoTargets : (({select  : M.selector,
          (* sanity check, exactly 2 arguments *)
          val () = require (Vector.length args = 2)
          val (arg1, arg2) = (Vector.sub (args, 0), Vector.sub (args, 1))
-                                          
+
          val ((affVarArg, otherArg), reorderArgs) = <@ (identifyAffineVar affineBases) (arg1, arg2)
          val affVar = <@ MU.Simple.Dec.sVariable affVarArg
 
@@ -1323,11 +1323,11 @@ val hasTwoTargets : (({select  : M.selector,
               of (Mil.Prims.PNumArith {operator = Mil.Prims.ATimes, ...}) =>
                  let
                    (* produce a vector version of the other arg *)
-                   val ((otherArgV, otherArgInstrs), defs) = 
+                   val ((otherArgV, otherArgInstrs), defs) =
                        <@ vectorizeSimple' (state, env, info, otherArg, NONE, defs)
                    (* put the new arguments in the right order *)
                    val (arg1', arg2') = reorderArgs (M.SVariable affineBasis, M.SVariable otherArgV)
-                   val vDescriptor = <@ mkVDescriptor (env, info, typ)                            
+                   val vDescriptor = <@ mkVDescriptor (env, info, typ)
                    val primA = Mil.Prims.ViPointwise {descriptor = vDescriptor,
                                                       masked = false,
                                                       operator = primOp}
@@ -1378,12 +1378,12 @@ val hasTwoTargets : (({select  : M.selector,
                      prim = Mil.Prims.Vector primOpV,
                      createThunks = false,
                      typs = Vector.new0 (),
-                     args = Vector.new2 (Mil.SVariable varA, 
+                     args = Vector.new2 (Mil.SVariable varA,
                                          Mil.SVariable varL)}
          val varV = <@ mkRelatedVectorVar (state, env, info, bindVar, "vres")
          val instrV = Mil.I {dests = Vector.new1 varV,
                              n = 0,
-                             rhs = rhsV}     
+                             rhs = rhsV}
 
          (* Update the mapping of affine bases *)
          val affineBases = Rename.renameTo (affineBases, bindVar, varA)
@@ -1393,16 +1393,16 @@ val hasTwoTargets : (({select  : M.selector,
                      reductionDefs = reductionDefs,
                      reductionInfos = reductionInfos}
          val instrs = instrsA @ [instrL, instrV]
-               
+
        in
          (instrs, defs)
        end)
 
   (* /vectorizeFieldIdentifier/ Compute a new field for tuple subscripting and setting.
-                                If the index is to the fixed part of a tuple, or the 
+                                If the index is to the fixed part of a tuple, or the
                                 index is to a variable part as is constant or loop invariant,
                                 then return NONE, i.e. no new field identifier for vectorized version
-                                                      
+
                                 If the index is to the variable part and is a unit stride affine
                                 variable then construct an FiViVariable field. If the index is
                                 non-affine construct a M.FiViIndexed field, indexing by a vector *)
@@ -1420,14 +1420,14 @@ val hasTwoTargets : (({select  : M.selector,
            val M.FD {kind, ...} = <- array
            val vDescriptor = <@ mkVDescriptorFS (env, info, MU.FieldKind.fieldSize (getConfig env, kind))
          in
-           case field 
+           case field
             of M.FiFixed i => SOME (M.FiVectorFixed {descriptor = vDescriptor,
                                                      mask = NONE,
                                                      index = i})
              | M.FiVariable (M.SConstant c) =>  Try.fail ()
               (* ^^^ todo: Check if arrayVar has a vector version
                if so generate a FiVectorVariable where c is lifted *)
-             | M.FiVariable (M.SVariable v) => 
+             | M.FiVariable (M.SVariable v) =>
                let
                  (* base depends upon whether our array variable has a vector
                   * version (i.e. we have already done some vectorization and now have
@@ -1450,11 +1450,11 @@ val hasTwoTargets : (({select  : M.selector,
                                                                 mask = NONE,
                                                                 index = M.SVariable v,
                                                                 kind = M.VikStrided i})
-                          | NONE => 
+                          | NONE =>
                           (* non-unit stride (including -1) or invariant var, lookup the vector version *)
                           (* and index by the vector *)
-                          let 
-                            val varV = <- (Rename.use' (vectorDefs, v))               
+                          let
+                            val varV = <- (Rename.use' (vectorDefs, v))
                           in SOME (M.FiVectorVariable {descriptor = vDescriptor,
                                                        base = base,
                                                        mask = NONE,
@@ -1464,7 +1464,7 @@ val hasTwoTargets : (({select  : M.selector,
                end
              | _ => Try.fail ()(* don't allow other field types so hard fail here *)
          end)
-       
+
   (* /vectorizeArrayLoad/ *)
   val vectorizeArrayLoad : (state * env * info * M.instruction * vectorRenamings)
                            -> (instructions * vectorRenamings) option =
@@ -1486,7 +1486,7 @@ val hasTwoTargets : (({select  : M.selector,
          val field' = <@ vectorizeFieldIdentifier (state, env, info, tupDesc, tup, field, vRenamings)
 
          (* build the new instruction *)
-         val (varV, instrV) = 
+         val (varV, instrV) =
              case field'
               of NONE =>
                  (* if no new field, then is constant/invariant index
@@ -1504,47 +1504,47 @@ val hasTwoTargets : (({select  : M.selector,
                                    | Mil.TbScalar => tup
                    val varV = <@ mkRelatedVectorVar (state, env, info, dest, "vrez")
                    val rhsV = M.RhsTupleSub (M.TF {tupDesc = tupDesc,
-                                                   tup = tupVar', 
+                                                   tup = tupVar',
                                                    field = field'})
                    val instrV = M.I {dests = Vector.new1 varV,
                                      n = 0,
                                      rhs = rhsV}
                  in (varV, instrV)
                  end
-                             
+
          val vectorDefs = Rename.renameTo (vectorDefs, dest, varV)
          val vRenamings = {vectorDefs = vectorDefs,
                            affineBases = affineBases,
                            reductionDefs = reductionDefs,
-                           reductionInfos = reductionInfos} 
+                           reductionInfos = reductionInfos}
        in
          ([instrV], vRenamings)
        end)
 
   (* /vectorizeArrayStore/ *)
   val vectorizeArrayStore : (state * env * info * M.instruction * vectorRenamings)
-                            -> (instructions * vectorRenamings) option = 
+                            -> (instructions * vectorRenamings) option =
     fn (state, env, info, instr, vRenamings) =>
       try (fn () =>
-       let                   
+       let
          val E {config, loopInfo, ...} = env
          val LI {loopHeader, ...} = info
          val symTableM = stateGetSymTableM state
-         val si = I.SymbolInfo.SiManager symTableM  
+         val si = I.SymbolInfo.SiManager symTableM
 
          (* Destruct instruction *)
          val M.I {dests, n, rhs} = instr
          val {tupField, ofVal} = <@ MU.Rhs.Dec.rhsTupleSet rhs
          val M.TF {tupDesc, tup, field} = tupField
-          
+
          val field' = <@ vectorizeFieldIdentifier (state, env, info, tupDesc, tup, field, vRenamings)
 
-         val liftConstantOrInvariant : (M.fieldIdentifier * M.simple * vectorRenamings) 
-                                       -> (instruction list * vectorRenamings) option = 
+         val liftConstantOrInvariant : (M.fieldIdentifier * M.simple * vectorRenamings)
+                                       -> (instruction list * vectorRenamings) option =
           fn (field', simple, vRenamings) =>
-             try (fn () =>                  
-                     let 
-                       val ((varV, valInstrs), vRenamings') = 
+             try (fn () =>
+                     let
+                       val ((varV, valInstrs), vRenamings') =
                            <@ vectorizeSimple' (state, env, info, simple, NONE, vRenamings)
                        val rhs' = M.RhsTupleSet {tupField = M.TF {tupDesc = tupDesc,
                                                                   tup = tup,
@@ -1557,7 +1557,7 @@ val hasTwoTargets : (({select  : M.selector,
                        (valInstrs @ [instr'], vRenamings')
                      end)
        in
-         case field' 
+         case field'
           of NONE => Try.fail ()
             (* if no new field, then is constant/invariant index
              * thus- which would cause mutability which we want
@@ -1566,7 +1566,7 @@ val hasTwoTargets : (({select  : M.selector,
            | SOME field' =>
              (case ofVal
                of M.SConstant c => <@ liftConstantOrInvariant (field', ofVal, vRenamings)
-                | M.SVariable v => 
+                | M.SVariable v =>
                   if isInvariantVar (state, env, info, v) then
                     <@ liftConstantOrInvariant (field', ofVal, vRenamings)
                   else
@@ -1587,7 +1587,7 @@ val hasTwoTargets : (({select  : M.selector,
 
   (* /vectorizeReduction/ - Vectorize a reduction instruction *)
   val vectorizeReduction : (state * env * info * M.instruction * vectorRenamings)
-                            -> (instructions * vectorRenamings) option = 
+                            -> (instructions * vectorRenamings) option =
     fn (state, env, info, instruction, defs) =>
       try (fn () =>
        let
@@ -1614,17 +1614,17 @@ val hasTwoTargets : (({select  : M.selector,
 
         (* Returns true if the operand is the parameter variable, else false *)
         val argIsParamVar : M.operand -> bool =
-         fn arg => 
+         fn arg =>
             (case arg
               of M.SVariable var => I.variableEqual(paramVar, var)
                | M.SConstant _   => false)
-             
+
         val identifyParamArg = identifyInPair argIsParamVar
         (* select the argument which is a parameter variable *)
         val ((argParam, argX), reorderArgs) = <@ identifyParamArg (arg1, arg2)
         (*val () = print "identified args\n"*)
 
-        (* see if we have already renamed it to a vector version *) 
+        (* see if we have already renamed it to a vector version *)
         val paramVarV = case Rename.use'(reductionDefs, paramVar)
                          of SOME paramVarV => paramVarV
                           | NONE           => <@ mkRelatedVectorVar (state, env, info, paramVar, "reduxv")
@@ -1638,7 +1638,7 @@ val hasTwoTargets : (({select  : M.selector,
 
         (*val () = print "vectorized the other param\n"*)
 
-                                                   
+
         (* build vector reduction instruction *)
         val vArgs = Vector.new2 (reorderArgs (argParamV, argXV))
         val typ = variableType (state, env, bindVar)
@@ -1663,7 +1663,7 @@ val hasTwoTargets : (({select  : M.selector,
         val reductionDefs = (case Rename.use'(reductionDefs, paramVar)
                               of SOME paramVarV => reductionDefs
                                | NONE => Rename.renameTo(reductionDefs, paramVar, paramVarV))
-         
+
         (*val () = print "did environment stuff\n"*)
 
         val reductionInfo = {reduxNextVar = bindVar,
@@ -1684,26 +1684,26 @@ val hasTwoTargets : (({select  : M.selector,
   val vectorizeInstruction : (state * env * info * tags * M.instruction * Rename.t * vectorRenamings) ->
                              (Mil.instruction list * vectorRenamings) option =
    fn (state, env, info, tags, instr, lastValues, vRenamings) =>
-      try (fn () => 
+      try (fn () =>
        let
          val Mil.I {dests, n, rhs} = instr
          val failDebug = Config.debug andalso (whyFail (getConfig env))
          val () = if failDebug then print ("[V] "^(Int.toString n)^": vectorizing...") else ()
          val tag = <@ ID.lookup (tags, n)
          (* select the function to vectorize the rhs *)
-         val vectorFun = 
-             case rhs 
+         val vectorFun =
+             case rhs
               of (M.RhsSimple _) =>
-                 (case tag 
+                 (case tag
                    of TagSimple    => vectorizeSimple
                     | TagAffine    => vectorizeSimpleAffine
                     | TagReduction => Try.fail () (* shouldn't tag a simple as reduction *))
                | (M.RhsPrim _) =>
                  (case tag
-                   of TagSimple    => vectorizePrim 
+                   of TagSimple    => vectorizePrim
                     | TagAffine    => vectorizePrimAffine
                     | TagReduction => vectorizeReduction)
-                 
+
                | (M.RhsTupleSub _) => vectorizeArrayLoad
                | (M.RhsTupleSet _) => vectorizeArrayStore
                | _                 => Try.fail ()
@@ -1715,7 +1715,7 @@ val hasTwoTargets : (({select  : M.selector,
    (* ----------------------------------------------------------------------- *)
 
  (* /lastValueSimple'/ - Build the last value for a mil simple, companion to
-                          lastValueSimple below which builds the whole last 
+                          lastValueSimple below which builds the whole last
                           value instruction *)
   val lastValueSimple' : (state * env * info * M.simple * Rename.t) ->
                           M.simple option =
@@ -1723,7 +1723,7 @@ val hasTwoTargets : (({select  : M.selector,
      try (fn () =>
             case simple
                of M.SVariable var => <-
-                   (case (Rename.use' (lastValues, var)) 
+                   (case (Rename.use' (lastValues, var))
                       of SOME varL => SOME (M.SVariable varL)
                        | NONE =>
                            (* If invariant, variable is always last value *)
@@ -1756,7 +1756,7 @@ val hasTwoTargets : (({select  : M.selector,
   (* /lastValuePrim/ create new instructions for the last value calculation of a prim
                       instruction *)
   val lastValuePrim : (state * env * info * M.instruction * Rename.t)
-                      -> (instructions * Rename.t) option = 
+                      -> (instructions * Rename.t) option =
     fn (state, env, info, instr, lastValues) =>
       try (fn () =>
         let
@@ -1779,28 +1779,28 @@ val hasTwoTargets : (({select  : M.selector,
           val lastValues' = Rename.renameTo(lastValues, bindVar, varL)
         in
           ([instrL], lastValues')
-        end)         
+        end)
 
 
   (* /lastArrayLoad/ *)
   val lastArrayLoad : (state * env * info * instruction * Rename.t) ->
-                      (instruction list * Rename.t) option = 
+                      (instruction list * Rename.t) option =
     fn (state, env, info, instr, lastValues) =>
       try (fn () =>
        let
          (* Destruct instruction *)
          val M.I {dests, n, rhs} = instr
-         val M.TF {tupDesc, tup, field} = <- (MU.Rhs.Dec.rhsTupleSub rhs) 
+         val M.TF {tupDesc, tup, field} = <- (MU.Rhs.Dec.rhsTupleSub rhs)
          val () = require ((Vector.length dests) = 1)
          val bindVar = Vector.sub (dests, 0)
-         
+
          val varL = mkRelatedVar (state, bindVar, "last")
-         val field' = 
+         val field' =
              case field
               of M.FiFixed i => M.FiFixed i
                | M.FiVariable operand =>
                  let
-                   val operand' = 
+                   val operand' =
                        <@ lastValueSimple' (state, env, info, operand, lastValues)
                  in M.FiVariable operand'
                  end
@@ -1809,15 +1809,15 @@ val hasTwoTargets : (({select  : M.selector,
                                          tup = tup,
                                          field = field'})
          val instrL = M.I {dests = Vector.new1 varL, n = n, rhs = rhsL}
-         val lastValues' = Rename.renameTo(lastValues, bindVar, varL)                      
+         val lastValues' = Rename.renameTo(lastValues, bindVar, varL)
        in
          ([instrL], lastValues')
        end)
 
-  (* /lastValueInstruction/ for an instruction computes the last value at the end of 
+  (* /lastValueInstruction/ for an instruction computes the last value at the end of
                             a vector iteration *)
   val lastValueInstruction : (state * env * info * tags * M.instruction * Rename.t) ->
-                             (Mil.instruction list * Rename.t) option = 
+                             (Mil.instruction list * Rename.t) option =
     fn (state, env, info, tags, instr, lastValues) =>
       try (fn () =>
        let
@@ -1829,7 +1829,7 @@ val hasTwoTargets : (({select  : M.selector,
        in
          case tag
            of TagReduction => ([], lastValues)
-            | _ => 
+            | _ =>
               case rhs
                of (M.RhsSimple _)   => <@ lastValueSimple (state, env, info, instr, lastValues)
                 | (M.RhsPrim _)     => <@ lastValuePrim (state, env, info, instr, lastValues)
@@ -1843,7 +1843,7 @@ val hasTwoTargets : (({select  : M.selector,
    (* ----------------------------------------------------------------------- *)
    (*   END OF Last value calculations                                        *)
    (* ----------------------------------------------------------------------- *)
-              
+
 
  (* /transformInstructions *)
  val transformInstructions : (state * env * info * tags *
@@ -1873,13 +1873,13 @@ val hasTwoTargets : (({select  : M.selector,
            case (lastValueInstruction (state, env, info, tags, instr, lastVals))
                 of SOME (instrs, lastVals') => let val () = if failDebug then print "ok\n" else ()
                                                in (SOME instrs, lastVals')
-                                               end 
+                                               end
                  | NONE                     => let val () = if failDebug then print "fail\n" else ()
                                                in (NONE, lastVals)
                                                end
-      
+
       (* Process the scalars striping out tuple sets *)
-      val scalars : instruction -> (instructions option) = 
+      val scalars : instruction -> (instructions option) =
           fn instr =>
              let val M.I {dests, n, rhs} = instr
                  val tag = <- (ID.lookup(tags, n))
@@ -1900,16 +1900,16 @@ val hasTwoTargets : (({select  : M.selector,
 
       val instrsS = List.map (instrs, scalars)
       val instrsS' = <- (distribute instrsS)
-     
+
      in
       (instrsS', instrsV', instrsL', (genDefs', lastValues'))
      end)
 
 
  (* /signedType/ returns SOME true if a type is numeric and signed
-                         SOME false if a type is numeric and unsigned 
+                         SOME false if a type is numeric and unsigned
                          NONE if a type is not numeric *)
- val signedType : Mil.typ -> bool option = 
+ val signedType : Mil.typ -> bool option =
    fn typ =>
      let
         val primSignedTyp : Mil.Prims.numericTyp -> bool option =
@@ -1918,7 +1918,7 @@ val hasTwoTargets : (({select  : M.selector,
                of M.Prims.NtRat => SOME true
                 | M.Prims.NtInteger (M.Prims.IpArbitrary) => SOME true
                 | M.Prims.NtInteger (M.Prims.IpFixed arb) =>
-                          (case arb 
+                          (case arb
                             of IA.T (_, IA.Signed) => SOME true
                              | IA.T (_, IA.Unsigned) => SOME false)
                 | M.Prims.NtFloat _ => SOME true
@@ -1937,7 +1937,7 @@ val hasTwoTargets : (({select  : M.selector,
                              SOME (-rat, false) if the type is unsigned and the rat is -ve
                                                 (thus, the rat returned rat is +ve)
                              SOME (rat, true) if the type is unsigned and the rat is +ve *)
- val addOrSubtractRat : (Rat.t * Mil.typ) -> (Rat.t * bool) option = 
+ val addOrSubtractRat : (Rat.t * Mil.typ) -> (Rat.t * bool) option =
     fn (rat, typ) =>
         let val signed = <- (signedType typ)
         in  if signed then
@@ -1950,19 +1950,19 @@ val hasTwoTargets : (({select  : M.selector,
               else
                 (* unsigned type with +ve rat, use plus with +ve rat *)
                 SOME (rat, true)
-        end       
-    
+        end
+
  (* /vectorizeBIV/ - creates a vector version of a base induction variable *)
  val vectorizeBIV : state * env * info * ML.inductionVariable * vectorRenamings ->
-                    (instructions * vectorRenamings) option = 
-  fn (state, env, info, iv, vRenamings) =>           
+                    (instructions * vectorRenamings) option =
+  fn (state, env, info, iv, vRenamings) =>
     try (fn () =>
        let
          val symTableM = stateGetSymTableM state
           val E {config, ...} = env
           val LI {vectorLength, ...} = info
           val vectorLength = <- vectorLength
-          val si = I.SymbolInfo.SiManager symTableM       
+          val si = I.SymbolInfo.SiManager symTableM
 
           val {vectorDefs, affineBases, reductionDefs, reductionInfos} = vRenamings
           val {variable, init, step} = <- (decBaseInductionVar iv)
@@ -1973,15 +1973,15 @@ val hasTwoTargets : (({select  : M.selector,
 
           (* Lift induction variable *)
           val (varL, instrL) = <@ liftSimple (state, env, info, M.SVariable variable, SOME variable)
-  
+
           (* test if we have +ve/-ve rat and whether the type allows negatives *)
           val (step', useAddition) = <- (addOrSubtractRat (step, ivType))
 
           (* Build step bases *)
-          val computeIndex = 
+          val computeIndex =
            fn n =>
-              let 
-                val i = Rat.*(step', Rat.fromInt n) 
+              let
+                val i = Rat.*(step', Rat.fromInt n)
                 val oper = <- (ratToConstant (state, i, ivNumType))
               in
                 oper
@@ -2005,7 +2005,7 @@ val hasTwoTargets : (({select  : M.selector,
 
           (* chose addition or subtraction *)
           val operator = if useAddition then
-                           Mil.Prims.APlus 
+                           Mil.Prims.APlus
                          else
                            Mil.Prims.ATimes
 
@@ -2039,29 +2039,29 @@ val hasTwoTargets : (({select  : M.selector,
  (* /lastValuBIV/ - create the last value of a base induction variable at the end
                      of a vectorized iteration *)
  val lastValueBIV : state * env * info * ML.inductionVariable * Rename.t ->
-                    (instructions * Rename.t) option = 
+                    (instructions * Rename.t) option =
   fn (state, env, info, iv, lastValues) =>
     try (fn () =>
         let
           val symTableM = stateGetSymTableM state
-          val si = I.SymbolInfo.SiManager symTableM         
+          val si = I.SymbolInfo.SiManager symTableM
           val E {config, ...} = env
           val LI {vectorLength, ...} = info
           val vectorLength = <- vectorLength
-                             
+
           val {variable, init, step} = <@ decBaseInductionVar iv
           (* Induction variable type must be an integral *)
           val ivType = variableType (state, env, variable)
           val ivNumType = <- (MU.Typ.Dec.tNumeric ivType)
-                                              
+
           val info = SymTableM.variableInfo (symTableM, variable)
           val varL = SymTableM.variableRelated (symTableM, variable, "last", info)
-          
+
           (* test if we have +ve/-ve rat and whether the type allows negatives *)
           val (step', useAddition) = <@ addOrSubtractRat (step, ivType)
 
           (* scale the BIV step by the (vector length - 1) *)
-          (* for an IV with step S, the last value is = i + S*(vecLen - 1) *)          
+          (* for an IV with step S, the last value is = i + S*(vecLen - 1) *)
           val step' = Rat.*(step', Rat.fromInt (vectorLength - 1))
           val iterN = <@ ratToConstant (state, step', ivNumType)
 
@@ -2083,7 +2083,7 @@ val hasTwoTargets : (({select  : M.selector,
           val lastValues' = Rename.renameTo (lastValues, variable, varL)
         in
           ([instrL], lastValues')
-        end)                      
+        end)
 
  (* /transformBIV/ :*)
  val transformBIV : (state * env * info * ML.inductionVariable * (vectorRenamings * Rename.t))
@@ -2100,13 +2100,13 @@ val hasTwoTargets : (({select  : M.selector,
  (* /transformBIVs/ - Takes the base induction variables and
       creates vectorized and last value computations, returning a pair
       of each set of instructions (vector and last instructions respectively)
-      as well as dictionary mapping 
+      as well as dictionary mapping
       BIVars to their vector versions and last value versions respectively -
 
       Vectorized and last value calculations for base induction variables are inserted
       before any other instructions from the loop *)
  val transformBIVs : (state * env * info) ->
-                     (instructions list * instructions list * (vectorRenamings * Rename.t)) option = 
+                     (instructions list * instructions list * (vectorRenamings * Rename.t)) option =
   fn (state, env, info) =>
     try (fn () =>
       let
@@ -2116,7 +2116,7 @@ val hasTwoTargets : (({select  : M.selector,
        val justBIVs = fn x => case x of (ML.BIV iv) => SOME (ML.BIV iv) | _ => NONE
        val baseIVs = List.keepAllMap (inductionVars, justBIVs)
 
-       val transformBIV = 
+       val transformBIV =
         fn (iv, renamings) =>
           case transformBIV (state, env, info, iv, renamings)
              of SOME (instrs, renamings') => (SOME instrs, renamings')
@@ -2127,12 +2127,12 @@ val hasTwoTargets : (({select  : M.selector,
                          reductionDefs = Rename.none,
                          reductionInfos = VD.empty}, Rename.none)
        val (instrs, renamings') = U.List.mapFoldl (baseIVs, renamings, transformBIV)
-        
+
        val instrs' = <- (distribute instrs)
        val (vectors, lasts) = List.unzip instrs'
       in
         (vectors, lasts, renamings')
-      end)         
+      end)
 
  (* -------------------------------------------------------------------------- *)
  (*  Depth 1 : Pass over the loop information built by MilLoop, creating a     *)
@@ -2144,47 +2144,47 @@ val hasTwoTargets : (({select  : M.selector,
 
     (* <todo> Provide a way to choose the vector length
                based on the maximum vector length or minimum vector length.
-                max vector length = vector register size/min size 
+                max vector length = vector register size/min size
                 of types in the computation (may require some emulation
                 but can result in higher throughput on some parts of a
                 computation)
               vs.
-                min vector length = vector register size/max size of 
+                min vector length = vector register size/max size of
                 types in the computation (requires no emulation, but
                 may not fully utilise packing at some types) </todo> *)
 
  val calcVectorLen : (state * env * int * int) -> int option =
    fn (state, env, minSize, maxSize) =>
-     let 
+     let
        val E {config, vectorConfig, ...} = env
        val sizes = List.map (PU.VectorConfig.allEnabledSizes vectorConfig, PU.VectorSize.numBits)
        val widths = List.map (sizes, fn sz => sz div maxSize)
-       val widthO = List.fold (widths, NONE, fn (width, prev) => 
+       val widthO = List.fold (widths, NONE, fn (width, prev) =>
                                                 case prev
                                                  of SOME max => if width > max then SOME width else  prev
                                                   | NONE     => SOME width)
      in widthO
      end
 
- (* /identifyTargets/ - Orders two targets. If one points to the head and 
+ (* /identifyTargets/ - Orders two targets. If one points to the head and
                         the other elsewhere then they are ordered (head, other) *)
  val identifyTargets : Mil.label ->
                       ((M.target * M.target), (M.target * M.target)) bidirectional =
-   fn header =>  identifyInPair (fn target => 
+   fn header =>  identifyInPair (fn target =>
                                     let val M.T {block, ...} = target
                                     in I.labelEqual(block, header)
                                     end)
 
 
- (* /identifyTestParams/ Takes a transfer and returns the pair of operands in the test condition 
+ (* /identifyTestParams/ Takes a transfer and returns the pair of operands in the test condition
                          for the loop, where the first operand is the induction variable involved and the second
                          operand is the bound, along with a function that puts the two operands back in the correct
-                         order 
+                         order
                          e.g. if the test for the loop is i < N then
                               (i, N) is returned along with a function: fn (x, y) => (x, y)
                               if the test for the loop is N < i then
                               (i, N) is retuend along with a function: fn (x, y) => (y, x) *)
- val identifyTestParams : (state * env * info * M.transfer) -> 
+ val identifyTestParams : (state * env * info * M.transfer) ->
                           ((M.operand * M.operand) * ((M.operand * M.operand) ->(M.operand * M.operand))) option =
   fn (state, env, info, transfer) =>
    try (fn () =>
@@ -2196,11 +2196,11 @@ val hasTwoTargets : (({select  : M.selector,
       val {select, on, cases, default} = switch
        val () = <@ MU.Selector.Dec.seConstant select
       val testVar = <- (MU.Simple.Dec.sVariable on)
-      
+
       (* find definition of the test *)
       val testVarDef = FMil.getVariable (fmil, testVar)
-      val (_, rhs) = <- (case testVarDef of FMil.VdInstr x => SOME x 
-                                          | _              => NONE)     
+      val (_, rhs) = <- (case testVarDef of FMil.VdInstr x => SOME x
+                                          | _              => NONE)
 
       (* deconstruct the test *)
       val {args, ...} = <- (MU.Rhs.Dec.rhsPrim rhs)
@@ -2210,7 +2210,7 @@ val hasTwoTargets : (({select  : M.selector,
 
       (* Returns true if the operand is an induction variable, else false *)
       val argIsInductionVar : M.operand -> bool =
-       fn arg => 
+       fn arg =>
           bool (try (fn () =>
                         let
                           val var = <@ MU.Simple.Dec.sVariable arg
@@ -2218,7 +2218,7 @@ val hasTwoTargets : (({select  : M.selector,
                         in
                           iv
                         end))
- 
+
       val identifyIVArg = identifyInPair argIsInductionVar
       (* select the argument which is a local induction variable *)
       val ((argIV, argB), reorderArgs) = <- (identifyIVArg (arg1, arg2))
@@ -2233,27 +2233,27 @@ val hasTwoTargets : (({select  : M.selector,
                     Behaviour:
                       i' = i + s
                       test = i' < b
-                      case test of ...                                  
-                    The last value of i' is looked up, and s * (vl - 1) 
+                      case test of ...
+                    The last value of i' is looked up, and s * (vl - 1)
                     is added in a new instruction, where vl is the vector length
                        i'' = i'_last + s * (vl - 1)
                     This is the value i will have at the end of the next vector
                     iteration. We then build a new test for the transfer:
                       test' = i'' <- b
-                      case test' of ... *)                       
-                   
+                      case test' of ... *)
+
  val buildNewTest : (state * env * info * M.transfer * Rename.t) ->
                     (instructions * M.transfer) option =
   fn (state, env, info, transfer, lastValues) =>
    try (fn () =>
-           
+
     let
       val E {config, fmil, loopInfo, ...} = env
       val LI {loopHeader, vectorLength, ...} = info
       val vectorLength = <- vectorLength
       val symTableM = stateGetSymTableM state
       val si = I.SymbolInfo.SiManager symTableM
-      
+
       (* deconstruct transfer *)
       val switch = <- (MU.Transfer.Dec.tCase transfer)
       val {select, on, cases, default} = switch
@@ -2262,20 +2262,20 @@ val hasTwoTargets : (({select  : M.selector,
 
       (* find definition of the test *)
       val testVarDef = FMil.getVariable (fmil, testVar)
-      val (_, rhs) = <- (case testVarDef of FMil.VdInstr x => SOME x 
+      val (_, rhs) = <- (case testVarDef of FMil.VdInstr x => SOME x
                                           | _              => NONE)
 
       (* deconstruct the test, get the num type from the convert*)
       val {prim, createThunks, typs, args} = <- (MU.Rhs.Dec.rhsPrim rhs)
       val prim' = <- (PU.T.Dec.prim prim)
-      val {typ, operator} = <- (PU.Prim.Dec.pNumCompare prim') 
+      val {typ, operator} = <- (PU.Prim.Dec.pNumCompare prim')
       (* check we have an precise type for the loop counter *)
       val () = require (isPreciseNumericTyp typ)
 
       (* deconstruct the test, get the num type from the convert*)
       val {prim, createThunks, typs, args} = <- (MU.Rhs.Dec.rhsPrim rhs)
 
-      (* identify the operands in the transfer's test and 
+      (* identify the operands in the transfer's test and
          get the variable and step information for the induction variable *)
       val ((argIV, argB), reorderArgs) = <@ identifyTestParams (state, env, info, transfer)
       val argIVvar = <- (MU.Simple.Dec.sVariable argIV)
@@ -2285,15 +2285,15 @@ val hasTwoTargets : (({select  : M.selector,
       val argIVinfo = <@ isInductionVariable (state, env, info, argIVvar)
       val {step, ...} = ML.canonizeInductionVariable argIVinfo
 
-      (* last value of the next value for the IV 
-          i_next_last = i_last + S 
+      (* last value of the next value for the IV
+          i_next_last = i_last + S
           i_last = i + S*(l-1) *)
       val argIVVarLast = <- (Rename.use' (lastValues, argIVvar))
-      
+
       (* test if we have +ve/-ve rat and whether the type allows negatives *)
       val (step', useAddition) = <- (addOrSubtractRat (step, argIVtype))
 
-      (* need to calculate: i_next_last + S*(l-1) *) 
+      (* need to calculate: i_next_last + S*(l-1) *)
       val iterEnd = <@ ratToConstant (state, Rat.*(step', Rat.fromInt (vectorLength - 1)), typ)
 
       (* build the end of next iteration value *)
@@ -2302,7 +2302,7 @@ val hasTwoTargets : (({select  : M.selector,
                      else
                        Mil.Prims.AMinus
 
-      val varNN = mkFreshLocalVar (state, "next_next_last", argIVtype)           
+      val varNN = mkFreshLocalVar (state, "next_next_last", argIVtype)
       val primNN = Mil.Prims.PNumArith {typ = typ,
                                         operator = operator}
       val argsNN = Vector.new2 (M.SVariable argIVVarLast, iterEnd)
@@ -2310,23 +2310,23 @@ val hasTwoTargets : (({select  : M.selector,
                                    createThunks = false,
                                    typs = Vector.new0 (),
                                    args = argsNN}
-      val instrNN = M.I {dests = Vector.new1 varNN, 
+      val instrNN = M.I {dests = Vector.new1 varNN,
                          n = 0,
                          rhs = rhsPrimNN}
 
       (* build the new test *)
       val newTestVar = mkRelatedVar (state, testVar, "new_test")
-      val res = 
+      val res =
           let
             (* Peephole optimization - if we have a loop with a constant bound
              * and we know that it exists after 1 iteration, then eliminate the
              * back edge
              *)
-            val exit = 
-                Try.try 
-                  (fn () => 
+            val exit =
+                Try.try
+                  (fn () =>
                       let
-                        val MilLoop.TC {init, flip1, comparison, bound, flip2, ...} = 
+                        val MilLoop.TC {init, flip1, comparison, bound, flip2, ...} =
                             <@ MilLoop.getTripCount (loopInfo, loopHeader)
                         val (m, i, c) = init
                         val i = <@ MU.Simple.Dec.sConstant i
@@ -2347,7 +2347,7 @@ val hasTwoTargets : (({select  : M.selector,
                         val (targets, rebuildSwitch) = <- (hasTwoTargets switch)
                         val ((headTarget, exitTarget), reorderTargets) = <- (identifyTargets loopHeader targets)
                         val T = MU.Bool.T (getConfig env)
-                        val t = M.TCase {select = select, 
+                        val t = M.TCase {select = select,
                                          on = M.SConstant T,
                                          cases = Vector.new1 (T, exitTarget),
                                          default = SOME headTarget}
@@ -2355,7 +2355,7 @@ val hasTwoTargets : (({select  : M.selector,
                       end)
           in case exit
               of SOME t => ([], t)
-               | NONE   => 
+               | NONE   =>
                  let
                    val newTestArgs = reorderArgs (M.SVariable varNN, argB)
                    val newTestRhs = M.RhsPrim {prim = prim,
@@ -2365,9 +2365,9 @@ val hasTwoTargets : (({select  : M.selector,
                    val newTestInstr = M.I {dests = Vector.new1 newTestVar,
                                            n = 0,
                                            rhs = newTestRhs}
-                                          
+
                                           (* build the new transfer *)
-                   val newTransfer = M.TCase {select = select, 
+                   val newTransfer = M.TCase {select = select,
                                               on = M.SVariable newTestVar,
                                               cases = cases,
                                               default = default}
@@ -2381,17 +2381,17 @@ val hasTwoTargets : (({select  : M.selector,
  (* /operatorIdentity/ - For an operation at a certain type, returns the identity, or in the case
                          of an idempotent operation (with a possibly unknown identity) an optional
                          element can be supplied *)
- val operatorIdentity : (env * M.Prims.arithOp * M.Prims.numericTyp * M.variable option) -> M.simple option = 
+ val operatorIdentity : (env * M.Prims.arithOp * M.Prims.numericTyp * M.variable option) -> M.simple option =
    fn (env, operator, typ, idempotent) =>
     try (fn () =>
-       let 
+       let
          val E {config, ...} = env
          (* sanity check that the operation is allowed as a reduction *)
          val () = require (PU.Properties.Associativity.arithOp (config, typ, operator)
                            orelse allowReductions config)
-         val allowRedux = allowReductions config 
-         val identity = <- 
-             (case operator 
+         val allowRedux = allowReductions config
+         val identity = <-
+             (case operator
                of Mil.Prims.APlus => (case typ
                                        of M.Prims.NtInteger (M.Prims.IpFixed arbTyp) =>
                                           (SOME o M.SConstant o M.CIntegral o IA.fromInt) (arbTyp, 0)
@@ -2431,12 +2431,12 @@ val hasTwoTargets : (({select  : M.selector,
                 | _ => NONE)
        in
          identity
-       end)                                                                      
-                                                                            
+       end)
+
 
  (* /buildReduxEnd/ builds the final instruction(s) which will perform the final reduction of a vectorized reduction *)
  val buildReduxEnd : (state * env * info * Rename.t * M.variable * reductionInfo * Rename.t)
-                     -> (M.instruction list * Rename.t) option = 
+                     -> (M.instruction list * Rename.t) option =
   fn (state, env, info, reductionDefs, reduxVar, reductionInfo, reduxRenamings) =>
      try (fn () =>
        let
@@ -2467,12 +2467,12 @@ val hasTwoTargets : (({select  : M.selector,
                                  rhs = rhs}
               in
                 (instr, bindVar)
-              end              
+              end
          val (subInstrs, subVars) = List.unzip (List.tabulate(vectorLength - 1, createSubInstruction))
 
          (* generate the identity/idempotent for the instruction *)
          val initOperand = <- (operatorIdentity (env, operator, typ, SOME (List.nth(subVars, 0))))
-         
+
          (* build up the last (vl - 1) results in a vector constant with the identity at the end *)
          val prevRConstVector = Vector.fromList (List.map(subVars, M.SVariable) @ [initOperand])
 
@@ -2520,7 +2520,7 @@ val hasTwoTargets : (({select  : M.selector,
          val prevLastVar = mkRelatedVar (state, reduxVar, "redux_last")
          val prevLastInstr = M.I {dests = Vector.new1 prevLastVar,
                                   n = 0,
-                                  rhs = prevLastRhs}                                   
+                                  rhs = prevLastRhs}
 
          (* compute the final reduction - the end result of the reduction *)
          val lastRhs = Mil.RhsPrim {prim = Mil.Prims.Vector reduxPrim,
@@ -2534,7 +2534,7 @@ val hasTwoTargets : (({select  : M.selector,
 
          (* add renamings for the previous and final results *)
          val reduxRenamings' = Rename.renameTo(reduxRenamings, reduxVar, prevLastVar)
-         val reduxRenamings' = Rename.renameTo(reduxRenamings', reduxNextVar, lastVar)                              
+         val reduxRenamings' = Rename.renameTo(reduxRenamings', reduxNextVar, lastVar)
        in
          (subInstrs @ [prevRInstr, prevInstr, prevLastInstr, lastInstr], reduxRenamings')
        end)
@@ -2546,7 +2546,7 @@ val hasTwoTargets : (({select  : M.selector,
   fn (state, env, info, serialTransfer, sLoopRenamings, lastValues,
       lastValInstructions, reductionDefs, reductionInfos) =>
    try (fn () =>
-           
+
     let
       val E {config, fmil, loopInfo, ...} = env
       val LI {loopHeader, vectorLength, ...} = info
@@ -2556,18 +2556,18 @@ val hasTwoTargets : (({select  : M.selector,
 
       (* compute the inverse map from the new serial variables to the old *)
       val originalVars = (Rename.invert sLoopRenamings)
-      
+
       (* deconstruct transfer *)
       val switch = <@ MU.Transfer.Dec.tCase serialTransfer
       val {select, on, cases, default} = switch
        val () = <@ MU.Selector.Dec.seConstant select
       val testVar = <@ MU.Simple.Dec.sVariable on
       val originalTestVar = <@ Rename.use' (originalVars, testVar)
-      
+
       (* find definition of the test *)
       val testVarDef = FMil.getVariable (fmil, originalTestVar)
-      val (_, rhs) = <- (case testVarDef of FMil.VdInstr x => SOME x 
-                                          | _              => NONE)   
+      val (_, rhs) = <- (case testVarDef of FMil.VdInstr x => SOME x
+                                          | _              => NONE)
 
       (* buil new test, replacing the given one *)
       val newTestVar = mkRelatedVar (state, originalTestVar, "cleanup")
@@ -2576,10 +2576,10 @@ val hasTwoTargets : (({select  : M.selector,
                                rhs = rhs}
       (* in the test, rewrite variables to their last value variables i.e.
           test = i' < B
-      =>  test = i'_last < B 
+      =>  test = i'_last < B
          thus, getting the last iteration value *)
       val newTestInstr = MilRename.Var.instruction (config, lastValues, newTestInstr0)
-      
+
       (* build the new transfer *)
       val transfer' = M.TCase {select = select,
                                on = M.SVariable newTestVar,
@@ -2597,7 +2597,7 @@ val hasTwoTargets : (({select  : M.selector,
              val instruction' = MilRename.Var.instruction (config, subst', instruction)
            in
              (instruction', subst')
-           end                             
+           end
       val (instructions', lastRenamings) = U.List.mapFoldl (lastValInstructions, Rename.none, renameLastVariables)
 
       (* compute the final reductions *)
@@ -2620,14 +2620,14 @@ val hasTwoTargets : (({select  : M.selector,
       (* rename the transfer *)
       val transfer'' = MilRename.Var.transfer (config, toCleanUpLastValues, transfer')
       val transfer'' = MilRename.Var.transfer (config, toEndRenamings, transfer'')
-      
+
       val instructions = reduxInstructions @ instructions' @ [newTestInstr]
       val cleanUpBlock = M.B {parameters = Vector.new0 (),
                               instructions = Vector.fromList instructions,
                               transfer = transfer''}
     in
       cleanUpBlock
-    end)                 
+    end)
 
  (* /renameAndAddTail/  *)
  val renameAndAddTail : (state * env * info * M.block) ->
@@ -2644,7 +2644,7 @@ val hasTwoTargets : (({select  : M.selector,
        (* rename the variables in a block *)
        val (block', renamer) = renameVariables (state, env, info, block)
        val (oldNames, newNames) = List.unzip (Rename.toList (renamer))
- 
+
        val M.B {parameters, instructions, transfer} = block'
        val switch = <- (MU.Transfer.Dec.tCase transfer)
        val () = <@ MU.Selector.Dec.seConstant (#select switch)
@@ -2652,7 +2652,7 @@ val hasTwoTargets : (({select  : M.selector,
        val ((headTarget, exitTarget), reorderTargets) = <- (identifyTargets loopHeader targets)
        val M.T {block = exitTargetLabel, arguments = exitArguments} = exitTarget
        val M.T {block = headTargetLabel, arguments = headArguments} = headTarget
-       
+
        (* create new tail block *)
          (* make new vars to bind the previous exit arugments *)
        val mkArgVar = fn arg => mkFreshLocalVar (state, "", operandType (state, env, arg))
@@ -2664,8 +2664,8 @@ val hasTwoTargets : (({select  : M.selector,
        val tailBlock = M.B {parameters = tailParams,
                             instructions = Vector.new0 (),
                             transfer = tailTransfer}
-       
- 
+
+
        (* change targets of original block *)
        (* create new arguments *)
        val variableOutArgs = Vector.map(Vector.fromList newNames, fn x => M.SVariable x)
@@ -2703,17 +2703,17 @@ val hasTwoTargets : (({select  : M.selector,
         (* rename any reduction variables to point to their vector version *)
         val transfer' = MilRename.Var.transfer (config, reductionDefs, transfer')
 
-        (* deconstruct transfer *)    
+        (* deconstruct transfer *)
         val switch = <- (MU.Transfer.Dec.tCase transfer')
        val () = <@ MU.Selector.Dec.seConstant (#select switch)
         val ((target1, target2), rebuildSwitch) = <- (hasTwoTargets switch)
         val ((loopTarget, exitTarget), reorderTargets) = <- (identifyTargets loopHeader (target1, target2))
-                         
+
         (* make new exit target pointing to cleanup block *)
         val M.T {block = _, arguments = loopArguments} = loopTarget
         val loopTarget' = M.T {block = headerLabel, arguments = loopArguments}
         val exitTarget' = M.T {block = cleanupLabel, arguments = Vector.new0 ()}
-       
+
         val switch' = (rebuildSwitch o reorderTargets) (loopTarget', exitTarget')
         val transfer' = M.TCase switch'
       in
@@ -2726,21 +2726,21 @@ val hasTwoTargets : (({select  : M.selector,
  val buildReduxInit : (state * env * info * M.variable * Rename.t * Rename.t * reductionInfo VD.t) ->
                       (M.instruction list * Rename.t) option =
   fn (state, env, info, paramVar, paramRenamer, reductionDefs, reductionInfos) =>
-  try (fn () => 
-    let 
+  try (fn () =>
+    let
       val LI {vectorLength, ...} = info
       val vectorLength = <- vectorLength
-    in 
+    in
       if Rename.renamed(reductionDefs, paramVar) then
         let
           val {operator, typ, ...} = <@ VD.lookup(reductionInfos, paramVar)
           val vDescriptor = <@ mkVDescriptor (env, info, Mil.TNumeric typ)
-          val initConst = 
+          val initConst =
               case operator
                  (* for + and *, make a vector of identities with the initial parameter in the
                   * first position in the vector *)
                of M.Prims.APlus =>
-                  let 
+                  let
                     val identityConst = <@ operatorIdentity (env, operator, typ, NONE)
                     val identities = List.tabulate (vectorLength, (fn _ => identityConst))
                     val init = (Mil.SVariable paramVar)::(tl identities)
@@ -2748,7 +2748,7 @@ val hasTwoTargets : (({select  : M.selector,
                     Vector.fromList init
                   end
                 | M.Prims.ATimes =>
-                  let 
+                  let
                     val identityConst = <@ operatorIdentity (env, operator, typ, NONE)
                     val identities = List.tabulate (vectorLength, (fn _ => identityConst))
                     val init = (Mil.SVariable paramVar)::(tl identities)
@@ -2780,12 +2780,12 @@ val hasTwoTargets : (({select  : M.selector,
     end)
 
  (* /tripCountToInitBoundCheck/ from a trip count compute the initial bounds check
-        to decide whether the iteration space is large enough for at least one 
+        to decide whether the iteration space is large enough for at least one
         pass of the vectorized loop - test = i0 + (vl - 1)*s < n
         where i0 is the initial loop-controlling parameter value, vl is the vector
         length, s is the step, and n is the loop bound *)
  val tripCountToInitBoundCheck : (state * env * info * MilLoop.tripCount * M.variable) ->
-                                    (M.variable * M.instruction list) option = 
+                                    (M.variable * M.instruction list) option =
    fn (state, env, info, tripCount, i0var) =>
     try (fn () =>
       let
@@ -2825,12 +2825,12 @@ val hasTwoTargets : (({select  : M.selector,
        val instrIterN = M.I {dests = Vector.new1 varIterN,
                              n = 0,
                              rhs = rhs}
-       
+
        (* build the test *)
        fun swap (a, b) = (b, a)
-       (* trip count describes the *exit* conditions, but we reverse this to be 
+       (* trip count describes the *exit* conditions, but we reverse this to be
           entry conditions, thus the behaviour of flip1 is inverted - flip1 controls
-          the comparison for exit conditions in the trip count - see description in loop.sml *) 
+          the comparison for exit conditions in the trip count - see description in loop.sml *)
        val testCompare = if flip1 then comparison else notPrim (comparison)
        val args = if flip2 then (bound, simpleIterN) else (simpleIterN, bound)
        val args = if flip1 then args else swap args
@@ -2842,7 +2842,7 @@ val hasTwoTargets : (({select  : M.selector,
                                 createThunks = false,
                                 typs = Vector.new0 (),
                                 args = Vector.new2 args}
-       val testInstr = M.I {dests = Vector.new1 testVar, 
+       val testInstr = M.I {dests = Vector.new1 testVar,
                             n = 0,
                             rhs = testRhs}
       in
@@ -2855,7 +2855,7 @@ val hasTwoTargets : (({select  : M.selector,
  val buildEntry : (state * env * info * (M.variable vector) * M.transfer * M.label * M.label * M.label
                         * Rename.t * reductionInfo VD.t)
                        -> M.block option =
-  fn (state, env, info, 
+  fn (state, env, info,
       params, serialTransfer, entryHeader, vectorHeader, serialHeader, reductionDefs, reductionInfos) =>
     try (fn () =>
      let
@@ -2863,7 +2863,7 @@ val hasTwoTargets : (({select  : M.selector,
        val LI {loopHeader, vectorLength, ...} = info
        val failDebug = Config.debug andalso (whyFail config)
        val symTableM = stateGetSymTableM state
-       val si = I.SymbolInfo.SiManager symTableM 
+       val si = I.SymbolInfo.SiManager symTableM
 
         val () = if failDebug then print "[V] Building initial reduction values...\n" else ()
        (* build the initial vector values for reduction variables *)
@@ -2883,7 +2883,7 @@ val hasTwoTargets : (({select  : M.selector,
                              val param' = mkFreshLocalVar (state, "", typ)
                              val renamer' = Rename.renameTo (renamer, param, param')
                            in
-                             (param', renamer')                           
+                             (param', renamer')
                            end
        val (params', paramRenamer) = Vector.mapAndFold (params, Rename.none, paramRename)
 
@@ -2915,10 +2915,10 @@ val hasTwoTargets : (({select  : M.selector,
        val (testVar, boundsCheck) = <@ tripCountToInitBoundCheck (state, env, info, tripCount, loopIVparam)
 
        (* build vector target *)
-       val arguments = Vector.map(params', fn p => Mil.SVariable p)                      
+       val arguments = Vector.map(params', fn p => Mil.SVariable p)
        (* replace reduction parameters with their initial vector versions *)
        val paramInitRenamer' = Rename.compose(paramInitRenamer, Rename.invert paramRenamer)
-       val useInits = fn arg => case arg 
+       val useInits = fn arg => case arg
                                  of M.SVariable var => M.SVariable (Rename.use(paramInitRenamer', var))
                                   | arg             => arg
        val argumentsV = Vector.map(arguments, useInits)
@@ -2932,7 +2932,7 @@ val hasTwoTargets : (({select  : M.selector,
        val caseSerial = (MU.Bool.F config, targetSerial)
 
        (* build the transfer and block*)
-       val transfer = M.TCase {select = M.SeConstant, 
+       val transfer = M.TCase {select = M.SeConstant,
                                on = M.SVariable testVar,
                                cases = Vector.new2 (caseVector, caseSerial),
                                default = NONE}
@@ -2944,13 +2944,13 @@ val hasTwoTargets : (({select  : M.selector,
      in
        block
      end)
-                   
- (* /vectorizeLoop/ *)               
+
+ (* /vectorizeLoop/ *)
  val rec vectorizeLoop : (state * env * ML.loop) ->
                          ((ML.loop Vector.t) * (Mil.block LD.t new)) option =
   fn (state, env, loop) =>
     try (fn () =>
-         
+
       let
         val E {config, program, fmil, code, cfg, domInfo, loopInfo, ...} = env
         val failDebug = Config.debug andalso (whyFail config)
@@ -2964,7 +2964,7 @@ val hasTwoTargets : (({select  : M.selector,
          * in the dependence analysis seems to use an exponential algorithm, and also may
          * have termination issues. FIXME -leaf *)
         (* **** Check just single block *)
-        val () = 
+        val () =
             if LD.size blocks = 1 then ()
             else
               if whyFail (getConfig env) then
@@ -2991,21 +2991,21 @@ val hasTwoTargets : (({select  : M.selector,
         val () = <?@ mayVectorize (state, env, info, loop) (env, ["May vectorize failed"])
 
         (* Create new labels *)
-        val entryLabel = SymTableM.labelFresh symTableM 
+        val entryLabel = SymTableM.labelFresh symTableM
         val vectorLoopLabel = SymTableM.labelFresh symTableM
         val cleanupLabel = SymTableM.labelFresh symTableM
 
         (* Tag instructions with their vectorization approach *)
         (* Stage 3.0 *)
         val () = if failDebug then print "[V] Tagging blocks...\n" else ()
-        val {tags, minSize, maxSize, ...} = tagBlocks (state, env, info, blocks) 
+        val {tags, minSize, maxSize, ...} = tagBlocks (state, env, info, blocks)
 
-        (* make a choice about the vector length. 
+        (* make a choice about the vector length.
          * Bigger vector length (vectorBitSize/minSize) = more packing, possible emulation
          * Smaller vector length (vectorBitSize/maxSize) = less packing, no emulation   *)
         val vectorLength = <?- (calcVectorLen (state, env, minSize, maxSize)) (env, ["Failed to choose len"])
         (* check vectorLength is at least 2, so that the vectorization is worth doing, but also
-         * some other computations rely on this (see buildCleanUp and partial reduction) *) 
+         * some other computations rely on this (see buildCleanUp and partial reduction) *)
         val () = requireR (vectorLength >= 2) (env, ["[V] Vectorization skipped as vector length < 2"])
         val info = updateVectorLength (info, vectorLength)
 
@@ -3020,21 +3020,21 @@ val hasTwoTargets : (({select  : M.selector,
         (* Stage 3.1 *)
         val () = if failDebug then print "[V] Vectorizing instructions...\n" else ()
         val instructionsL = Vector.toList instructions
-        val (scalars, vectors, lasts, (vRenamings', lastValues')) = 
+        val (scalars, vectors, lasts, (vRenamings', lastValues')) =
             <@ transformInstructions (state, env, info, tags, instructionsL, (vRenamings, lastValues))
 
         (* zip the instructions together *)
         val instrs0 = pointwiseConcat (instrs0V, instrs0L)
         val instructions' = pointwiseConcat (scalars, (pointwiseConcat (vectors, lasts)))
-        val instructions' = (List.concat instrs0) @ (List.concat instructions') 
+        val instructions' = (List.concat instrs0) @ (List.concat instructions')
 
         (* Adjust the test for the vectorized block *)
         val () = if failDebug then print "[V] Changing the test of vectorized loop...\n" else ()
         val (testInstrs, transferV) = <@ buildNewTest (state, env, info, transfer, lastValues')
-        val instructions' = instructions' @ testInstrs   
+        val instructions' = instructions' @ testInstrs
 
         (* Replace the loop arguments that are vars with their last value var, and reduction
-         * variables to their reduction vector variable and 
+         * variables to their reduction vector variable and
          * point the transfer to the loopHead to the top of the block and exit to the cleanup block *)
         val () = if failDebug then print "[V] Rewriting the transfer of the vector loop...\n" else ()
         val {reductionDefs, reductionInfos, ...} = vRenamings'
@@ -3045,10 +3045,10 @@ val hasTwoTargets : (({select  : M.selector,
          * defined in the loop to the original varibles *)
         val () = if failDebug then print "[V] Creating tail block for the serial loop...\n" else ()
         val ((header', block'), (tlLabel, tlBlock), serialRenamings) = <@ renameAndAddTail (state, env, info, block)
-        val M.B {parameters = _, instructions = _, transfer = serialTransfer} = block' 
+        val M.B {parameters = _, instructions = _, transfer = serialTransfer} = block'
         (* Build the serial block *)
         val blocks' = (LD.insert (LD.empty, header', block'))
-        val serialLoop = MilLoop.L {header = header', blocks = blocks'}      
+        val serialLoop = MilLoop.L {header = header', blocks = blocks'}
 
         (* Create cleanup block *)
         val () = if failDebug then print "[V] Create cleanup blocks...\n" else ()
@@ -3069,13 +3069,13 @@ val hasTwoTargets : (({select  : M.selector,
         val (_, cleanupBlock') = MilRename.Var.block (getConfig env, vectorRenamings,
                                                        cleanupLabel, cleanupBlock)
 
-        (* Build the vectorized loop *)        
+        (* Build the vectorized loop *)
         val blocksV = LD.fromList [(vectorLoopLabel, blockV')]
         val vectorLoop = MilLoop.L {header = vectorLoopLabel, blocks = blocksV}
 
         (* Build the entry block *)
         val () = if failDebug then print "[V] Create the prelude block...\n" else ()
-        val entryBlock = <@ buildEntry (state, env, info, parameters, 
+        val entryBlock = <@ buildEntry (state, env, info, parameters,
                                         transfer, header, vectorLoopLabel,
                                         header', reductionDefs, reductionInfos)
 
@@ -3090,8 +3090,8 @@ val hasTwoTargets : (({select  : M.selector,
 
  (* /vectorizeLoopTree/ *)
  and rec vectorizeLoopTree : (state * env * ML.loopTree) -> (ML.loopForest * Mil.block LD.t new) =
-  fn (state, env, loopTree) => 
-      let val (Tree.T (node, children)) = loopTree 
+  fn (state, env, loopTree) =>
+      let val (Tree.T (node, children)) = loopTree
       in
         if (Vector.isEmpty children) then
          (* leaf, inner loop. apply vectorization *)
@@ -3101,7 +3101,7 @@ val hasTwoTargets : (({select  : M.selector,
               let val singletonTree = fn x => Tree.T (x, Vector.new0 ())
               in  (Vector.map (loops, singletonTree), blocks)
               end
-            | NONE => 
+            | NONE =>
               let
                 val failDebug = Config.debug andalso (whyFail (getConfig env))
                 val () = if failDebug then print "[V] Vectorization failed.\n" else ()
@@ -3121,12 +3121,12 @@ val hasTwoTargets : (({select  : M.selector,
                        a loop forest and a label dictionary of blocks not in loops *)
  and rec vectorizeForest : (state * env * ML.loopForest) -> (ML.loopForest * (Mil.block LD.t new)) =
     fn (state, env, forest) =>
-       let 
+       let
          (* parameter to loopForest fold- vectorizes a loop and
           builds new forest and dictionary of blocks *)
          val vectorize : (ML.loopTree * Mil.block LD.t) -> (ML.loopForest * Mil.block LD.t) =
            fn (loopTree, blocks) =>
-             let 
+             let
                val (loopForest', blocks') = vectorizeLoopTree (state, env, loopTree)
                val blocks'' = unionR (blocks, blocks')
              in (loopForest', blocks'')
@@ -3135,18 +3135,18 @@ val hasTwoTargets : (({select  : M.selector,
          val (forest', blocks') = Vector.mapAndFold (forest, LD.empty, vectorize)
        in (Vector.concatV forest', tagAsNew blocks')
        end
-                                                         
+
  (* /doVectorize/ Takes a MilLoop, generates a (possibly) vectorized code body *)
- val doVectorize : (state * env) -> Mil.codeBody = 
+ val doVectorize : (state * env) -> Mil.codeBody =
   fn (state, env) =>
-   let      
+   let
      val flattenLoop : MilLoop.loop * Mil.block LD.t -> Mil.block LD.t =
        fn (node, blocks) =>
            let
               val MilLoop.L {blocks = blocks', ...} = node
            in unionR (blocks, tagAsNew blocks')
-           end          
-                                   
+           end
+
      val flattenForest : ML.loopForest -> Mil.block LD.t =
        fn forest =>
           Vector.fold (forest, LD.empty,
@@ -3157,7 +3157,7 @@ val hasTwoTargets : (({select  : M.selector,
 
       val E {fmil, loopInfo, ...} = env
 
-      val loops = MilLoop.getLoops loopInfo 
+      val loops = MilLoop.getLoops loopInfo
       val blocks = MilLoop.getBlocksNotInLoops loopInfo
 
       (* Perform vectorization of the forest *)
@@ -3169,9 +3169,9 @@ val hasTwoTargets : (({select  : M.selector,
                      original blocks not in loops,
                      new blocks not in loops,
                      new loop blocks *)
-      val finalBlocks = unionR (unionR (blocks, blocks'), blocks'')                        
+      val finalBlocks = unionR (unionR (blocks, blocks'), blocks'')
 
-      val codeBody = Mil.CB {entry = MilLoop.getEntry loopInfo, 
+      val codeBody = Mil.CB {entry = MilLoop.getEntry loopInfo,
                              blocks = finalBlocks}
    in
      codeBody
@@ -3200,9 +3200,9 @@ val hasTwoTargets : (({select  : M.selector,
  (* /global/ Vectorize a global *)
  val global : (Config.t * Mil.t * FMil.t * state *
                (Mil.variable * Mil.global)) -> Mil.global =
-  fn (config, program, fmil, state, (var, global)) => 
-       case global 
-         of Mil.GCode (code as Mil.F {body, ...}) => 
+  fn (config, program, fmil, state, (var, global)) =>
+       case global
+         of Mil.GCode (code as Mil.F {body, ...}) =>
            let
              val si = stateGetSi state
              val cfgInfo = MilCfg.build (config, si, body)
@@ -3211,7 +3211,7 @@ val hasTwoTargets : (({select  : M.selector,
              val ldominfo = MilCfg.LabelDominance.new ldomtree
 
              val loopInfo = ML.build (config, si, cfgInfo, labelBlockDomTree)
-             val loopInfo = ML.addPreheaders (loopInfo, stateGetSymTableM state) 
+             val loopInfo = ML.addPreheaders (loopInfo, stateGetSymTableM state)
              val loopInfo = ML.genAllNodes loopInfo
              val loopInfo = ML.genExits loopInfo
              val loopInfo = ML.genInductionVariables (loopInfo, fmil, cfgInfo)
@@ -3263,7 +3263,7 @@ val hasTwoTargets : (({select  : M.selector,
             symbolTable = symbolTable',
             entry = entry}
      end
-               
+
  val description = {name        = passname,
                     description = "Vectorizer",
                     inIr        = BothMil.irHelpers,
@@ -3279,4 +3279,4 @@ val hasTwoTargets : (({select  : M.selector,
      Pass.mkOptPass (description, associates, BothMil.mkMilPass program)
 
 end (* structure MilVectorize *)
- 
+

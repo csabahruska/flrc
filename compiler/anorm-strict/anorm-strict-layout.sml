@@ -1,7 +1,7 @@
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -51,7 +51,7 @@ struct
        showBinderTypes : bool,
        showSymbolTable : bool
   }
-                 
+
   val describe =
    fn () =>
       L.align [L.str (modulename ^ " control string consists of:"),
@@ -59,7 +59,7 @@ struct
                                    L.str "S => show symbol table",
                                    L.str "+ => show all of the above"]),
                L.str "default is nothing"]
-      
+
   val parse =
    fn str =>
       let
@@ -82,42 +82,42 @@ struct
         else
           NONE
       end
-      
+
   val dft = fn _ =>({showBinderTypes = false, showSymbolTable = false})
-                   
+
   val (control, controlGet) = Config.Control.mk (modulename, describe, parse, dft)
 
   type 'a layout = Config.t * ANormStrict.symbolInfo * 'a -> Layout.t
-                              
+
   datatype env = E of {
            config  : Config.t,
            si      : ANS.symbolInfo,
            options : options
   }
-                      
+
   val getConfig  = fn (E {config,  ...}) => config
   val getSI      = fn (E {si,      ...}) => si
   val getOptions = fn (E {options, ...}) => options
 
   val showBinderTypes = fn e => #showBinderTypes (getOptions e)
   val showSymbolTable = fn e => #showSymbolTable (getOptions e)
-                                
+
   val indent = LU.indent
   val angleList = LU.angleSeq
   val spaceList = fn l => LU.sequence ("", "", " ") l
 
   val semiMap =
-   fn (env, l, f) => 
+   fn (env, l, f) =>
       (case l
         of []  => []
          |  [x] => [f (env, x)]
          |  l   => List.map (l, fn v => L.seq [f (env, v), L.str ";"]))
 
-  val name = 
+  val name =
    fn (env, n) => IS.layoutName (n, getSI env)
 
-  val variable = 
-   fn (env, v) => 
+  val variable =
+   fn (env, v) =>
       let
         val si = getSI env
         val l = IS.layoutVariable (v, si)
@@ -134,23 +134,23 @@ struct
           L.seq [L.str "BAD_VAR_", l]
       end
 
-  val rec ty = 
+  val rec ty =
    fn (env, vTy) =>
       (case TypeRep.repToBase vTy
         of ANS.Boxed        => L.str "%boxed"
-         | ANS.Thunk t      => L.seq [L.str "Thunk(", ty (env, t), L.str ")"] 
+         | ANS.Thunk t      => L.seq [L.str "Thunk(", ty (env, t), L.str ")"]
          | ANS.Prim t       => L.seq [L.str "%primtype ", PTL.layoutPrimTy (fn t => ty (env, t)) t]
-         | ANS.Arr (t1, t2, effect) => L.mayAlign [angleList (tys (env, t1)) , 
+         | ANS.Arr (t1, t2, effect) => L.mayAlign [angleList (tys (env, t1)) ,
                                                    L.seq [Effect.layout effect, L.str "-> ", angleList (tys (env, t2))]]
-         | ANS.Sum cons     => 
-           let 
-             val layCon = fn ((con, _), ts) => L.seq [name (env, con), L.str " ", 
+         | ANS.Sum cons     =>
+           let
+             val layCon = fn ((con, _), ts) => L.seq [name (env, con), L.str " ",
                                                       angleList (tys (env, ts))]
            in
              LU.braceSeq (List.map (cons, layCon))
            end)
 
-  and rec tys = 
+  and rec tys =
    fn (env, tys) => List.map (tys, fn t => ty (env, t))
 
   val tDef = fn (env, (v, t)) => L.seq [L.str "%data ", variable (env, v), L.str  " = ", ty (env, t)]
@@ -171,18 +171,18 @@ struct
 
   val variableSeq = fn (env, vs) => angleList (List.map (vs, fn v => variable (env, v)))
 
-  val showBinder = 
-   fn (env, t) => 
-      if showBinderTypes env then 
+  val showBinder =
+   fn (env, t) =>
+      if showBinderTypes env then
         L.seq [L.str " :: ", ty (env, t)]
       else
         L.empty
 
-  fun variableSeqWithTy (env, vts) 
+  fun variableSeqWithTy (env, vts)
     = angleList (List.map (vts, fn (v, t) => L.seq [variable (env, v), showBinder (env, t)]))
 
-  val rec alt = 
-   fn (env, a) => 
+  val rec alt =
+   fn (env, a) =>
       (case a
         of ANS.Acon ((con, _), vbs, e) =>
            L.mayAlign [ L.seq [name (env, con), L.str " ", spaceList (vBinds (env, vbs)), L.str " ->"]
@@ -192,13 +192,13 @@ struct
                          , indent (exp (env, e))]
          | ANS.Adefault e          => L.mayAlign [ L.str "%_ -> ", indent (exp (env, e))])
 
-  and rec alts = 
+  and rec alts =
    fn (env, alternatives) => List.map (alternatives, fn a => alt (env, a))
 
   and rec aExp =
    fn (env, ae) =>
       (case ae
-        of ANS.PrimApp (f, xs) => 
+        of ANS.PrimApp (f, xs) =>
            L.seq [CL.layoutQName (getConfig env, CP.pv (GHCPrimOp.toString f)), L.str " ", variableSeq (env, xs)]
          | ANS.ConApp ((c, _), xs) => L.seq [name (env, c), L.str " " , variableSeq (env, xs)]
          | ANS.Return xs => variableSeq (env, xs)
@@ -217,15 +217,15 @@ struct
          | ANS.Eval v      => L.seq [L.str "%eval ", variable (env, v)]
          | e           => L.paren (exp (env, e)))
 
-  and rec exp = 
-   fn (env, e) => 
+  and rec exp =
+   fn (env, e) =>
       (case e
-        of ANS.Let (vd, e) => 
+        of ANS.Let (vd, e) =>
            let
-             val rec doNested = 
-              fn e => 
+             val rec doNested =
+              fn e =>
                  (case e
-                   of ANS.Let (vd, e) => 
+                   of ANS.Let (vd, e) =>
                       L.align [ L.seq [L.str "%    ", vDefg (env, vd)], doNested e]
                     | _ => L.seq [L.str "%in ", exp (env, e)])
            in L.align [ L.seq [L.str "%let ", vDefg (env, vd)], doNested e]
@@ -236,25 +236,25 @@ struct
          | e => aExp (env, e))
 
   and rec vDef =
-   fn (env, vd) => 
+   fn (env, vd) =>
       let
         val lesc = fn escapes => if escapes then L.str "^" else L.empty
         val lrec = fn recursive => if recursive then L.str "*" else L.empty
       in
         case vd
          of ANS.Vthk {name, ty, escapes, recursive, fvs, body} =>
-            L.mayAlign [ L.seq [ variable (env, name), lesc escapes, lrec recursive, 
-                                 showBinder (env, ty), L.str " = %thunk ", vBindsWithFVS (env, (fvs, [])) ], 
+            L.mayAlign [ L.seq [ variable (env, name), lesc escapes, lrec recursive,
+                                 showBinder (env, ty), L.str " = %thunk ", vBindsWithFVS (env, (fvs, [])) ],
                          indent (exp (env, body)) ]
           | ANS.Vfun {name, ty, escapes, recursive, fvs, args, body} =>
             L.mayAlign [ L.seq [ variable (env, name), lesc escapes, lrec recursive, showBinder (env, ty), L.str " ="]
                        , indent (L.mayAlign [ L.seq [ L.str "\\ ", vBindsWithFVS (env, (fvs, args)), L.str " -> "]
                                             , exp (env, body)])]
       end
-             
+
   and rec vDefg =
-   fn (env, vdg) => 
-      (case vdg 
+   fn (env, vdg) =>
+      (case vdg
         of ANS.Rec vdefs   => L.mayAlign [ L.str "%rec {"
                                          , indent (L.align (semiMap (env, vdefs, vDef)))
                                          , L.str "}"]
@@ -262,25 +262,25 @@ struct
          | ANS.Vdef (vts, e) =>
            L.mayAlign [ L.seq [ variableSeqWithTy (env, vts), L.str " =" ]
                       , indent (exp (env, e))])
-    
+
   val module =
-      fn (env, m) => 
+      fn (env, m) =>
          (case m
            of ANS.Module (v, vdefgs)=>
               L.align [ L.str "%module"
                       , indent (L.align (semiMap (env, vdefgs, vDefg)))
                       , L.seq [L.str "%entry ", variable (env, v)]])
 
-  val symbolTable = 
-   fn (env, im) => 
+  val symbolTable =
+   fn (env, im) =>
       if showSymbolTable env then
         let
           val vs = I.listVariables im
-          val layout = 
+          val layout =
            fn x => L.seq [ variable (env, x)
                          , L.str " :: "
                          , ty (env, #1 (I.variableInfo (im, x)))]
-                                                               
+
         in
           L.align [ L.str "%variables"
                   , indent (L.align (List.map (vs, layout)))
@@ -288,12 +288,12 @@ struct
         end
       else
         L.empty
-        
-  val envMk = 
+
+  val envMk =
    fn (config, si) => E {config = config,
                          si = si,
                          options = controlGet config}
-  val layout = 
+  val layout =
    fn (config, (m, im, _)) =>
       let
         val env = envMk (config, IS.SiTable im)
@@ -303,7 +303,7 @@ struct
                 , L.str "\n"]
       end
 
-  val lift = 
+  val lift =
    fn f => fn (config, si, a) => f (envMk (config, si), a)
 
   val var    : ANormStrict.var layout    = lift variable

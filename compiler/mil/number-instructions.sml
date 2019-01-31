@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature MIL_NUMBER_INSTRUCTIONS = 
+signature MIL_NUMBER_INSTRUCTIONS =
 sig
   (* Label every instruction in the program with a unique integer id.
    * Returns the numbered mil, and an integer guaranteed to be
@@ -31,7 +31,7 @@ end (* MIL_NUMBER_INSTRUCTIONS *)
 structure MilNumberInstructions :> MIL_NUMBER_INSTRUCTIONS =
 struct
   structure MU = MilUtils
-  structure MRC = MilRewriterClient 
+  structure MRC = MilRewriterClient
   structure M = Mil
 
   datatype state = S of {next : int ref}
@@ -40,10 +40,10 @@ struct
 
   val id = fn S {next} => Utils.Ref.inc next
 
-  val instr = 
+  val instr =
    fn (state, env, M.I {dests, n, rhs}) => MRC.StopWith (env, M.I {dests = dests, n = id state, rhs = rhs})
 
-  structure R = 
+  structure R =
   MilRewriterF (struct
                   type env   = env
                   type state = state
@@ -61,9 +61,9 @@ struct
                   val cfgEnum     = fn (_, _, t) => MilUtils.CodeBody.dfsTrees t
                 end)
 
-  val number = 
-   fn f => 
-   fn (config, obj) => 
+  val number =
+   fn f =>
+   fn (config, obj) =>
       let
         val next = ref 0
         val state = S {next = next}

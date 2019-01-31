@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -18,9 +18,9 @@
 
 (* Description: Inline functions aggressively. *)
 
-(* 
+(*
  * Inline Aggressive Policy:
- * 
+ *
  * Given a size budget
  *
  * for each function f in prog
@@ -40,7 +40,7 @@
  *   return selected_set
  *)
 
-signature MIL_INLINE_AGGRESSIVE = 
+signature MIL_INLINE_AGGRESSIVE =
 sig
   val pass : (BothMil.t, BothMil.t) Pass.t
 end
@@ -51,9 +51,9 @@ struct
   val passname = "MilInlineAggressive"
 
   val stats =
-      [("AggressiveFuncInlined", 
+      [("AggressiveFuncInlined",
         "functions inlined (Aggressive inliner)"),
-       ("AggressiveCallSitesInlined", 
+       ("AggressiveCallSitesInlined",
         "call sites inlined (Aggressive inliner)")]
 
   (* Budget ratio is used to calculate the budgetSize limit. *)
@@ -71,11 +71,11 @@ struct
   structure ACGP = AnnotatedCGPrinter
 
   val (prnCallGraphEndD, prnCallGraphEnd) =
-      Config.Debug.mk (passname ^ ":print-call-graph-at-end", 
+      Config.Debug.mk (passname ^ ":print-call-graph-at-end",
                        "print call graph at end of inline aggressive")
 
   val (prnCallGraphOptD, prnCallGraphOpt) =
-      Config.Debug.mk (passname ^ ":print-call-graph-after-opt", 
+      Config.Debug.mk (passname ^ ":print-call-graph-after-opt",
                        "print call graph after each iter")
 
   (* Number of times the module was called. *)
@@ -98,21 +98,21 @@ struct
       if Config.debug andalso debugPass (PD.getConfig d) then
         LayoutUtils.printLayout (L.seq [L.str (passname ^ ": "), l])
       else ()
-           
+
   (* Policy functions and types. *)
   type policyInfo = unit
   fun analyze (imil) = nOptExec := 0
   type callId = IMil.iInstr
   fun callIdToCall (info: policyInfo, imil: IMil.t, call: callId) = call
-  fun associateCallToCallId (info: policyInfo, 
-                             imil: IMil.t, 
+  fun associateCallToCallId (info: policyInfo,
+                             imil: IMil.t,
                              cp: IMil.iInstr,
-                             origBlock: IMil.iBlock, 
+                             origBlock: IMil.iBlock,
                              newBlock: IMil.iBlock) = ()
   fun rewriteOperation (c: callId) = InlineFunctionCopy
 
   val (noOptimizerF, noOptimizer) =
-      Config.Feature.mk (passname^":noOptimizer", 
+      Config.Feature.mk (passname^":noOptimizer",
                          "Do not call the optimizer " ^
                          "after inlining the call site list")
 
@@ -123,8 +123,8 @@ struct
                  else MilSimplify.program (d, imil)
       in
         (* Print the call graph into a file. *)
-        if Config.debug andalso 
-           prnCallGraphOpt (PD.getConfig d) then 
+        if Config.debug andalso
+           prnCallGraphOpt (PD.getConfig d) then
           let
             val nOptExec' = Int.toString (!nOptExec)
             val nExec' = Int.toString (!nExec)
@@ -138,23 +138,23 @@ struct
       end
 
   (* Collect call sites that call function (fname, cfg). *)
-  fun getInlineableCalls (d: PD.t, 
-                          fname: Mil.variable, 
+  fun getInlineableCalls (d: PD.t,
+                          fname: Mil.variable,
                           cfg: IMil.iFunc,
                           imil: IMil.t) : callId list * bool =
       let
-        fun getCandidateCall (u: IMil.use) = 
+        fun getCandidateCall (u: IMil.use) =
             Try.try
-              (fn () => 
+              (fn () =>
                   let
                     val i = Try.<- (IMil.Use.toIInstr u)
 (*                    val t = Try.<- (IMil.Use.toTransfer (imil, i))*)
                     val t = Try.<- (IMil.Use.toTransfer u)
-                    fun warn f = 
+                    fun warn f =
                         (* XXX EB: Why is it necessary to check fname? *)
                         if f = fname then ()
-                        else 
-                          let 
+                        else
+                          let
                             val () = dbgString (d, "Fun code used in call "^
                                                    "but not callee: " ^
                                                    (L.toString (ID.layoutVariable' (fname))) ^
@@ -162,7 +162,7 @@ struct
                           in Try.fail ()
                           end
                     (* XXX EB: What does doConv mean? *)
-                    fun doConv conv = 
+                    fun doConv conv =
                         (case conv
                           of M.CCode {ptr, ...} => warn ptr
                            | M.CDirectClosure {cls, code} => warn code
@@ -170,12 +170,12 @@ struct
                     (* Check transfer. Only TCall and TTailCall are valid. *)
                     (* XXX EB: Is there any other transfer that may
                      * use a function? *)
-                    val () = 
+                    val () =
                         case t
 (*                         of M.TCall (conv, _, _, _, _) => doConv conv
                           | M.TTailCall (conv, _, _) => doConv conv*)
-                         of M.TInterProc {callee, ret, fx} => 
-                            (case callee 
+                         of M.TInterProc {callee, ret, fx} =>
+                            (case callee
                               of M.IpCall {call, args} => doConv call
                                | M.IpEval {typ, eval} => Try.fail())
                           | _ => Try.fail ()
@@ -185,12 +185,12 @@ struct
         val calls = Vector.keepAllMap (uses, getCandidateCall)
         val allCallsAreInlineable : bool = (Vector.length (calls) = Vector.length (uses))
         (* Keep original function after inlining? *)
-        val keepOriginal : bool = IMil.IFunc.getEscapes (imil, cfg) orelse 
+        val keepOriginal : bool = IMil.IFunc.getEscapes (imil, cfg) orelse
                                   not allCallsAreInlineable
         (* Debug message. XXX EB: Delete this*)
         val () = if Vector.isEmpty (calls) then
                    ()
-                 else 
+                 else
                    (dbgLayout (d, L.seq [L.str "Function \"",
                                          ID.layoutVariable' (fname),
 (*                                                            IMil.getST (imil)),*)
@@ -202,12 +202,12 @@ struct
       end
 
   (* Select the best candidate to inline based on the size cost. *)
-  fun selectByBudget (funs : (Mil.variable * IMil.iFunc * int) list, 
+  fun selectByBudget (funs : (Mil.variable * IMil.iFunc * int) list,
                       budget: int) =
       let
         val func = ref NONE
         val size = ref 0
-        fun selectCheapest (f, c, sz) = 
+        fun selectCheapest (f, c, sz) =
             if sz < budget andalso (Option.isNone (!func) orelse sz < !size) then
               (func := SOME (f, c); size := sz)
             else
@@ -217,13 +217,13 @@ struct
         (!func, !size)
       end
 
-  (* If the function is an inlineable function, returns it and 
+  (* If the function is an inlineable function, returns it and
    * its cost in size to inline. Otherwise, return NONE. *)
-  fun selectInlineable (d: PD.t, 
-                        f: Mil.variable, 
-                        cfg : IMil.iFunc, 
-                        imil: IMil.t) : 
-      (Mil.variable * IMil.iFunc * int) option = 
+  fun selectInlineable (d: PD.t,
+                        f: Mil.variable,
+                        cfg : IMil.iFunc,
+                        imil: IMil.t) :
+      (Mil.variable * IMil.iFunc * int) option =
       Try.try
         (fn () =>
             let
@@ -240,7 +240,7 @@ struct
               (f, cfg, sizeCost)
             end)
 
-  (* Select the call sites to inline. 
+  (* Select the call sites to inline.
    * For each function, call callectCallSites and append the list of
    * call sites. *)
   fun policy (info: policyInfo, d: PD.t, imil: IMil.t) =
@@ -261,7 +261,7 @@ struct
       in
         calls
       end
-      
+
   structure Inliner = MilInlineRewriterF (
                         type policyInfo = policyInfo
                         val analyze = analyze
@@ -271,16 +271,16 @@ struct
                         val rewriteOperation = rewriteOperation
                         val policy = policy
                         val optimizer = SOME optimizer)
-                               
-  fun getProgSize (imil) = 
+
+  fun getProgSize (imil) =
       let
         val cfgs = IMil.IFunc.getIFuncs (imil)
       in
-        List.fold (cfgs, 0, 
+        List.fold (cfgs, 0,
                 fn ((f, cfg), sz) => sz + IMil.IFunc.getSize (imil, cfg))
       end
 
-  fun program (imil : IMil.t, d : PD.t) : unit = 
+  fun program (imil : IMil.t, d : PD.t) : unit =
       let
         val () = budgetSize := round (real (getProgSize (imil)) * budgetRatio)
         (* Update the number of times the module was executed. *)
@@ -288,14 +288,14 @@ struct
         val nExec' = Int.toString (!nExec)
         val () = dbgString (d, " - Starting the aggressive inliner"^
                                " (Iteration # "^nExec'^")...\n")
-                 
+
         val () = Inliner.program (d, imil, NONE)
         val () = PD.report (d, passname)
         val () = dbgString (d, " - Finishing the aggressive inliner...\n")
       in
         (* Print the call graph into a file. *)
-        if Config.debug andalso 
-           prnCallGraphEnd (PD.getConfig d) then 
+        if Config.debug andalso
+           prnCallGraphEnd (PD.getConfig d) then
           let
             val graphLabel = "Call graph at the end of inline aggressive"^
                              " - Exec: "^nExec'^

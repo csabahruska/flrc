@@ -1,8 +1,8 @@
 (* The Haskell Research Compiler *)
 (*
- * Redistribution and use in source and binary forms, with or without modification, are permitted 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted
  * provided that the following conditions are met:
- * 1.   Redistributions of source code must retain the above copyright notice, this list of 
+ * 1.   Redistributions of source code must retain the above copyright notice, this list of
  * conditions and the following disclaimer.
  * 2.   Redistributions in binary form must reproduce the above copyright notice, this list of
  * conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,7 +16,7 @@
  *)
 
 
-signature IMIL_INSTR = 
+signature IMIL_INSTR =
 sig
   include IMIL_PUBLIC_TYPES
 
@@ -32,16 +32,16 @@ sig
 
   val variablesDefined : t * iInstr -> Mil.variable vector
 
-  (* replaceMil (t, i, mi).  Replace the contents of i with mi.  This should 
-   * be used with caution.  In particular, the following are the only 
+  (* replaceMil (t, i, mi).  Replace the contents of i with mi.  This should
+   * be used with caution.  In particular, the following are the only
    * guaranteed valid replacements:
-   * 1) Replacing any instruction with MDead.  This essentially kills the 
+   * 1) Replacing any instruction with MDead.  This essentially kills the
    * instruction.  Using delete is a better option.
-   * 2) Replacing a MInstr with a new MInstr.  The use def info will be 
+   * 2) Replacing a MInstr with a new MInstr.  The use def info will be
    * updated.
-   * 3) Replacing a MTransfer with a new MTransfer.  The use def info and 
+   * 3) Replacing a MTransfer with a new MTransfer.  The use def info and
    * control flow graph info will be updated appropriately.
-   * 4) Replacing a MLabel with a new MLabel, both of which are labeled with 
+   * 4) Replacing a MLabel with a new MLabel, both of which are labeled with
    * the same Mil.label.  Use def info will be updated appropriately.
    *)
   val replaceMil : t * iInstr * mInstr -> unit
@@ -64,12 +64,12 @@ sig
   val getUses   : t * iInstr -> use Vector.t
 
   (* insertBefore (t, i1, i2) => Inserts i1 before i2 in
-   * in the instruction list.  It is a fatal error if i2 
+   * in the instruction list.  It is a fatal error if i2
    * is a label or if i2 is not in a block.  *)
   val insertBefore  : t * Mil.instruction * iInstr -> iInstr
-  val insertBefore' : t * iInstr * iInstr -> unit 
+  val insertBefore' : t * iInstr * iInstr -> unit
   (* insertAfter (t, i1, i2) => Inserts i2 after i1 in
-   * in the instruction list.  It is a fatal error if i1 
+   * in the instruction list.  It is a fatal error if i1
    * is a transfer or if i1 is not in a block *)
   val insertAfter   : t * iInstr * Mil.instruction -> iInstr
   val insertAfter'  : t * iInstr * iInstr -> unit
@@ -87,7 +87,7 @@ sig
    *   2) i is a transfer from block b and
    *      a) b has multiple successors or
    *      b) the successor of b has multiple predecessors
-   *)      
+   *)
   val nextExt : t * iInstr -> iInstr option
   (* Get the previous instruction in an extended basic block.
    * prevExt (t, i) => NONE only if
@@ -95,7 +95,7 @@ sig
    *   2) i is a label of block b and
    *      a) b has multiple predecessors or
    *      b) the predecessor of b has multiple successors
-   *)      
+   *)
   val prevExt : t * iInstr -> iInstr option
 
   val layout    : t * iInstr -> Layout.t
@@ -105,7 +105,7 @@ sig
   val toRhs         : iInstr -> Mil.rhs option
   val toTransfer    : iInstr -> Mil.transfer option
   val toLabel       : iInstr -> (Mil.label * Mil.variable Vector.t) option
-                                    
+
   val splitUses' : t * iInstr * use Vector.t -> {inits : use Vector.t, others : use Vector.t}
   val splitUses  : t * iInstr  -> {inits : use Vector.t, others : use Vector.t}
 
@@ -113,7 +113,7 @@ sig
 end
 
 structure IMilInstr :
-sig 
+sig
   include IMIL_INSTR
 
   (* new creates a new empty instruction with no location and no block
@@ -124,12 +124,12 @@ sig
   val new'   : t * mInstr -> iInstr
 
   val setLoc    : t * iInstr * iBlock * iInstr DList.cursor option -> unit
-end 
-  = 
+end
+  =
 struct
   open IMilPublicTypes
 
-  val fail = 
+  val fail =
    fn (f, s) => Fail.fail ("instr.sml", f, s)
 
   structure L = Layout
@@ -145,15 +145,15 @@ struct
   structure Graph = IMT.Graph
   structure IVD = IMT.IVD
 
-  val getId = 
+  val getId =
    fn (p, i) => IMT.iInstrGetId i
-  val getMil = 
+  val getMil =
    fn (p, i) => IMT.iInstrGetMil i
-  val getVars = 
+  val getVars =
    fn (p, i) => IMT.iInstrGetVars i
-  val getIBlock = 
+  val getIBlock =
    fn (p, i)  => IMT.iInstrGetIBlock i
-  val getLoc = 
+  val getLoc =
    fn (p, i) => IMT.iInstrGetLoc i
 
   val getIFunc =
@@ -165,17 +165,17 @@ struct
   val toLabel = IMT.iInstrToLabel
 
   val preds =
-   fn (p, i) => 
+   fn (p, i) =>
       IMT.iBlockGetPredIBlocks (getIBlock (p, i))
 
   val succs =
-   fn (p, i) => 
+   fn (p, i) =>
       IMT.iBlockGetSuccIBlocks (getIBlock (p, i))
 
-  val freeVarsInMilInstr = 
+  val freeVarsInMilInstr =
    fn (p, m) =>
       let
-        val s = 
+        val s =
             case m
              of IMT.MInstr i    => FV.instruction (p, i)
               | IMT.MTransfer t => FV.transfer (p, t)
@@ -184,7 +184,7 @@ struct
       in s
       end
 
-  val buildMilVars = 
+  val buildMilVars =
    fn (p, i, m) =>
       let
         val vs = freeVarsInMilInstr (p, m)
@@ -196,16 +196,16 @@ struct
 
 
   val updateGraph =
-   fn (p, block, new, old) => 
+   fn (p, block, new, old) =>
       let
-        val iFunc = IMT.iBlockGetIFunc block 
+        val iFunc = IMT.iBlockGetIFunc block
         val exit = IMT.iFuncGetExit iFunc
         val graph = IMT.iFuncGetCfg iFunc
         val node = IMT.iBlockGetNode block
         val getNodeForLabel = fn l => IMT.iFuncGetNodeByLabel (iFunc, l)
-        val () = 
+        val () =
             case old
-             of IMT.MTransfer told => 
+             of IMT.MTransfer told =>
                 let
                   val deleteEdge =
                    fn e => Graph.deleteEdge (graph, e)
@@ -214,18 +214,18 @@ struct
                 in ()
                 end
               | _ => ()
-        val () = 
+        val () =
             case new
-             of IMT.MTransfer tnew => 
+             of IMT.MTransfer tnew =>
                 let
                   val {blocks, exits} = MilUtils.Transfer.targets tnew
                   val addEdge =
-                   fn label => 
+                   fn label =>
                       ignore (Graph.addEdge (graph, node, getNodeForLabel label, ()))
                   val () = Vector.foreach (blocks, addEdge)
                   val () = if exits then
                              ignore (Graph.addEdge (graph, node, exit, ()))
-                           else 
+                           else
                              ()
                 in ()
                 end
@@ -234,10 +234,10 @@ struct
       in ()
       end
 
-  val variablesDefinedByMInstr = 
-   fn (p, m) => 
+  val variablesDefinedByMInstr =
+   fn (p, m) =>
       let
-        val vv = 
+        val vv =
             case m
              of IMT.MInstr (M.I {dests, ...}) => dests
               | IMT.MLabel (l, parms) => parms
@@ -247,11 +247,11 @@ struct
       in vv
       end
 
-  val variablesDefined = 
+  val variablesDefined =
    fn (p, i) => variablesDefinedByMInstr (p, getMil (p, i))
 
   val deleteDefs =
-   fn (p, m) => 
+   fn (p, m) =>
       let
         val removeDef = fn v => Def.delete (p, v)
         val () = Vector.foreach (variablesDefinedByMInstr (p, m), removeDef)
@@ -259,7 +259,7 @@ struct
       end
 
   val addDefs =
-   fn (p, i, m) => 
+   fn (p, i, m) =>
       let
         val addDef = fn v => Def.add (p, v, IMT.DefInstr i)
         val () = Vector.foreach (variablesDefinedByMInstr (p, m), addDef)
@@ -267,26 +267,26 @@ struct
       end
 
   val decIFuncSize =
-   fn (p, i) => 
+   fn (p, i) =>
       (case getMil (p, i)
         of IMT.MDead => ()
          | _ => IMT.iFuncDecSize (getIFunc (p, i)))
 
   val incIFuncSize =
-   fn (p, i) => 
+   fn (p, i) =>
       (case getMil (p, i)
         of IMT.MDead => ()
          | _ => IMT.iFuncIncSize (getIFunc (p, i)))
 
   val setLoc =
-   fn (p, i, b, c) => 
+   fn (p, i, b, c) =>
       let
-        val () = 
+        val () =
             if IMT.iBlockIsInitialized (IMT.iInstrGetIBlock i) then
               decIFuncSize (p, i)
             else
                ()
-        val () = 
+        val () =
             (case IMT.iInstrGetLoc i
               of NONE => ()
                | SOME c' => DList.remove c')
@@ -298,7 +298,7 @@ struct
 
 
   val replaceMil =
-   fn (p, i, m) => 
+   fn (p, i, m) =>
       let
         val block = IMT.iInstrGetIBlock i
         val mil =  IMT.iInstrGetMil i
@@ -312,17 +312,17 @@ struct
         val () = IMT.iInstrSetMil (i, m)
         val () = IMT.iInstrSetVars (i, vars)
         val () = incIFuncSize (p, i)
-        val () = 
+        val () =
             case (m, mil)
              of (IMT.MTransfer _, IMT.MTransfer _) => ()
               | (IMT.MInstr _, IMT.MInstr _) => ()
-              | (IMT.MLabel (l, _), IMT.MLabel (l', _)) => 
+              | (IMT.MLabel (l, _), IMT.MLabel (l', _)) =>
                 if l = l' then ()
                 else fail ("replaceMil",
                            "Replacing label with different label not allowed")
               | (IMT.MDead, _) => ()
               | (_, IMT.MDead) => ()
-              | _ => 
+              | _ =>
                 fail ("replaceMil",
                       "Illegal mil replacement in instr")
       in ()
@@ -330,24 +330,24 @@ struct
 
   val () = BackPatch.fill (Use.replaceMilIH, replaceMil)
 
-  val replaceInstruction = 
+  val replaceInstruction =
    fn (p, i, m) => replaceMil (p, i, IMT.MInstr m)
 
-  val replaceTransfer = 
+  val replaceTransfer =
    fn (p, i, t) => replaceMil (p, i, IMT.MTransfer t)
 
   val replaceLabel =
    fn (p, i, l) => replaceMil (p, i, IMT.MLabel l)
 
-  val delete = 
+  val delete =
    fn (p, i) => replaceMil (p, i, IMT.MDead)
 
   local
-    val new'' = 
-        fn (p, b, m) => 
+    val new'' =
+        fn (p, b, m) =>
         let
           val id = IMT.nextId p
-          val i' = 
+          val i' =
               IMT.I {id    = id,
                      vars  = IVD.empty (),
                      iBlock = b,
@@ -361,22 +361,22 @@ struct
         in i
         end
   in
-  val new' = 
-      fn (p, m) => new'' (p, IMT.iBlockNewUninitialized (), m) 
-  val new = 
+  val new' =
+      fn (p, m) => new'' (p, IMT.iBlockNewUninitialized (), m)
+  val new =
    fn (p) => new' (p, IMT.MDead)
   end
 
-  val getUses = 
-   fn (p, i) => 
+  val getUses =
+   fn (p, i) =>
       let
         val vars = variablesDefined (p, i)
         val uses = Vector.toListMap (vars, fn v => Use.getUses (p, v))
-        val uses = 
+        val uses =
             case getMil (p, i)
              of IMT.MInstr _ => uses
               | IMT.MLabel (l, args) => Vector.new1 IMT.Used :: uses
-              | IMT.MTransfer t => 
+              | IMT.MTransfer t =>
                 let
                   val succ = IMT.iBlockGetSuccIBlocks (IMT.iInstrGetIBlock i)
                   val labelUses = Vector.fromListMap (succ, IMT.UseInstr o IMT.iBlockGetLabel)
@@ -390,8 +390,8 @@ struct
       in uses
       end
 
-  val freeVars' = 
-      fn (p, i) => 
+  val freeVars' =
+      fn (p, i) =>
       let
         val vars = getVars (p, i)
         val vars = IVD.domain vars
@@ -400,26 +400,26 @@ struct
 
   val freeVars = VS.fromList o freeVars'
 
-  val getUsedBy = 
-   fn (p, i) => 
+  val getUsedBy =
+   fn (p, i) =>
       let
         val dls = freeVars' (p, i)
-        val defs = Vector.fromListMap (dls, 
+        val defs = Vector.fromListMap (dls,
                                     fn v => Def.get (p, v))
         val items = Def.defsToItems (p, defs)
       in items
       end
 
-  val layout = 
-   fn (p, i) => 
+  val layout =
+   fn (p, i) =>
       let
         val IMT.I {id, mil, vars, iBlock, loc} = IMT.iInstrGetIInstr' i
         val l = IMilLayout.mInstr (p, mil)
         val vars = IVD.layout (vars, fn (v, _) => IMilLayout.var (p, v))
-        val uses = Vector.layout 
-                     (fn u => IMilLayout.use (p, u)) 
+        val uses = Vector.layout
+                     (fn u => IMilLayout.use (p, u))
                      (getUses (p, i))
-        val res = 
+        val res =
             L.mayAlign [L.seq [L.str "I ", l],
                         LU.indent (
                         L.mayAlign [L.seq[L.str " <- ", vars],
@@ -429,11 +429,11 @@ struct
 
   val () = BackPatch.fill(IMilLayout.iInstrH, layout)
 
-  val layoutMil = 
+  val layoutMil =
    fn (p, mi) => IMilLayout.mInstr (p, mi)
 
-  val isRec = 
-   fn (p, i) => 
+  val isRec =
+   fn (p, i) =>
       let
         val b = getIBlock (p, i)
         val f = IMT.iFuncGetFName (IMT.iBlockGetIFunc b)
@@ -444,15 +444,15 @@ struct
 
 
   local
-    val rec move = 
-     fn mv => fn (p, i) => 
+    val rec move =
+     fn mv => fn (p, i) =>
         let
           val loc = IMT.iInstrGetLoc i
-          val res = 
+          val res =
               case loc
-               of SOME l => 
+               of SOME l =>
                   (case mv l
-                    of SOME c => 
+                    of SOME c =>
                        let
                          val i = DList.getVal c
                          val res = case IMT.iInstrGetMil i
@@ -461,9 +461,9 @@ struct
                        in res
                        end
                      | NONE => NONE)
-                | _ => 
+                | _ =>
                   let
-                    val () = LayoutUtils.printLayout 
+                    val () = LayoutUtils.printLayout
                                (L.seq[IMilLayout.iInstr (p, i), L.str "\n"])
                   in
                     fail ("move",
@@ -475,22 +475,22 @@ struct
   val next : IMT.t * IMT.iInstr -> IMT.iInstr option = move DList.next
   val prev : IMT.t * IMT.iInstr -> IMT.iInstr option = move DList.prev
 
-  val nextExt = 
-   fn (p, i) => 
+  val nextExt =
+   fn (p, i) =>
       let
         val block = IMT.iInstrGetIBlock i
         val mil = IMT.iInstrGetMil i
-        val res = 
+        val res =
             case mil
-             of IMT.MLabel _ => 
+             of IMT.MLabel _ =>
                 let
                   val code = IMT.iBlockGetCode block
                   val res = Option.map (DList.first code, DList.getVal)
                 in res
                 end
-              | IMT.MTransfer _ => 
+              | IMT.MTransfer _ =>
                 (case IMT.iBlockGetSuccIBlocks block
-                  of [b] => 
+                  of [b] =>
                      (case IMT.iBlockGetPredIBlocks b
                        of [_] => SOME (IMT.iBlockGetLabel b)
                         | _ => NONE)
@@ -501,21 +501,21 @@ struct
       in res
       end
 
-  val prevExt = 
-   fn (p, i) => 
+  val prevExt =
+   fn (p, i) =>
       let
         val block = IMT.iInstrGetIBlock i
         val mil = IMT.iInstrGetMil i
-        val res = 
+        val res =
             case mil
-             of IMT.MLabel _ => 
+             of IMT.MLabel _ =>
                 (case IMT.iBlockGetPredIBlocks block
-                  of [b] => 
+                  of [b] =>
                      (case IMT.iBlockGetSuccIBlocks b
                        of [_] => SOME (IMT.iBlockGetTrans b)
                         | _ => NONE)
                    | _ => NONE)
-              | IMT.MTransfer _ => 
+              | IMT.MTransfer _ =>
                 let
                   val code = IMT.iBlockGetCode block
                   val res = Option.map (DList.last code, DList.getVal)
@@ -528,25 +528,25 @@ struct
       end
   end
 
-  val assertInstruction = 
-   fn mi => 
+  val assertInstruction =
+   fn mi =>
       (case mi
         of IMT.MDead => ()
          | IMT.MInstr _ => ()
          | _ => fail ("assertInstruction",
                       "Not a legal location for a transfer or label"))
 
-  val insertBefore' = 
-   fn (p, i1, i2) => 
+  val insertBefore' =
+   fn (p, i1, i2) =>
       let
         val m1 = IMT.iInstrGetMil i1
         val m2 = IMT.iInstrGetMil i2
         val l2 = IMT.iInstrGetLoc i2
         val b2 = IMT.iInstrGetIBlock i2
         val () = assertInstruction m1
-        val l1 = 
-            (case (m2, l2) 
-              of (IMT.MTransfer _, _) => 
+        val l1 =
+            (case (m2, l2)
+              of (IMT.MTransfer _, _) =>
                  DList.insertLast (IMT.iBlockGetCode b2, i1)
                | (_, SOME loc) => DList.insertL (loc, i1)
                | (_, NONE)     => fail ("insertBefore'",
@@ -555,16 +555,16 @@ struct
       in
         ()
       end
-  val insertBefore = 
-   fn (p, m, i2) => 
+  val insertBefore =
+   fn (p, m, i2) =>
       let
         val i1 = new' (p, IMT.MInstr m)
         val () = insertBefore' (p, i1, i2)
       in i1
       end
 
-  val insertAfter' = 
-   fn (p, i1, i2) => 
+  val insertAfter' =
+   fn (p, i1, i2) =>
       let
         val m1 = IMT.iInstrGetMil i1
         val l1 = IMT.iInstrGetLoc i1
@@ -572,7 +572,7 @@ struct
         val m2 = IMT.iInstrGetMil i2
         val () = assertInstruction m2
         val l2 = case (m1, l1)
-                  of (IMT.MLabel _, _) => 
+                  of (IMT.MLabel _, _) =>
                      DList.insert (IMT.iBlockGetCode b1, i2)
                    | (_, SOME loc) => DList.insertR (loc, i2)
                    | (_, NONE)     => fail ("insertAfter'",
@@ -581,8 +581,8 @@ struct
       in
         ()
       end
-  val insertAfter = 
-   fn (p, i1, m) => 
+  val insertAfter =
+   fn (p, i1, m) =>
       let
         val i2 = new' (p, IMT.MInstr m)
         val () = insertAfter' (p, i1, i2)
@@ -592,10 +592,10 @@ struct
   val splitUses' =
    fn (imil, i, uses) =>
       (case getMil (imil, i)
-        of IMT.MInstr (M.I {dests, ...}) => 
+        of IMT.MInstr (M.I {dests, ...}) =>
            let
              val ps = Vector.map (dests, fn v => Use.splitUses' (imil, v, uses))
-             val help = 
+             val help =
               fn ({others, inits}, (othersL, initsL)) => (others::othersL, inits::initsL)
              val (othersL, initsL) = Vector.fold (ps, ([],[]), help)
              val others = Vector.concat othersL
@@ -604,13 +604,13 @@ struct
            end
          | _ => {others = uses, inits = Vector.new0 ()})
 
-  val splitUses = 
+  val splitUses =
    fn (imil, i) => splitUses' (imil, i, getUses (imil, i))
 
-  val fx = 
+  val fx =
    fn (imil, i) =>
       let
-        val fx = 
+        val fx =
             case IMT.iInstrGetMil i
              of IMT.MInstr i         => MU.Instruction.fx (IMT.tGetConfig imil, i)
               | IMT.MLabel (l, args) => Effect.Total
